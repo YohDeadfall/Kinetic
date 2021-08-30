@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{5C1A7536-6
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kinetic.Tests", "test\Kinetic.Tests\Kinetic.Tests.csproj", "{E2CFDC2A-D6E7-42E9-ACA9-5E15036A1B98}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benches", "benches", "{0F4D41FE-0BB8-40C9-9B5A-4B125C9116D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Kinetic.Benchmarks", "benches\Kinetic.Benchmarks\Kinetic.Benchmarks.csproj", "{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,9 +52,22 @@ Global
 		{E2CFDC2A-D6E7-42E9-ACA9-5E15036A1B98}.Release|x64.Build.0 = Release|Any CPU
 		{E2CFDC2A-D6E7-42E9-ACA9-5E15036A1B98}.Release|x86.ActiveCfg = Release|Any CPU
 		{E2CFDC2A-D6E7-42E9-ACA9-5E15036A1B98}.Release|x86.Build.0 = Release|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Debug|x64.Build.0 = Debug|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Debug|x86.Build.0 = Debug|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Release|x64.ActiveCfg = Release|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Release|x64.Build.0 = Release|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Release|x86.ActiveCfg = Release|Any CPU
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{5EB5DB5C-DC32-4698-AE35-51AE39D1BCE1} = {86F43000-AA0C-4354-A762-A917AF51B70A}
 		{E2CFDC2A-D6E7-42E9-ACA9-5E15036A1B98} = {5C1A7536-6398-4865-B5B5-CFED6432F891}
+		{B13957DF-EBB0-468C-86E9-57FDA9DFFA3B} = {0F4D41FE-0BB8-40C9-9B5A-4B125C9116D6}
 	EndGlobalSection
 EndGlobal

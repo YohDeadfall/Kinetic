@@ -37,9 +37,11 @@ namespace Kinetic
             return new KineticProperty<T>(this, offset);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref IntPtr GetReference() =>
             ref Unsafe.As<KineticPropertyObservable?, IntPtr>(ref _observables);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ref T GetReference<T>(IntPtr offset)
         {
             ref var baseRef = ref GetReference();

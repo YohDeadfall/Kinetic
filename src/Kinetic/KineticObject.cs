@@ -89,7 +89,7 @@ namespace Kinetic
         public SuppressNotificationsScope SuppressNotifications() =>
             new SuppressNotificationsScope(this);
 
-        public readonly struct SuppressNotificationsScope
+        public readonly struct SuppressNotificationsScope : IDisposable
         {
             private readonly KineticObject? _owner;
 

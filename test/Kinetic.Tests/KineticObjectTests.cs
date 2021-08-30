@@ -31,12 +31,31 @@ namespace Kinetic.Tests
             {
                 test.Number.Set(1);
                 test.Number.Set(2);
-                test.Number.Set(42);
+                test.Number.Set(3);
             }
 
-            test.Number.Set(62);
+            test.Number.Set(4);
 
-            Assert.Equal(new[] { 0, 1, 2, 42 }, numbers);
+            Assert.Equal(new[] { 0, 1, 2, 3 }, numbers);
+        }
+
+        [Fact]
+        public void SuppressNotifications()
+        {
+            var test = new TestObject();
+            var numbers = new List<int>();
+
+            test.Number.Changed.Subscribe(
+                new Observer<int>(value => numbers.Add(value)));
+
+            using (test.SuppressNotifications())
+            {
+                test.Number.Set(1);
+                test.Number.Set(2);
+                test.Number.Set(3);
+            }
+
+            Assert.Equal(new[] { 0, 3 }, numbers);
         }
 
         private sealed class TestObject : KineticObject

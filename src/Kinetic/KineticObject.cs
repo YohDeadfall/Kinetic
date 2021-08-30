@@ -29,6 +29,7 @@ namespace Kinetic
         protected void Set<T>(KineticReadOnlyProperty<T> property, T value) =>
             property.EnsureOwner().Set(property.Offset, value);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected KineticProperty<T> Property<T>(ref T field)
         {
             var offset = Unsafe.ByteOffset(

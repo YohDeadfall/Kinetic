@@ -44,95 +44,48 @@ namespace Kinetic
             CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    internal interface IKineticCommandHandler<TState, TParameter, TResult>
+    internal interface IKineticFunction<T1, T2, TResult>
     {
-        TState State { get; set; }
-
-        bool CanExecute(TParameter parameter);
-        TResult Execute(TParameter parameter);
+        TResult Invoke(T1 value1, T2 value2);
     }
 
-    internal struct KineticCommandHandler<TExecute, TEnabled, TParameter, TResult> : IKineticCommandHandler<bool, TParameter, TResult>
-        where TExecute : struct, IKineticFunction<TParameter, TResult>
-        where TEnabled : struct, IKineticFunction<TParameter, bool>
-    {
-        private readonly TExecute _execute;
-        private readonly TEnabled _enabled;
-
-        public KineticCommandHandler(TExecute execute, TEnabled enabled)
-        {
-            _execute = execute;
-            _enabled = enabled;
-
-            State = false;
-        }
-
-        public bool State { get; set; }
-
-        public bool CanExecute(TParameter parameter) =>
-            State && _enabled.Invoke(parameter);
-
-        public TResult Execute(TParameter parameter) =>
-            State && _enabled.Invoke(parameter)
-            ? _execute.Invoke(parameter)
-            : throw new InvalidOperationException();
-    }
-
-    internal struct KineticCommandHandler<TExecute, TEnabled, TState, TParameter, TResult> : IKineticCommandHandler<TState, TParameter, TResult>
+    internal sealed class KineticCommand<TExecute, TEnabled, TState, TParameter, TResult> : KineticCommand<TParameter, TResult>, IObserver<TState>
         where TExecute : struct, IKineticFunction<TState, TParameter, TResult>
         where TEnabled : struct, IKineticFunction<TState, TParameter, bool>
     {
         private readonly TExecute _execute;
         private readonly TEnabled _enabled;
+        private TState _state;
 
-        public KineticCommandHandler(TExecute execute, TEnabled enabled)
+        public KineticCommand(TState state, TExecute execute, TEnabled enabled, bool optionalParameter)
+            : base(optionalParameter)
         {
             _execute = execute;
             _enabled = enabled;
-
-            State = default!;
+            _state = state;
         }
 
-        public TState State { get; set; }
-
-        public bool CanExecute(TParameter parameter) =>
-            _enabled.Invoke(State, parameter);
-
-        public TResult Execute(TParameter parameter) =>
-            _enabled.Invoke(State, parameter)
-            ? _execute.Invoke(State, parameter)
-            : throw new InvalidOperationException();
-    }
-
-    internal sealed class KineticCommand<THandler, TState, TParameter, TResult> : KineticCommand<TParameter, TResult>, IObserver<TState>
-        where THandler : struct, IKineticCommandHandler<TState, TParameter, TResult>
-    {
-        private THandler _handler;
-        private IDisposable? _state;
-
-        public KineticCommand(THandler handler, TState state, bool optionalParameter)
+        public KineticCommand(IObservable<TState>? state, TExecute execute, TEnabled enabled, bool optionalParameter)
             : base(optionalParameter)
         {
-            _handler = handler;
-            _handler.State = state;
-        }
+            _execute = execute;
+            _enabled = enabled;
+            _state = default!;
 
-        public KineticCommand(THandler handler, IObservable<TState>? state, bool optionalParameter)
-            : base(optionalParameter)
-        {
-            _handler = handler;
-            _state = state?.Subscribe(this);
+            state?.Subscribe(this);
         }
 
         public override bool CanExecute(TParameter parameter) =>
-            _handler.CanExecute(parameter);
+            _enabled.Invoke(_state, parameter);
 
         public override TResult Execute(TParameter parameter) =>
-            _handler.Execute(parameter);
+            _enabled.Invoke(_state, parameter)
+            ? _execute.Invoke(_state, parameter)
+            : throw new InvalidOperationException();
 
         public void OnNext(TState value)
         {
-            _handler.State = value;
+            _state = value;
             OnCanExecuteChanged();
         }
 
@@ -253,16 +206,16 @@ namespace Kinetic
             where TExecute : struct, IKineticFunction<TState, Unit, Unit>
             where TEnabled : struct, IKineticFunction<TState, Unit, bool>
         {
-            return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, Unit, Unit>, TState, Unit, Unit>(
-                handler: new(execute, enabled), state, optionalParameter: false);
+            return new KineticCommand<TExecute, TEnabled, TState, Unit, Unit>(
+                state, execute, enabled, optionalParameter: false);
         }
 
         private static KineticCommand<Unit, Unit> Create<TExecute, TEnabled, TState>(IObservable<TState> state, TExecute execute, TEnabled enabled)
             where TExecute : struct, IKineticFunction<TState, Unit, Unit>
             where TEnabled : struct, IKineticFunction<TState, Unit, bool>
         {
-            return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, Unit, Unit>, TState, Unit, Unit>(
-                handler: new(execute, enabled), state, optionalParameter: false);
+            return new KineticCommand<TExecute, TEnabled, TState, Unit, Unit>(
+                state, execute, enabled, optionalParameter: false);
         }
 
         private static class WithResult<TResult>
@@ -271,16 +224,16 @@ namespace Kinetic
                 where TExecute : struct, IKineticFunction<TState, Unit, TResult>
                 where TEnabled : struct, IKineticFunction<TState, Unit, bool>
             {
-                return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, Unit, TResult>, TState, Unit, TResult>(
-                    handler: new(execute, enabled), state, optionalParameter: false);
+                return new KineticCommand<TExecute, TEnabled, TState, Unit, TResult>(
+                    state, execute, enabled, optionalParameter: false);
             }
             
             public static KineticCommand<Unit, TResult> Create<TExecute, TEnabled, TState>(IObservable<TState> state, TExecute execute, TEnabled enabled)
                 where TExecute : struct, IKineticFunction<TState, Unit, TResult>
                 where TEnabled : struct, IKineticFunction<TState, Unit, bool>
             {
-                return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, Unit, TResult>, TState, Unit, TResult>(
-                    handler: new(execute, enabled), state, optionalParameter: false);
+                return new KineticCommand<TExecute, TEnabled, TState, Unit, TResult>(
+                    state, execute, enabled, optionalParameter: false);
             }
         }
 
@@ -430,8 +383,8 @@ namespace Kinetic
             where TExecute : struct, IKineticFunction<TState, TParameter, Unit>
             where TEnabled : struct, IKineticFunction<TState, TParameter, bool>
         {
-            return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, TParameter, Unit>, TState, TParameter, Unit>(
-                handler: new(execute, enabled), state, optionalParameter);
+            return new KineticCommand<TExecute, TEnabled, TState, TParameter, Unit>(
+                state, execute, enabled, optionalParameter);
         }
 
         private static KineticCommand<TParameter, Unit> Create<TExecute, TEnabled, TState>(
@@ -439,8 +392,8 @@ namespace Kinetic
             where TExecute : struct, IKineticFunction<TState, TParameter, Unit>
             where TEnabled : struct, IKineticFunction<TState, TParameter, bool>
         {
-            return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, TParameter, Unit>, TState, TParameter, Unit>(
-                handler: new(execute, enabled), state, optionalParameter);
+            return new KineticCommand<TExecute, TEnabled, TState, TParameter, Unit>(
+                state, execute, enabled, optionalParameter);
         }
 
         private static class WithResult<TResult>
@@ -450,8 +403,8 @@ namespace Kinetic
                 where TExecute : struct, IKineticFunction<TState, TParameter, TResult>
                 where TEnabled : struct, IKineticFunction<TState, TParameter, bool>
             {
-                return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, TParameter, TResult>, TState, TParameter, TResult>(
-                    handler: new(execute, enabled), state, optionalParameter);
+                return new KineticCommand<TExecute, TEnabled, TState, TParameter, TResult>(
+                    state, execute, enabled, optionalParameter);
             }
             
             public static KineticCommand<TParameter, TResult> Create<TExecute, TEnabled, TState>(
@@ -459,8 +412,8 @@ namespace Kinetic
                 where TExecute : struct, IKineticFunction<TState, TParameter, TResult>
                 where TEnabled : struct, IKineticFunction<TState, TParameter, bool>
             {
-                return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, TParameter, TResult>, TState, TParameter, TResult>(
-                    handler: new(execute, enabled), state, optionalParameter);
+                return new KineticCommand<TExecute, TEnabled, TState, TParameter, TResult>(
+                    state, execute, enabled, optionalParameter);
             }
         }
 

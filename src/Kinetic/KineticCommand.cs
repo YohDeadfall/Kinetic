@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Windows.Input;
 
 namespace Kinetic
@@ -140,6 +142,8 @@ namespace Kinetic
     
     public static class KineticCommand
     {
+        private static readonly ConcurrentDictionary<MethodInfo, bool> OptionalParameters = new();
+
         public static KineticCommand<Unit, Unit> Create(
             Action execute) =>
             Create(NoState, Execute(execute), EnabledAlways());
@@ -286,31 +290,32 @@ namespace Kinetic
         public static TResult Execute<TResult>(this KineticCommand<Unit, TResult> command) =>
             command.Execute(default);
 
-        internal static bool OptionalParameter(Delegate execute)
-        {
-            var parameter = execute.Method
-                .GetParameters()
-                .LastOrDefault();
-            if (parameter is null)
+        internal static bool OptionalParameter(Delegate execute) =>
+            OptionalParameters.GetOrAdd(execute.Method, method =>
             {
-                return false;
-            }
+                var parameter = method
+                    .GetParameters()
+                    .LastOrDefault();
+                if (parameter is null)
+                {
+                    return false;
+                }
 
-            if (parameter.ParameterType.IsValueType)
-            {
-                return Nullable.GetUnderlyingType(parameter.ParameterType) is not null;
-            }
+                if (parameter.ParameterType.IsValueType)
+                {
+                    return Nullable.GetUnderlyingType(parameter.ParameterType) is not null;
+                }
 
-            var argument = parameter
-                .GetCustomAttributesData()
-                .FirstOrDefault(a => a.AttributeType.FullName == "System.Runtime.CompilerServices.NullableAttribute")?
-                .ConstructorArguments
-                .FirstOrDefault();;
+                var argument = parameter
+                    .GetCustomAttributesData()
+                    .FirstOrDefault(a => a.AttributeType.FullName == "System.Runtime.CompilerServices.NullableAttribute")?
+                    .ConstructorArguments
+                    .FirstOrDefault();;
 
-            return
-                argument?.Value is byte nullability &&
-                nullability == 2;
-        }
+                return
+                    argument?.Value is byte nullability &&
+                    nullability == 2;
+            });
     }
 
     public static class KineticCommand<TParameter>
@@ -459,12 +464,10 @@ namespace Kinetic
             }
         }
 
-        internal static bool OptionalParameter(Delegate method)
-        {
-            return typeof(TParameter).IsValueType
-                ? default(TParameter) is null
-                : KineticCommand.OptionalParameter(method);
-        }
+        internal static bool OptionalParameter(Delegate method) =>
+            typeof(TParameter).IsValueType
+            ? default(TParameter) is null
+            : KineticCommand.OptionalParameter(method);
 
         internal static bool UnboxParameter(object? boxed, [NotNullWhen(true)] out TParameter? unboxed, bool allowNull)
         {

@@ -122,5 +122,100 @@ namespace Kinetic.Tests
             Assert.Throws<InvalidOperationException>(() => command.Execute(42));
             Assert.Equal(0, executions);
         }
+
+        [Fact]
+        public void CanExecuteChangedAction()
+        {
+            var state = new State();
+            var events = 0;
+            var command = KineticCommand.Create(
+                state.CanExecute.Changed,
+                execute: s => { },
+                canExecute: s => s);
+            
+            command.CanExecuteChanged += (s, e) => events += 1;
+
+            Assert.False(command.CanExecute());
+            Assert.Equal(0, events);
+
+            state.CanExecute.Set(true);
+
+            Assert.True(command.CanExecute());
+            Assert.Equal(1, events);
+        }
+
+        [Fact]
+        public void CanExecuteChangedActionWithParameter()
+        {
+            var state = new State();
+            var events = 0;
+            var command = KineticCommand<bool>.Create(
+                state.CanExecute.Changed,
+                execute: (s, p) => { },
+                canExecute: (s, p) => s && p);
+            
+            command.CanExecuteChanged += (s, e) => events += 1;
+
+            Assert.False(command.CanExecute(false));
+            Assert.False(command.CanExecute(true));
+            Assert.Equal(0, events);
+
+            state.CanExecute.Set(true);
+
+            Assert.False(command.CanExecute(false));
+            Assert.True(command.CanExecute(true));
+            Assert.Equal(1, events);
+        }
+
+        [Fact]
+        public void CanExecuteChangedFunction()
+        {
+            var state = new State();
+            var events = 0;
+            var command = KineticCommand.Create(
+                state.CanExecute.Changed,
+                execute: s => s,
+                canExecute: s => s);
+            
+            command.CanExecuteChanged += (s, e) => events += 1;
+
+            Assert.False(command.CanExecute());
+            Assert.Equal(0, events);
+
+            state.CanExecute.Set(true);
+
+            Assert.True(command.CanExecute());
+            Assert.Equal(1, events);
+        }
+
+        [Fact]
+        public void CanExecuteChangedFunctionWithParameter()
+        {
+            var state = new State();
+            var events = 0;
+            var command = KineticCommand<bool>.Create(
+                state.CanExecute.Changed,
+                execute: (s, p) => s && p,
+                canExecute: (s, p) => s && p);
+            
+            command.CanExecuteChanged += (s, e) => events += 1;
+
+            Assert.False(command.CanExecute(false));
+            Assert.False(command.CanExecute(true));
+            Assert.Equal(0, events);
+
+            state.CanExecute.Set(true);
+
+            Assert.False(command.CanExecute(false));
+            Assert.True(command.CanExecute(true));
+            Assert.Equal(1, events);
+        }
+
+        private sealed class State : KineticObject
+        {
+            private bool _canExecute;
+
+            public KineticProperty<bool> CanExecute => Property(ref _canExecute);
+        }
     }
 }

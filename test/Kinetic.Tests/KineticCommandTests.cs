@@ -1,4 +1,5 @@
 using System;
+using System.Windows.Input;
 using Xunit;
 
 namespace Kinetic.Tests
@@ -216,6 +217,32 @@ namespace Kinetic.Tests
             private bool _canExecute;
 
             public KineticProperty<bool> CanExecute => Property(ref _canExecute);
+        }
+
+        [Fact]
+        public void ParameterCheck()
+        {
+            ICommand command1 = KineticCommand<int>.Create(p => p);
+
+            Assert.False(command1.CanExecute(null));
+            Assert.False(command1.CanExecute(default(long)));
+            Assert.True(command1.CanExecute(default(int)));
+
+            ICommand command2 = KineticCommand<int?>.Create(p => p);
+
+            Assert.True(command2.CanExecute(null));
+            Assert.True(command2.CanExecute(default(int)));
+
+            ICommand command3 = KineticCommand<string>.Create(p => p);
+
+            Assert.False(command3.CanExecute(null));
+            Assert.False(command1.CanExecute(default(long)));
+            Assert.True(command3.CanExecute(string.Empty));
+
+            ICommand command4 = KineticCommand<string?>.Create(p => p);
+
+            Assert.True(command4.CanExecute(null));
+            Assert.True(command4.CanExecute(string.Empty));
         }
     }
 }

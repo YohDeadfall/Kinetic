@@ -1,10 +1,16 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Windows.Input;
 
 namespace Kinetic
 {
     public abstract class KineticCommand<TParameter, TResult> : ICommand
     {
+        private readonly bool _optionalParameter;
+        private protected KineticCommand(bool optionalParameter) =>
+            _optionalParameter = optionalParameter;
+
         public event EventHandler? CanExecuteChanged;
 
         public abstract bool CanExecute(TParameter parameter);
@@ -13,12 +19,23 @@ namespace Kinetic
 
         bool ICommand.CanExecute(object? parameter)
         {
-            throw new NotImplementedException();
+            return
+                KineticCommand<TParameter>.UnboxParameter(parameter, out var unboxed, _optionalParameter) &&
+                CanExecute(unboxed);
         }
 
         void ICommand.Execute(object? parameter)
         {
-            throw new NotImplementedException();
+            if (KineticCommand<TParameter>.UnboxParameter(parameter, out var unboxed, _optionalParameter))
+            {
+                Execute(unboxed);
+            }
+            else
+            {
+                throw parameter is null
+                    ? new ArgumentNullException(nameof(parameter))
+                    : new ArgumentException(nameof(parameter));
+            }
         }
 
         private protected void OnCanExecuteChanged() =>
@@ -91,13 +108,15 @@ namespace Kinetic
         private THandler _handler;
         private IDisposable? _state;
 
-        public KineticCommand(THandler handler, TState state)
+        public KineticCommand(THandler handler, TState state, bool optionalParameter)
+            : base(optionalParameter)
         {
             _handler = handler;
             _handler.State = state;
         }
 
-        public KineticCommand(THandler handler, IObservable<TState>? state)
+        public KineticCommand(THandler handler, IObservable<TState>? state, bool optionalParameter)
+            : base(optionalParameter)
         {
             _handler = handler;
             _state = state?.Subscribe(this);
@@ -123,51 +142,51 @@ namespace Kinetic
     {
         public static KineticCommand<Unit, Unit> Create(
             Action execute) =>
-            Create(Execute(execute), EnabledAlways(), NoState);
+            Create(NoState, Execute(execute), EnabledAlways());
 
         public static KineticCommand<Unit, Unit> Create(
             Action execute, Func<bool> canExecute) =>
-            Create(Execute(execute), Enabled(canExecute), NoState);
+            Create(NoState, Execute(execute), Enabled(canExecute));
 
         public static KineticCommand<Unit, Unit> Create<TState>(
             TState state, Action<TState> execute) =>
-            Create(Execute(execute), EnabledAlways<TState>(), state);
+            Create(state, Execute(execute), EnabledAlways<TState>());
 
         public static KineticCommand<Unit, Unit> Create<TState>(
             TState state, Action<TState> execute, Func<TState, bool> canExecute) =>
-            Create(Execute(execute), Enabled(canExecute), state);
+            Create(state, Execute(execute), Enabled(canExecute));
 
         public static KineticCommand<Unit, Unit> Create<TState>(
             IObservable<TState> state, Action<TState> execute) =>
-            Create(Execute(execute), EnabledAlways<TState>(), state);
+            Create(state, Execute(execute), EnabledAlways<TState>());
 
         public static KineticCommand<Unit, Unit> Create<TState>(
             IObservable<TState> state, Action<TState> execute, Func<TState, bool> canExecute) =>
-            Create(Execute(execute), Enabled(canExecute), state);
+            Create(state, Execute(execute), Enabled(canExecute));
 
         public static KineticCommand<Unit, TResult> Create<TResult>(
             Func<TResult> execute) =>
-            WithResult<TResult>.Create(Execute(execute), EnabledAlways<Unit>(), NoState);
+            WithResult<TResult>.Create(NoState, Execute(execute), EnabledAlways<Unit>());
 
         public static KineticCommand<Unit, TResult> Create<TResult>(
             Func<TResult> execute, Func<bool> canExecute) =>
-            WithResult<TResult>.Create(Execute(execute), Enabled(canExecute), NoState);
+            WithResult<TResult>.Create(NoState, Execute(execute), Enabled(canExecute));
 
         public static KineticCommand<Unit, TResult> Create<TState, TResult>(
             TState state, Func<TState, TResult> execute) =>
-            WithResult<TResult>.Create(Execute(execute), EnabledAlways<TState>(), state);
+            WithResult<TResult>.Create(state, Execute(execute), EnabledAlways<TState>());
 
         public static KineticCommand<Unit, TResult> Create<TState, TResult>(
             TState state, Func<TState, TResult> execute, Func<TState, bool> canExecute) =>
-            WithResult<TResult>.Create(Execute(execute), Enabled(canExecute), state);
+            WithResult<TResult>.Create(state, Execute(execute), Enabled(canExecute));
 
         public static KineticCommand<Unit, TResult> Create<TState, TResult>(
             IObservable<TState> state, Func<TState, TResult> execute) =>
-            WithResult<TResult>.Create(Execute(execute), EnabledAlways<TState>(), state);
+            WithResult<TResult>.Create(state, Execute(execute), EnabledAlways<TState>());
 
         public static KineticCommand<Unit, TResult> Create<TState, TResult>(
             IObservable<TState> state, Func<TState, TResult> execute, Func<TState, bool> canExecute) =>
-            WithResult<TResult>.Create(Execute(execute), Enabled(canExecute), state);
+            WithResult<TResult>.Create(state, Execute(execute), Enabled(canExecute));
 
         private static Unit NoState => default;
 
@@ -226,38 +245,38 @@ namespace Kinetic
             public bool Invoke(TState state, Unit parameter) => true;
         }
 
-        private static KineticCommand<Unit, Unit> Create<TExecute, TEnabled, TState>(TExecute execute, TEnabled enabled, TState state)
+        private static KineticCommand<Unit, Unit> Create<TExecute, TEnabled, TState>(TState state, TExecute execute, TEnabled enabled)
             where TExecute : struct, IKineticFunction<TState, Unit, Unit>
             where TEnabled : struct, IKineticFunction<TState, Unit, bool>
         {
             return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, Unit, Unit>, TState, Unit, Unit>(
-                handler: new(execute, enabled), state);
+                handler: new(execute, enabled), state, optionalParameter: false);
         }
 
-        private static KineticCommand<Unit, Unit> Create<TExecute, TEnabled, TState>(TExecute execute, TEnabled enabled, IObservable<TState> state)
+        private static KineticCommand<Unit, Unit> Create<TExecute, TEnabled, TState>(IObservable<TState> state, TExecute execute, TEnabled enabled)
             where TExecute : struct, IKineticFunction<TState, Unit, Unit>
             where TEnabled : struct, IKineticFunction<TState, Unit, bool>
         {
             return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, Unit, Unit>, TState, Unit, Unit>(
-                handler: new(execute, enabled), state);
+                handler: new(execute, enabled), state, optionalParameter: false);
         }
 
         private static class WithResult<TResult>
         {
-            public static KineticCommand<Unit, TResult> Create<TExecute, TEnabled, TState>(TExecute execute, TEnabled enabled, TState state)
+            public static KineticCommand<Unit, TResult> Create<TExecute, TEnabled, TState>(TState state, TExecute execute, TEnabled enabled)
                 where TExecute : struct, IKineticFunction<TState, Unit, TResult>
                 where TEnabled : struct, IKineticFunction<TState, Unit, bool>
             {
                 return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, Unit, TResult>, TState, Unit, TResult>(
-                    handler: new(execute, enabled), state);
+                    handler: new(execute, enabled), state, optionalParameter: false);
             }
             
-            public static KineticCommand<Unit, TResult> Create<TExecute, TEnabled, TState>(TExecute execute, TEnabled enabled, IObservable<TState> state)
+            public static KineticCommand<Unit, TResult> Create<TExecute, TEnabled, TState>(IObservable<TState> state, TExecute execute, TEnabled enabled)
                 where TExecute : struct, IKineticFunction<TState, Unit, TResult>
                 where TEnabled : struct, IKineticFunction<TState, Unit, bool>
             {
                 return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, Unit, TResult>, TState, Unit, TResult>(
-                    handler: new(execute, enabled), state);
+                    handler: new(execute, enabled), state, optionalParameter: false);
             }
         }
 
@@ -266,57 +285,83 @@ namespace Kinetic
 
         public static TResult Execute<TResult>(this KineticCommand<Unit, TResult> command) =>
             command.Execute(default);
+
+        internal static bool OptionalParameter(Delegate execute)
+        {
+            var parameter = execute.Method
+                .GetParameters()
+                .LastOrDefault();
+            if (parameter is null)
+            {
+                return false;
+            }
+
+            if (parameter.ParameterType.IsValueType)
+            {
+                return Nullable.GetUnderlyingType(parameter.ParameterType) is not null;
+            }
+
+            var argument = parameter
+                .GetCustomAttributesData()
+                .FirstOrDefault(a => a.AttributeType.FullName == "System.Runtime.CompilerServices.NullableAttribute")?
+                .ConstructorArguments
+                .FirstOrDefault();;
+
+            return
+                argument?.Value is byte nullability &&
+                nullability == 2;
+        }
     }
 
     public static class KineticCommand<TParameter>
     {
         public static KineticCommand<TParameter, Unit> Create(
             Action<TParameter> execute) =>
-            Create(Execute(execute), EnabledAlways(), NoState);
+            Create(NoState, Execute(execute), EnabledAlways(), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, Unit> Create(
             Action<TParameter> execute, Func<TParameter, bool> canExecute) =>
-            Create(Execute(execute), Enabled(canExecute), NoState);
+            Create(NoState, Execute(execute), Enabled(canExecute), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, Unit> Create<TState>(
             TState state, Action<TState, TParameter> execute) =>
-            Create(Execute(execute), EnabledAlways<TState>(), state);
+            Create(state, Execute(execute), EnabledAlways<TState>(), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, Unit> Create<TState>(
             TState state, Action<TState, TParameter> execute, Func<TState, TParameter, bool> canExecute) =>
-            Create(Execute(execute), Enabled(canExecute), state);
+            Create(state, Execute(execute), Enabled(canExecute), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, Unit> Create<TState>(
             IObservable<TState> state, Action<TState, TParameter> execute) =>
-            Create(Execute(execute), EnabledAlways<TState>(), state);
+            Create(state, Execute(execute), EnabledAlways<TState>(), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, Unit> Create<TState>(
             IObservable<TState> state, Action<TState, TParameter> execute, Func<TState, TParameter, bool> canExecute) =>
-            Create(Execute(execute), Enabled(canExecute), state);
+            Create(state, Execute(execute), Enabled(canExecute), OptionalParameter(execute));
             
         public static KineticCommand<TParameter, TResult> Create<TResult>(
             Func<TParameter, TResult> execute) =>
-            WithResult<TResult>.Create(Execute(execute), EnabledAlways(), NoState);
+            WithResult<TResult>.Create(NoState, Execute(execute), EnabledAlways(), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, TResult> Create<TResult>(
             Func<TParameter, TResult> execute, Func<TParameter, bool> canExecute) =>
-            WithResult<TResult>.Create(Execute(execute), Enabled(canExecute), NoState);
+            WithResult<TResult>.Create(NoState, Execute(execute), Enabled(canExecute), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, TResult> Create<TState, TResult>(
             TState state, Func<TState, TParameter, TResult> execute) =>
-            WithResult<TResult>.Create(Execute(execute), EnabledAlways<TState>(), state);
+            WithResult<TResult>.Create(state, Execute(execute), EnabledAlways<TState>(), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, TResult> Create<TState, TResult>(
             TState state, Func<TState, TParameter, TResult> execute, Func<TState, TParameter, bool> canExecute) =>
-            WithResult<TResult>.Create(Execute(execute), Enabled(canExecute), state);
+            WithResult<TResult>.Create(state, Execute(execute), Enabled(canExecute), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, TResult> Create<TState, TResult>(
             IObservable<TState> state, Func<TState, TParameter, TResult> execute) =>
-            WithResult<TResult>.Create(Execute(execute), EnabledAlways<TState>(), state);
+            WithResult<TResult>.Create(state, Execute(execute), EnabledAlways<TState>(), OptionalParameter(execute));
 
         public static KineticCommand<TParameter, TResult> Create<TState, TResult>(
             IObservable<TState> state, Func<TState, TParameter, TResult> execute, Func<TState, TParameter, bool> canExecute) =>
-            WithResult<TResult>.Create(Execute(execute), Enabled(canExecute), state);
+            WithResult<TResult>.Create(state, Execute(execute), Enabled(canExecute), OptionalParameter(execute));
 
         private static Unit NoState => default;
 
@@ -375,38 +420,68 @@ namespace Kinetic
             public bool Invoke(TState state, TParameter parameter) => true;
         }
 
-        private static KineticCommand<TParameter, Unit> Create<TExecute, TEnabled, TState>(TExecute execute, TEnabled enabled, TState state)
+        private static KineticCommand<TParameter, Unit> Create<TExecute, TEnabled, TState>(
+            TState state, TExecute execute, TEnabled enabled, bool optionalParameter)
             where TExecute : struct, IKineticFunction<TState, TParameter, Unit>
             where TEnabled : struct, IKineticFunction<TState, TParameter, bool>
         {
             return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, TParameter, Unit>, TState, TParameter, Unit>(
-                handler: new(execute, enabled), state);
+                handler: new(execute, enabled), state, optionalParameter);
         }
 
-        private static KineticCommand<TParameter, Unit> Create<TExecute, TEnabled, TState>(TExecute execute, TEnabled enabled, IObservable<TState> state)
+        private static KineticCommand<TParameter, Unit> Create<TExecute, TEnabled, TState>(
+            IObservable<TState> state, TExecute execute, TEnabled enabled, bool optionalParameter)
             where TExecute : struct, IKineticFunction<TState, TParameter, Unit>
             where TEnabled : struct, IKineticFunction<TState, TParameter, bool>
         {
             return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, TParameter, Unit>, TState, TParameter, Unit>(
-                handler: new(execute, enabled), state);
+                handler: new(execute, enabled), state, optionalParameter);
         }
 
         private static class WithResult<TResult>
         {
-            public static KineticCommand<TParameter, TResult> Create<TExecute, TEnabled, TState>(TExecute execute, TEnabled enabled, TState state)
+            public static KineticCommand<TParameter, TResult> Create<TExecute, TEnabled, TState>(
+                TState state, TExecute execute, TEnabled enabled, bool optionalParameter)
                 where TExecute : struct, IKineticFunction<TState, TParameter, TResult>
                 where TEnabled : struct, IKineticFunction<TState, TParameter, bool>
             {
                 return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, TParameter, TResult>, TState, TParameter, TResult>(
-                    handler: new(execute, enabled), state);
+                    handler: new(execute, enabled), state, optionalParameter);
             }
             
-            public static KineticCommand<TParameter, TResult> Create<TExecute, TEnabled, TState>(TExecute execute, TEnabled enabled, IObservable<TState> state)
+            public static KineticCommand<TParameter, TResult> Create<TExecute, TEnabled, TState>(
+                IObservable<TState> state, TExecute execute, TEnabled enabled, bool optionalParameter)
                 where TExecute : struct, IKineticFunction<TState, TParameter, TResult>
                 where TEnabled : struct, IKineticFunction<TState, TParameter, bool>
             {
                 return new KineticCommand<KineticCommandHandler<TExecute, TEnabled, TState, TParameter, TResult>, TState, TParameter, TResult>(
-                    handler: new(execute, enabled), state);
+                    handler: new(execute, enabled), state, optionalParameter);
+            }
+        }
+
+        internal static bool OptionalParameter(Delegate method)
+        {
+            return typeof(TParameter).IsValueType
+                ? default(TParameter) is null
+                : KineticCommand.OptionalParameter(method);
+        }
+
+        internal static bool UnboxParameter(object? boxed, [NotNullWhen(true)] out TParameter? unboxed, bool allowNull)
+        {
+            if (typeof(TParameter) == typeof(Unit))
+            {
+                unboxed = default!;
+                return true;
+            }
+            if (boxed is TParameter parameter)
+            {
+                unboxed = parameter;
+                return true;
+            }
+            else
+            {
+                unboxed = default;
+                return boxed is null && allowNull;
             }
         }
     }

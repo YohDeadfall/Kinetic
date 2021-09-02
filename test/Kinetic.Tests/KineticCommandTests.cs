@@ -18,6 +18,19 @@ namespace Kinetic.Tests
         }
 
         [Fact]
+        public void ExecuteActionStatePreserved()
+        {
+            var state = new State();
+            var command = KineticCommand.Create(
+                state.CanExecute.Changed,
+                execute: s => { Assert.True(s); },
+                canExecute: s => { state.CanExecute.Set(false); return s; });
+
+            state.CanExecute.Set(true);
+            command.Execute();
+        }
+
+        [Fact]
         public void ExecuteActionWithParameter()
         {
             var executions = 0;
@@ -42,6 +55,19 @@ namespace Kinetic.Tests
 
             Assert.Equal(1, command.Execute());
             Assert.Equal(1, executions);
+        }
+
+        [Fact]
+        public void ExecuteFunctionStatePreserved()
+        {
+            var state = new State();
+            var command = KineticCommand.Create(
+                state.CanExecute.Changed,
+                execute: s => { Assert.True(s); return s; },
+                canExecute: s => { state.CanExecute.Set(false); return s; });
+
+            state.CanExecute.Set(true);
+            command.Execute();
         }
 
         [Fact]

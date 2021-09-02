@@ -77,13 +77,19 @@ namespace Kinetic
             _subscription = state?.Subscribe(this);
         }
 
-        public override bool CanExecute(TParameter parameter) =>
-            _enabled.Invoke(_state, parameter);
+        public override bool CanExecute(TParameter parameter)
+        {
+            var state = _state;
+            return _enabled.Invoke(_state, parameter);
+        }
 
-        public override TResult Execute(TParameter parameter) =>
-            _enabled.Invoke(_state, parameter)
-            ? _execute.Invoke(_state, parameter)
-            : throw new InvalidOperationException();
+        public override TResult Execute(TParameter parameter)
+        {
+            var state = _state;
+            return _enabled.Invoke(state, parameter)
+                ? _execute.Invoke(state, parameter)
+                : throw new InvalidOperationException();
+        }
 
         public override void Dispose()
         {

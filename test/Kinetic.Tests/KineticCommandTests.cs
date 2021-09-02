@@ -212,11 +212,55 @@ namespace Kinetic.Tests
             Assert.Equal(1, events);
         }
 
+        [Fact]
+        public void DisposeAction()
+        {
+            var state = new State();
+            var events = 0;
+            var command = KineticCommand.Create(
+                state.Counter.Changed,
+                execute: s => { },
+                canExecute: s => s == 0);
+            
+            command.CanExecuteChanged += (s, e) => events += 1;            
+            state.Counter.Set(1);
+
+            Assert.Equal(1, events);
+
+            command.Dispose();
+            state.Counter.Set(2);
+
+            Assert.Equal(1, events);
+        }
+
+        [Fact]
+        public void DisposeFunction()
+        {
+            var state = new State();
+            var events = 0;
+            var command = KineticCommand.Create(
+                state.Counter.Changed,
+                execute: s => s,
+                canExecute: s => s == 0);
+            
+            command.CanExecuteChanged += (s, e) => events += 1;            
+            state.Counter.Set(1);
+
+            Assert.Equal(1, events);
+
+            command.Dispose();
+            state.Counter.Set(2);
+
+            Assert.Equal(1, events);
+        }
+
         private sealed class State : KineticObject
         {
             private bool _canExecute;
+            private int _counter;
 
             public KineticProperty<bool> CanExecute => Property(ref _canExecute);
+            public KineticProperty<int> Counter => Property(ref _counter);
         }
 
         [Fact]

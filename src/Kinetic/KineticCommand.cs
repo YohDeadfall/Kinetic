@@ -19,6 +19,8 @@ namespace Kinetic
 
         public abstract TResult Execute(TParameter parameter);
 
+        public abstract void Dispose();
+
         bool ICommand.CanExecute(object? parameter)
         {
             return
@@ -56,6 +58,7 @@ namespace Kinetic
         private readonly TExecute _execute;
         private readonly TEnabled _enabled;
         private TState _state;
+        private IDisposable? _subscription;
 
         public KineticCommand(TState state, TExecute execute, TEnabled enabled, bool optionalParameter)
             : base(optionalParameter)
@@ -71,8 +74,7 @@ namespace Kinetic
             _execute = execute;
             _enabled = enabled;
             _state = default!;
-
-            state?.Subscribe(this);
+            _subscription = state?.Subscribe(this);
         }
 
         public override bool CanExecute(TParameter parameter) =>
@@ -82,6 +84,12 @@ namespace Kinetic
             _enabled.Invoke(_state, parameter)
             ? _execute.Invoke(_state, parameter)
             : throw new InvalidOperationException();
+
+        public override void Dispose()
+        {
+            _subscription?.Dispose();
+            _subscription = null;
+        }
 
         public void OnNext(TState value)
         {

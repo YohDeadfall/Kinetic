@@ -50,26 +50,27 @@ namespace Kinetic
             internal Subscription? Previous;
             internal Subscription? Next;
 
-            private KineticPropertyObservable<T>? _observable;
-            private IObserver<T>? _observer;
+            private readonly KineticPropertyObservable<T> _observable;
+            private readonly IObserver<T> _observer;
 
             public Subscription(KineticPropertyObservable<T> observable, IObserver<T> observer) =>
                 (_observable, _observer) = (observable, observer);
 
             public void Changed(T value) =>
-                _observer?.OnNext(value);
+                _observer.OnNext(value);
 
             public void Dispose()
             {
                 if (_observable is { } observable &&
                     _observer is { } observer)
                 {
-                    _observable = null;
-                    _observer = null;
-
                     if (Previous is { } previous)
                     {
                         previous.Next = Next;
+                    }
+                    else
+                    {
+                        observable._subscriptions = Next;
                     }
 
                     if (Next is { } next)

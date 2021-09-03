@@ -1,4 +1,7 @@
 using System;
+using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using Xunit;
 
@@ -10,11 +13,40 @@ namespace Kinetic.Tests
         public void ExecuteAction()
         {
             var executions = 0;
-            var command = KineticCommand.Create(() => { executions += 1; });
+            var command = KineticCommand.Create(
+                execute: () => { executions += 1; });
+            var result = command
+                .FirstOrDefaultAsync()
+                .GetAwaiter();
 
             command.Execute();
 
+            Assert.True(result.IsCompleted);
+            Assert.Equal(default, result.GetResult());
             Assert.Equal(1, executions);
+        }
+
+        [Fact]
+        public void ExecuteActionWithParameter()
+        {
+            var executions = 0;
+            var parameter = 0;
+            var command = KineticCommand<int>.Create(
+                execute: p =>
+                {
+                    parameter = p;
+                    executions += 1;
+                });
+            var result = command
+                .FirstOrDefaultAsync()
+                .GetAwaiter();
+
+            command.Execute(42);
+
+            Assert.True(result.IsCompleted);
+            Assert.Equal(default, result.GetResult());
+            Assert.Equal(1, executions);
+            Assert.Equal(42, parameter);
         }
 
         [Fact]
@@ -25,36 +57,113 @@ namespace Kinetic.Tests
                 state.CanExecute.Changed,
                 execute: s => { Assert.True(s); },
                 canExecute: s => { state.CanExecute.Set(false); return s; });
+            var result = command
+                .FirstOrDefaultAsync()
+                .GetAwaiter();
 
             state.CanExecute.Set(true);
             command.Execute();
+
+            Assert.True(result.IsCompleted);
+            Assert.Equal(default, result.GetResult());
         }
 
         [Fact]
-        public void ExecuteActionWithParameter()
+        public async ValueTask ExecuteActionAsync()
+        {
+            var executions = 0;
+            var command = KineticCommand.CreateForTask(
+                execute: async () =>
+                {
+                    await Task.Yield();
+                    executions += 1;
+                });
+            var result = command
+                .FirstOrDefaultAsync();
+
+            command.Execute();
+
+            Assert.Equal(default, await result);
+            Assert.Equal(1, executions);
+        }
+
+        [Fact]
+        public async ValueTask ExecuteActionAsyncWithParameter()
         {
             var executions = 0;
             var parameter = 0;
-            var command = KineticCommand<int>.Create(p =>
-            {
-                parameter = p;
-                executions += 1;
-            });
+            var command = KineticCommand<int>.CreateForTask(
+                execute: async p =>
+                {
+                    await Task.Yield();
+                    parameter = p;
+                    executions += 1;
+                });
+            var result = command
+                .FirstOrDefaultAsync();
 
             command.Execute(42);
 
+            Assert.Equal(default, await result);
             Assert.Equal(1, executions);
             Assert.Equal(42, parameter);
+        }
+
+        [Fact]
+        public async ValueTask ExecuteActionAsyncStatePreserved()
+        {
+            var state = new State();
+            var command = KineticCommand.CreateForTask(
+                state.CanExecute.Changed,
+                execute: async s => { await Task.Yield(); Assert.True(s); },
+                canExecute: s => { state.CanExecute.Set(false); return s; });
+            var result = command
+                .FirstOrDefaultAsync();
+
+            state.CanExecute.Set(true);
+            command.Execute();
+            
+            Assert.Equal(default, await result);
         }
 
         [Fact]
         public void ExecuteFunction()
         {
             var executions = 0;
-            var command = KineticCommand.Create(() => executions += 1);
+            var command = KineticCommand.Create(
+                execute: () => executions += 1);
+            var result = command
+                .FirstOrDefaultAsync()
+                .GetAwaiter();
 
-            Assert.Equal(1, command.Execute());
+            command.Execute();
+
+            Assert.True(result.IsCompleted);
+            Assert.Equal(1, result.GetResult());
             Assert.Equal(1, executions);
+        }
+
+        [Fact]
+        public void ExecuteFunctionWithParameter()
+        {
+            var executions = 0;
+            var parameter = 0;
+            var command = KineticCommand<int>.Create(
+                execute: p =>
+                {
+                    parameter = p;
+                    return executions += 1;
+                });
+            var result = command
+                .FirstOrDefaultAsync()
+                .GetAwaiter();
+
+            command.Execute(42);
+
+            Assert.True(result.IsCompleted);
+            Assert.Equal(1, result.GetResult());
+            Assert.Equal(1, executions);
+            Assert.Equal(42, parameter);
         }
 
         [Fact]
@@ -65,25 +174,73 @@ namespace Kinetic.Tests
                 state.CanExecute.Changed,
                 execute: s => { Assert.True(s); return s; },
                 canExecute: s => { state.CanExecute.Set(false); return s; });
+            var result = command
+                .FirstOrDefaultAsync()
+                .GetAwaiter();
 
             state.CanExecute.Set(true);
             command.Execute();
+            
+            Assert.True(result.IsCompleted);
+            Assert.True(result.GetResult());
         }
 
         [Fact]
-        public void ExecuteFunctionWithParameter()
+        public async ValueTask ExecuteFunctionAsync()
+        {
+            var executions = 0;
+            var command = KineticCommand.CreateForTask(
+                execute: async () =>
+                {
+                    await Task.Yield(); 
+                    return executions += 1;
+                });
+            var result = command
+                .FirstOrDefaultAsync();
+
+            command.Execute();
+
+            Assert.Equal(1, await result);
+            Assert.Equal(1, executions);
+        }
+
+        [Fact]
+        public async ValueTask ExecuteFunctionAsyncWithParameter()
         {
             var executions = 0;
             var parameter = 0;
-            var command = KineticCommand<int>.Create(p =>
-            {
-                parameter = p;
-                return executions += 1;
-            });
+            var command = KineticCommand<int>.CreateForTask(
+                execute: async p =>
+                {
+                    await Task.Yield(); 
+                    parameter = p;
+                    return executions += 1;
+                });
+            var result = command
+                .FirstOrDefaultAsync();
 
-            Assert.Equal(1, command.Execute(42));
+            command.Execute(42);
+
+            Assert.Equal(1, await result);
             Assert.Equal(1, executions);
             Assert.Equal(42, parameter);
+        }
+
+        [Fact]
+        public async ValueTask ExecuteFunctionAsyncStatePreserved()
+        {
+            var state = new State();
+            var command = KineticCommand.CreateForTask(
+                state.CanExecute.Changed,
+                execute: async s => { await Task.Yield(); Assert.True(s); return s; },
+                canExecute: s => { state.CanExecute.Set(false); return s; });
+            var result = command
+                .FirstOrDefaultAsync();
+
+            state.CanExecute.Set(true);
+            command.Execute();
+
+            Assert.True(await result);
         }
 
         [Fact]
@@ -118,6 +275,47 @@ namespace Kinetic.Tests
             Assert.Equal(0, executions);
         }
 
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async ValueTask CanExecuteActionAsync(bool awaitCompletion)
+        {
+            var executions = 0;
+            var validations = 0;
+            var state = new State();
+            var semaphore = new SemaphoreSlim(1);
+            var command = KineticCommand.CreateForTask(
+                state.CanExecute.Changed,
+                execute: async s => { await semaphore.WaitAsync(); executions += 1; },
+                canExecute: s => { validations += 1; return s; },
+                awaitCompletion);
+            var result = command
+                .FirstOrDefaultAsync();
+            
+            Assert.False(command.CanExecute());
+            Assert.Equal(1, validations);
+
+            Assert.Throws<InvalidOperationException>(() => command.Execute());
+            Assert.Equal(0, executions);
+
+            state.CanExecute.Set(true);
+            semaphore.Wait(0);
+
+            Assert.False(command.CanExecute());
+            Assert.Equal(2, validations);
+
+            command.Execute();
+
+            Assert.Equal(awaitCompletion, !command.CanExecute());
+            Assert.Equal(4, validations);
+
+            semaphore.Release();
+            await result;
+
+            Assert.True(command.CanExecute());
+            Assert.Equal(5, validations);
+        }
+
         [Fact]
         public void CanExecuteFunction()
         {
@@ -148,6 +346,47 @@ namespace Kinetic.Tests
 
             Assert.Throws<InvalidOperationException>(() => command.Execute(42));
             Assert.Equal(0, executions);
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public async ValueTask CanExecuteFunctionAsync(bool awaitCompletion)
+        {
+            var executions = 0;
+            var validations = 0;
+            var state = new State();
+            var semaphore = new SemaphoreSlim(1);
+            var command = KineticCommand.CreateForTask(
+                state.CanExecute.Changed,
+                execute: async s => { await semaphore.WaitAsync(); return executions += 1; },
+                canExecute: s => { validations += 1; return s; },
+                awaitCompletion);
+            var result = command
+                .FirstOrDefaultAsync();
+            
+            Assert.False(command.CanExecute());
+            Assert.Equal(1, validations);
+
+            Assert.Throws<InvalidOperationException>(() => command.Execute());
+            Assert.Equal(0, executions);
+
+            state.CanExecute.Set(true);
+            semaphore.Wait(0);
+
+            Assert.False(command.CanExecute());
+            Assert.Equal(2, validations);
+
+            command.Execute();
+
+            Assert.Equal(awaitCompletion, !command.CanExecute());
+            Assert.Equal(4, validations);
+
+            semaphore.Release();
+            await result;
+
+            Assert.True(command.CanExecute());
+            Assert.Equal(5, validations);
         }
 
         [Fact]

@@ -2,103 +2,114 @@ using System;
 
 namespace Kinetic
 {
-    public abstract class KineticObservable<T> : IObservable<T>
+    internal interface IKineticObservable<T> : IObservable<T>
     {
-        private Subscription? _subscriptions;
-        
-        protected void OnNext(T value)
+        void Subscribe(KineticObservableSubscription<T> subscription);
+        void Unsubscribe(KineticObservableSubscription<T> subscription);
+    }
+
+    internal sealed class KineticObservableSubscription<T> : IDisposable
+    {
+        internal IKineticObservable<T>? Observable;
+        internal KineticObservableSubscription<T>? Next;
+    
+        private readonly IObserver<T> _observer;
+
+        public KineticObservableSubscription(IObserver<T> observer) => _observer = observer;
+
+        public void Dispose() => Observable?.Unsubscribe(this);
+
+        public void OnNext(T value) => _observer.OnNext(value);
+        public void OnError(Exception error) => _observer.OnError(error);
+        public void OnCompleted() => _observer.OnCompleted();
+    }
+
+    internal struct KineticObservableSubscriptions<T>
+    {
+        private KineticObservableSubscription<T>? _head;
+
+        public IDisposable Subscribe(IKineticObservable<T> observable, IObserver<T> observer, T value)
         {
-            var subscriptions = _subscriptions;
-            var subscription = subscriptions;
+            var subscription = new KineticObservableSubscription<T>(observer);
 
-            while (subscription is not null)
-            {
-                subscription.OnNext(value);
-                subscription = subscription.Next;
-            }
-        }
-
-        protected void OnError(Exception error)
-        {
-            var subscriptions = _subscriptions;
-            var subscription = subscriptions;
-
-            while (subscription is not null)
-            {
-                subscription.OnError(error);
-                subscription = subscription.Next;
-            }
-        }
-
-        protected void OnCompleted()
-        {
-            var subscriptions = _subscriptions;
-            var subscription = subscriptions;
-
-            while (subscription is not null)
-            {
-                subscription.OnCompleted();
-                subscription = subscription.Next;
-            }
-        }
-
-        public IDisposable Subscribe(IObserver<T> observer)
-        {
-            var subscription = new Subscription(
-                observable: this,
-                observer ?? throw new ArgumentNullException(nameof(observer)));
-
-            var subscriptions = _subscriptions;
-            if (subscriptions is not null)
-            {
-                subscription.Next = subscriptions;
-                subscriptions.Previous = subscription;
-            }
-
-            _subscriptions = subscription;
-
+            Subscribe(observable, subscription, value);
             return subscription;
         }
 
-        private sealed class Subscription : IDisposable
+        public IDisposable Subscribe(IKineticObservable<T> observable, IObserver<T> observer)
         {
-            internal Subscription? Previous;
-            internal Subscription? Next;
+            var subscription = new KineticObservableSubscription<T>(observer);
 
-            private readonly KineticObservable<T> _observable;
-            private readonly IObserver<T> _observer;
+            Subscribe(observable, subscription);
+            return subscription;
+        }
 
-            public Subscription(KineticObservable<T> observable, IObserver<T> observer) =>
-                (_observable, _observer) = (observable, observer);
+        public void Subscribe(IKineticObservable<T> observable, KineticObservableSubscription<T> subscription, T value)
+        {
+            subscription.OnNext(value);
+            subscription.Observable = observable;
+            subscription.Next = _head;
+            _head = subscription;
+        }
 
-            public void OnNext(T value) =>
-                _observer.OnNext(value);
+        public void Subscribe(IKineticObservable<T> observable, KineticObservableSubscription<T> subscription)
+        {
+            subscription.Observable = observable;
+            subscription.Next = _head;
+            _head = subscription;
+        }
 
-            public void OnError(Exception error) =>
-                _observable.OnError(error);
-
-            public void OnCompleted() =>
-                _observable.OnCompleted();
-
-            public void Dispose()
+        public void Unsubscribe(KineticObservableSubscription<T> subscription)
+        {
+            if (_head == subscription)
             {
-                if (_observable is { } observable &&
-                    _observer is { } observer)
+                _head = subscription.Next;
+                return;
+            }
+            
+            var current = _head;
+            while (current is not null)
+            {
+                if (current.Next == subscription)
                 {
-                    if (Previous is { } previous)
-                    {
-                        previous.Next = Next;
-                    }
-                    else
-                    {
-                        observable._subscriptions = Next;
-                    }
-
-                    if (Next is { } next)
-                    {
-                        next.Previous = Previous;
-                    }
+                    current.Next = subscription.Next;
+                    subscription.Observable = null;
+                    subscription.Next = null;
+                    return;
                 }
+
+                current = current.Next;
+            }
+        }
+
+        public void OnNext(T value)
+        {
+            var current = _head;
+            while (current is not null)
+            {
+                current.OnNext(value);
+                current = current.Next;
+            }
+        }
+
+        public void OnError(Exception error)
+        {
+            var current = _head;
+            while (current is not null)
+            {
+                current.OnError(error);
+                current = current.Next;
+            }
+        }
+
+        public void OnCompleted()
+        {
+            while (_head is { } head)
+            {
+                _head = head.Next;
+
+                head.Next = null;
+                head.OnCompleted();
             }
         }
     }

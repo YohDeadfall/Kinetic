@@ -9,9 +9,11 @@ using System.Windows.Input;
 
 namespace Kinetic
 {
-    public abstract class KineticCommand<TParameter, TResult> : KineticObservable<TResult>, ICommand
+    public abstract class KineticCommand<TParameter, TResult> : ICommand, IKineticObservable<TResult>
     {
         private readonly bool _optionalParameter;
+        private KineticObservableSubscriptions<TResult> _subscriptions;
+
         private protected KineticCommand(bool optionalParameter) =>
             _optionalParameter = optionalParameter;
 
@@ -46,6 +48,21 @@ namespace Kinetic
                     : new ArgumentException(nameof(parameter));
             }
         }
+
+        public IDisposable Subscribe(IObserver<TResult> observer) =>
+            _subscriptions.Subscribe(this, observer);
+
+        void IKineticObservable<TResult>.Subscribe(KineticObservableSubscription<TResult> subscription) =>
+            _subscriptions.Subscribe(this, subscription);
+
+        void IKineticObservable<TResult>.Unsubscribe(KineticObservableSubscription<TResult> subscription) =>
+            _subscriptions.Unsubscribe(subscription);
+
+        private protected void OnNext(TResult value) =>
+            _subscriptions.OnNext(value);
+
+        private protected void OnError(Exception error) =>
+            _subscriptions.OnError(error);
 
         private protected void OnCanExecuteChanged() =>
             CanExecuteChanged?.Invoke(this, EventArgs.Empty);

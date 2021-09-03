@@ -15,6 +15,9 @@ namespace Kinetic
         private protected KineticCommand(bool optionalParameter) =>
             _optionalParameter = optionalParameter;
 
+        public sealed override string ToString() =>
+            nameof(KineticCommand) + "<" + typeof(TParameter) + ", " + typeof(TResult) + ">";
+
         public event EventHandler? CanExecuteChanged;
 
         public abstract bool CanExecute(TParameter parameter);

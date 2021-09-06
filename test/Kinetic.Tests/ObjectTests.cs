@@ -58,7 +58,7 @@ namespace Kinetic.Tests
             Assert.Equal(new[] { 0, 3 }, numbers);
         }
 
-        private sealed class TestObject : KineticObject
+        private sealed class TestObject : Object
         {
             private int _number;
             private string _text = string.Empty;
@@ -66,8 +66,8 @@ namespace Kinetic.Tests
             public TestObject() =>
                 Number.Changed.Subscribe(new NumberChanged(this));
 
-            public KineticProperty<int> Number => Property(ref _number);
-            public KineticReadOnlyProperty<string> Text => Property(ref _text);
+            public Property<int> Number => Property(ref _number);
+            public ReadOnlyProperty<string> Text => Property(ref _text);
 
             private class NumberChanged : IObserver<int>
             {

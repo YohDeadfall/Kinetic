@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 
 namespace Kinetic
 {
-    public abstract class KineticObject
+    public abstract class Object
     {
         private PropertyObservable? _observables;
         private uint _suppressions;
@@ -26,16 +26,16 @@ namespace Kinetic
             return null;
         }
 
-        protected void Set<T>(KineticReadOnlyProperty<T> property, T value) =>
+        protected void Set<T>(ReadOnlyProperty<T> property, T value) =>
             property.EnsureOwner().Set(property.Offset, value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        protected KineticProperty<T> Property<T>(ref T field)
+        protected Property<T> Property<T>(ref T field)
         {
             var offset = Unsafe.ByteOffset(
                 ref GetReference(),
                 ref Unsafe.As<T, IntPtr>(ref field));
-            return new KineticProperty<T>(this, offset);
+            return new Property<T>(this, offset);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -91,9 +91,9 @@ namespace Kinetic
 
         public readonly struct SuppressNotificationsScope : IDisposable
         {
-            private readonly KineticObject? _owner;
+            private readonly Object? _owner;
 
-            internal SuppressNotificationsScope(KineticObject owner)
+            internal SuppressNotificationsScope(Object owner)
             {
                 if (owner._suppressions == 0)
                 {
@@ -125,23 +125,23 @@ namespace Kinetic
 
         private abstract class PropertyObservable
         {
-            internal readonly KineticObject Owner;
+            internal readonly Object Owner;
             internal readonly PropertyObservable? Next;
             internal readonly IntPtr Offset;
 
             internal uint Version;
 
-            protected PropertyObservable(KineticObject owner, IntPtr offset, PropertyObservable? next) =>
+            protected PropertyObservable(Object owner, IntPtr offset, PropertyObservable? next) =>
                 (Owner, Offset, Next) = (owner, offset, next);
 
             public abstract void Changed();
         }
 
-        private sealed class PropertyObservable<T> : PropertyObservable, IKineticObservable<T>
+        private sealed class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>
         {
-            private KineticObservableSubscriptions<T> _subscriptions;
+            private ObservableSubscriptions<T> _subscriptions;
 
-            public PropertyObservable(KineticObject owner, IntPtr offset, PropertyObservable? next)
+            public PropertyObservable(Object owner, IntPtr offset, PropertyObservable? next)
                 : base(owner, offset, next) { }
 
             public override void Changed() =>
@@ -153,23 +153,23 @@ namespace Kinetic
             public IDisposable Subscribe(IObserver<T> observer) =>
                 _subscriptions.Subscribe(this, observer, Owner.Get<T>(Offset));
 
-            public void Subscribe(KineticObservableSubscription<T> subscription) =>
+            public void Subscribe(ObservableSubscription<T> subscription) =>
                 _subscriptions.Subscribe(this, subscription);
 
-            public void Unsubscribe(KineticObservableSubscription<T> subscription) =>
+            public void Unsubscribe(ObservableSubscription<T> subscription) =>
                 _subscriptions.Unsubscribe(subscription);
         }
     }
 
-    public readonly ref struct KineticProperty<T>
+    public readonly ref struct Property<T>
     {
-        internal readonly KineticObject? Owner;
+        internal readonly Object? Owner;
         internal readonly IntPtr Offset;
 
-        internal KineticProperty(KineticObject? owner, IntPtr offset) =>
+        internal Property(Object? owner, IntPtr offset) =>
             (Owner, Offset) = (owner, offset);
 
-        internal KineticObject EnsureOwner() =>
+        internal Object EnsureOwner() =>
             Owner ?? throw new InvalidOperationException();
 
         public T Get() => EnsureOwner().Get<T>(Offset);
@@ -178,29 +178,29 @@ namespace Kinetic
 
         public IObservable<T> Changed => EnsureOwner().Changed<T>(Offset);
 
-        public static implicit operator T(KineticProperty<T> property) =>
+        public static implicit operator T(Property<T> property) =>
             property.Get();
 
-        public static implicit operator KineticReadOnlyProperty<T>(KineticProperty<T> property) =>
-            new KineticReadOnlyProperty<T>(property.Owner, property.Offset);
+        public static implicit operator ReadOnlyProperty<T>(Property<T> property) =>
+            new ReadOnlyProperty<T>(property.Owner, property.Offset);
     }
 
-    public readonly ref struct KineticReadOnlyProperty<T>
+    public readonly ref struct ReadOnlyProperty<T>
     {
-        internal readonly KineticObject? Owner;
+        internal readonly Object? Owner;
         internal readonly IntPtr Offset;
 
-        internal KineticReadOnlyProperty(KineticObject? owner, IntPtr offset) =>
+        internal ReadOnlyProperty(Object? owner, IntPtr offset) =>
             (Owner, Offset) = (owner, offset);
 
-        internal KineticObject EnsureOwner() =>
+        internal Object EnsureOwner() =>
             Owner ?? throw new InvalidOperationException();
 
         public T Get() => EnsureOwner().Get<T>(Offset);
 
         public IObservable<T> Changed => EnsureOwner().Changed<T>(Offset);
 
-        public static implicit operator T(KineticReadOnlyProperty<T> property) =>
+        public static implicit operator T(ReadOnlyProperty<T> property) =>
             property.Get();
     }
 }

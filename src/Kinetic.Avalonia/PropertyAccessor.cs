@@ -7,7 +7,7 @@ using Avalonia.Data.Core.Plugins;
 
 namespace Kinetic.Avalonia
 {
-    public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
+    public sealed class PropertyAccessor : IPropertyAccessorPlugin
     {
         private delegate IPropertyAccessor AccessorFactory(WeakReference<object> reference);
 
@@ -22,7 +22,7 @@ namespace Kinetic.Avalonia
         {
             static AccessorFactory Internal(PropertyInfo property)
             {
-                var getter = KineticReflection.CreateRoGetter<T>(property);
+                var getter = Reflection.CreateRoGetter<T>(property);
                 return reference => new AccessorReadOnly<T>(reference, getter);
             }
 
@@ -33,7 +33,7 @@ namespace Kinetic.Avalonia
         {
             static AccessorFactory Internal(PropertyInfo property)
             {
-                var getter = KineticReflection.CreateRwGetter<T>(property);
+                var getter = Reflection.CreateRwGetter<T>(property);
                 return reference => new Accessor<T>(reference, getter);
             }
 
@@ -63,7 +63,7 @@ namespace Kinetic.Avalonia
 
         private AccessorFactory? GetAccessorFactory(object? obj, string propertyName)
         {
-            if (obj is not KineticObject)
+            if (obj is not Object)
             {
                 return null;
             }
@@ -81,8 +81,8 @@ namespace Kinetic.Avalonia
             {
                 var propertyType = propertyTypeGeneric.GetGenericTypeDefinition();
                 var method =
-                    propertyType == typeof(KineticProperty<>) ? _factoryRw :
-                    propertyType == typeof(KineticReadOnlyProperty<>) ? _factoryRo :
+                    propertyType == typeof(Property<>) ? _factoryRw :
+                    propertyType == typeof(ReadOnlyProperty<>) ? _factoryRo :
                     null;
 
                 factory = method?
@@ -99,9 +99,9 @@ namespace Kinetic.Avalonia
             return factory;
         }
 
-        private sealed class Accessor<T> : AccessorBase<T, KineticPropertyGetter<T>>
+        private sealed class Accessor<T> : AccessorBase<T, PropertyGetter<T>>
         {
-            public Accessor(WeakReference<object> reference, KineticPropertyGetter<T> getter)
+            public Accessor(WeakReference<object> reference, PropertyGetter<T> getter)
                 : base(reference, getter) { }
 
             public override object? Value =>
@@ -122,9 +122,9 @@ namespace Kinetic.Avalonia
                 Getter(Reference, out var property) ? property.Changed : null);
         }
 
-        private sealed class AccessorReadOnly<T> : AccessorBase<T, KineticReadOnlyPropertyGetter<T>>
+        private sealed class AccessorReadOnly<T> : AccessorBase<T, ReadOnlyPropertyGetter<T>>
         {
-            public AccessorReadOnly(WeakReference<object> reference, KineticReadOnlyPropertyGetter<T> getter)
+            public AccessorReadOnly(WeakReference<object> reference, ReadOnlyPropertyGetter<T> getter)
                 : base(reference, getter) { }
 
             public override object? Value =>

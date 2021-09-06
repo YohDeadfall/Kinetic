@@ -2,20 +2,20 @@ using System;
 
 namespace Kinetic
 {
-    internal interface IKineticObservable<T> : IObservable<T>
+    internal interface IObservableInternal<T> : IObservable<T>
     {
-        void Subscribe(KineticObservableSubscription<T> subscription);
-        void Unsubscribe(KineticObservableSubscription<T> subscription);
+        void Subscribe(ObservableSubscription<T> subscription);
+        void Unsubscribe(ObservableSubscription<T> subscription);
     }
 
-    internal sealed class KineticObservableSubscription<T> : IDisposable
+    internal sealed class ObservableSubscription<T> : IDisposable
     {
-        internal IKineticObservable<T>? Observable;
-        internal KineticObservableSubscription<T>? Next;
+        internal IObservableInternal<T>? Observable;
+        internal ObservableSubscription<T>? Next;
 
         private readonly IObserver<T> _observer;
 
-        public KineticObservableSubscription(IObserver<T> observer) => _observer = observer;
+        public ObservableSubscription(IObserver<T> observer) => _observer = observer;
 
         public void Dispose() => Observable?.Unsubscribe(this);
 
@@ -24,27 +24,27 @@ namespace Kinetic
         public void OnCompleted() => _observer.OnCompleted();
     }
 
-    internal struct KineticObservableSubscriptions<T>
+    internal struct ObservableSubscriptions<T>
     {
-        private KineticObservableSubscription<T>? _head;
+        private ObservableSubscription<T>? _head;
 
-        public IDisposable Subscribe(IKineticObservable<T> observable, IObserver<T> observer, T value)
+        public IDisposable Subscribe(IObservableInternal<T> observable, IObserver<T> observer, T value)
         {
-            var subscription = new KineticObservableSubscription<T>(observer);
+            var subscription = new ObservableSubscription<T>(observer);
 
             Subscribe(observable, subscription, value);
             return subscription;
         }
 
-        public IDisposable Subscribe(IKineticObservable<T> observable, IObserver<T> observer)
+        public IDisposable Subscribe(IObservableInternal<T> observable, IObserver<T> observer)
         {
-            var subscription = new KineticObservableSubscription<T>(observer);
+            var subscription = new ObservableSubscription<T>(observer);
 
             Subscribe(observable, subscription);
             return subscription;
         }
 
-        public void Subscribe(IKineticObservable<T> observable, KineticObservableSubscription<T> subscription, T value)
+        public void Subscribe(IObservableInternal<T> observable, ObservableSubscription<T> subscription, T value)
         {
             subscription.OnNext(value);
             subscription.Observable = observable;
@@ -52,14 +52,14 @@ namespace Kinetic
             _head = subscription;
         }
 
-        public void Subscribe(IKineticObservable<T> observable, KineticObservableSubscription<T> subscription)
+        public void Subscribe(IObservableInternal<T> observable, ObservableSubscription<T> subscription)
         {
             subscription.Observable = observable;
             subscription.Next = _head;
             _head = subscription;
         }
 
-        public void Unsubscribe(KineticObservableSubscription<T> subscription)
+        public void Unsubscribe(ObservableSubscription<T> subscription)
         {
             if (_head == subscription)
             {

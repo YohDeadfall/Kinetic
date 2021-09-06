@@ -4,29 +4,29 @@ using System.Reflection;
 
 namespace Kinetic.Avalonia
 {
-    internal delegate bool KineticPropertyGetter<T>(WeakReference<object> reference, out KineticProperty<T> property);
-    internal delegate bool KineticReadOnlyPropertyGetter<T>(WeakReference<object> reference, out KineticReadOnlyProperty<T> property);
+    internal delegate bool PropertyGetter<T>(WeakReference<object> reference, out Property<T> property);
+    internal delegate bool ReadOnlyPropertyGetter<T>(WeakReference<object> reference, out ReadOnlyProperty<T> property);
 
-    internal static class KineticReflection
+    internal static class Reflection
     {
-        private delegate KineticProperty<T> RwGetter<TOwner, T>(TOwner owner);
-        private delegate KineticReadOnlyProperty<T> RoGetter<TOwner, T>(TOwner owner);
+        private delegate Property<T> RwGetter<TOwner, T>(TOwner owner);
+        private delegate ReadOnlyProperty<T> RoGetter<TOwner, T>(TOwner owner);
 
         public static MethodInfo GetGenericDefinition<T>(Func<T> method) =>
             method.Method.GetGenericMethodDefinition();
 
-        public static KineticPropertyGetter<T> CreateRwGetter<T>(PropertyInfo property)
+        public static PropertyGetter<T> CreateRwGetter<T>(PropertyInfo property)
         {
             Debug.Assert(property.DeclaringType is not null);
-            Debug.Assert(property.PropertyType == typeof(KineticProperty<T>));
+            Debug.Assert(property.PropertyType == typeof(Property<T>));
             Debug.Assert(property.GetMethod is not null);
 
-            static Func<PropertyInfo, KineticPropertyGetter<T>> Wrapper<TOwner>() =>
+            static Func<PropertyInfo, PropertyGetter<T>> Wrapper<TOwner>() =>
                 property => Factory<TOwner>(property);
 
-            static KineticPropertyGetter<T> Factory<TOwner>(PropertyInfo property)
+            static PropertyGetter<T> Factory<TOwner>(PropertyInfo property)
             {
-                static bool Getter(WeakReference<object> reference, RwGetter<TOwner, T> getter, out KineticProperty<T> property)
+                static bool Getter(WeakReference<object> reference, RwGetter<TOwner, T> getter, out Property<T> property)
                 {
                     if (reference.TryGetTarget(out var target) &&
                         target is TOwner owner)
@@ -42,14 +42,14 @@ namespace Kinetic.Avalonia
                 }
 
                 Debug.Assert(property.DeclaringType == typeof(TOwner));
-                Debug.Assert(property.PropertyType == typeof(KineticProperty<T>));
+                Debug.Assert(property.PropertyType == typeof(Property<T>));
                 Debug.Assert(property.GetMethod is not null);
 
                 var getter = property.GetMethod
                     .MakeGenericMethod(property.DeclaringType, property.PropertyType)
                     .CreateDelegate<RwGetter<TOwner, T>>();
 
-                return delegate (WeakReference<object> reference, out KineticProperty<T> property)
+                return delegate (WeakReference<object> reference, out Property<T> property)
                 {
                     return Getter(reference, getter, out property);
                 };
@@ -57,22 +57,22 @@ namespace Kinetic.Avalonia
 
             return GetGenericDefinition(Wrapper<object>)
                 .MakeGenericMethod(property.DeclaringType)
-                .CreateDelegate<Func<PropertyInfo, KineticPropertyGetter<T>>>()
+                .CreateDelegate<Func<PropertyInfo, PropertyGetter<T>>>()
                 .Invoke(property);
         }
 
-        public static KineticReadOnlyPropertyGetter<T> CreateRoGetter<T>(PropertyInfo property)
+        public static ReadOnlyPropertyGetter<T> CreateRoGetter<T>(PropertyInfo property)
         {
             Debug.Assert(property.DeclaringType is not null);
-            Debug.Assert(property.PropertyType == typeof(KineticReadOnlyProperty<T>));
+            Debug.Assert(property.PropertyType == typeof(ReadOnlyProperty<T>));
             Debug.Assert(property.GetMethod is not null);
 
-            static Func<PropertyInfo, KineticReadOnlyPropertyGetter<T>> Wrapper<TOwner>() =>
+            static Func<PropertyInfo, ReadOnlyPropertyGetter<T>> Wrapper<TOwner>() =>
                 property => Factory<TOwner>(property);
 
-            static KineticReadOnlyPropertyGetter<T> Factory<TOwner>(PropertyInfo property)
+            static ReadOnlyPropertyGetter<T> Factory<TOwner>(PropertyInfo property)
             {
-                static bool Getter(WeakReference<object> reference, RoGetter<TOwner, T> getter, out KineticReadOnlyProperty<T> property)
+                static bool Getter(WeakReference<object> reference, RoGetter<TOwner, T> getter, out ReadOnlyProperty<T> property)
                 {
                     if (reference.TryGetTarget(out var target) &&
                         target is TOwner owner)
@@ -88,14 +88,14 @@ namespace Kinetic.Avalonia
                 }
 
                 Debug.Assert(property.DeclaringType == typeof(TOwner));
-                Debug.Assert(property.PropertyType == typeof(KineticReadOnlyProperty<T>));
+                Debug.Assert(property.PropertyType == typeof(ReadOnlyProperty<T>));
                 Debug.Assert(property.GetMethod is not null);
 
                 var getter = property.GetMethod
                     .MakeGenericMethod(property.DeclaringType, property.PropertyType)
                     .CreateDelegate<RoGetter<TOwner, T>>();
 
-                return delegate (WeakReference<object> reference, out KineticReadOnlyProperty<T> property)
+                return delegate (WeakReference<object> reference, out ReadOnlyProperty<T> property)
                 {
                     return Getter(reference, getter, out property);
                 };
@@ -103,7 +103,7 @@ namespace Kinetic.Avalonia
 
             return GetGenericDefinition(Wrapper<object>)
                 .MakeGenericMethod(property.DeclaringType)
-                .CreateDelegate<Func<PropertyInfo, KineticReadOnlyPropertyGetter<T>>>()
+                .CreateDelegate<Func<PropertyInfo, ReadOnlyPropertyGetter<T>>>()
                 .Invoke(property);
         }
 

@@ -31,11 +31,11 @@ namespace Kinetic.Benchmarks
         [Benchmark]
         public void Set() => Test.Number.Set(42);
 
-        public sealed class TestObject : KineticObject
+        public sealed class TestObject : Object
         {
             private int _number;
 
-            public KineticProperty<int> Number => Property(ref _number);
+            public Property<int> Number => Property(ref _number);
         }
 
         public sealed class Observer<T> : IObserver<T>

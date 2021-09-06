@@ -12,7 +12,7 @@ namespace Kinetic
     {
         internal IKineticObservable<T>? Observable;
         internal KineticObservableSubscription<T>? Next;
-    
+
         private readonly IObserver<T> _observer;
 
         public KineticObservableSubscription(IObserver<T> observer) => _observer = observer;
@@ -66,7 +66,7 @@ namespace Kinetic
                 _head = subscription.Next;
                 return;
             }
-            
+
             var current = _head;
             while (current is not null)
             {

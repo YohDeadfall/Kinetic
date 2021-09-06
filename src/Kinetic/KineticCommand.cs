@@ -166,7 +166,7 @@ namespace Kinetic
             }
             else
             {
-                throw new InvalidOperationException();   
+                throw new InvalidOperationException();
             }
         }
     }
@@ -275,7 +275,7 @@ namespace Kinetic
             }
         }
     }
-    
+
     public static class KineticCommand
     {
         private static readonly ConcurrentDictionary<MethodInfo, bool> OptionalParameters = new();
@@ -479,7 +479,7 @@ namespace Kinetic
                 return new KineticCommand<TExecute, TEnabled, TState, Unit, TResult>(
                     state, execute, enabled, optionalParameter: false);
             }
-            
+
             public static KineticCommand<Unit, TResult> Create<TExecute, TEnabled, TState>(
                 IObservable<TState> state, TExecute execute, TEnabled enabled)
                 where TExecute : struct, IKineticFunction<TState, Unit, TResult>
@@ -497,7 +497,7 @@ namespace Kinetic
                 return new KineticTaskCommand<TExecute, TEnabled, TState, Unit, TResult>(
                     state, execute, enabled, optionalParameter: false, awaitCompletion);
             }
-            
+
             public static KineticCommand<Unit, TResult> CreateForTask<TExecute, TEnabled, TState>(
                 IObservable<TState> state, TExecute execute, TEnabled enabled, bool awaitCompletion)
                 where TExecute : struct, IKineticFunction<TState, Unit, Task<TResult>>
@@ -534,7 +534,7 @@ namespace Kinetic
                     .GetCustomAttributesData()
                     .FirstOrDefault(a => a.AttributeType.FullName == "System.Runtime.CompilerServices.NullableAttribute")?
                     .ConstructorArguments
-                    .FirstOrDefault();;
+                    .FirstOrDefault();
 
                 return
                     argument?.Value is byte nullability &&
@@ -567,7 +567,7 @@ namespace Kinetic
         public static KineticCommand<TParameter, Unit> Create<TState>(
             IObservable<TState> state, Action<TState, TParameter> execute, Func<TState, TParameter, bool> canExecute) =>
             Create(state, Execute(execute), Enabled(canExecute), OptionalParameter(execute));
-            
+
         public static KineticCommand<TParameter, TResult> Create<TResult>(
             Func<TParameter, TResult> execute) =>
             WithResult<TResult>.Create(NoState, Execute(execute), EnabledAlways(), OptionalParameter(execute));
@@ -591,7 +591,7 @@ namespace Kinetic
         public static KineticCommand<TParameter, TResult> Create<TState, TResult>(
             IObservable<TState> state, Func<TState, TParameter, TResult> execute, Func<TState, TParameter, bool> canExecute) =>
             WithResult<TResult>.Create(state, Execute(execute), Enabled(canExecute), OptionalParameter(execute));
-            
+
         public static KineticCommand<TParameter, Unit> CreateForTask(
             Func<TParameter, Task> execute, bool awaitCompletion = true) =>
             CreateForTask(NoState, Execute(execute), EnabledAlways(), OptionalParameter(execute), awaitCompletion);
@@ -615,7 +615,7 @@ namespace Kinetic
         public static KineticCommand<TParameter, Unit> CreateForTask<TState>(
             IObservable<TState> state, Func<TState, TParameter, Task> execute, Func<TState, TParameter, bool> canExecute, bool awaitCompletion = true) =>
             CreateForTask(state, Execute(execute), Enabled(canExecute), OptionalParameter(execute), awaitCompletion);
-            
+
         public static KineticCommand<TParameter, TResult> CreateForTask<TResult>(
             Func<TParameter, Task<TResult>> execute, bool awaitCompletion = true) =>
             WithResult<TResult>.CreateForTask(NoState, Execute(execute), EnabledAlways(), OptionalParameter(execute), awaitCompletion);
@@ -743,7 +743,7 @@ namespace Kinetic
                 return new KineticCommand<TExecute, TEnabled, TState, TParameter, TResult>(
                     state, execute, enabled, optionalParameter);
             }
-            
+
             public static KineticCommand<TParameter, TResult> Create<TExecute, TEnabled, TState>(
                 IObservable<TState> state, TExecute execute, TEnabled enabled, bool optionalParameter)
                 where TExecute : struct, IKineticFunction<TState, TParameter, TResult>
@@ -761,7 +761,7 @@ namespace Kinetic
                 return new KineticTaskCommand<TExecute, TEnabled, TState, TParameter, TResult>(
                     state, execute, enabled, optionalParameter, awaitCompletion);
             }
-            
+
             public static KineticCommand<TParameter, TResult> CreateForTask<TExecute, TEnabled, TState>(
                 IObservable<TState> state, TExecute execute, TEnabled enabled, bool optionalParameter, bool awaitCompletion)
                 where TExecute : struct, IKineticFunction<TState, TParameter, Task<TResult>>

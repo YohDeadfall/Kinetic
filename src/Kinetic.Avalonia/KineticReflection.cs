@@ -1,6 +1,6 @@
 using System;
-using System.Reflection;
 using System.Diagnostics;
+using System.Reflection;
 
 namespace Kinetic.Avalonia
 {

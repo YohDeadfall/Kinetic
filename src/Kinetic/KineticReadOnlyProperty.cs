@@ -1,5 +1,5 @@
 using System;
- 
+
 namespace Kinetic
 {
     public readonly ref struct KineticReadOnlyProperty<T>

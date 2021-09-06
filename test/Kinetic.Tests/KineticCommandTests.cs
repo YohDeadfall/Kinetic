@@ -122,7 +122,7 @@ namespace Kinetic.Tests
 
             state.CanExecute.Set(true);
             command.Execute();
-            
+
             Assert.Equal(default, await result);
         }
 
@@ -180,7 +180,7 @@ namespace Kinetic.Tests
 
             state.CanExecute.Set(true);
             command.Execute();
-            
+
             Assert.True(result.IsCompleted);
             Assert.True(result.GetResult());
         }
@@ -192,7 +192,7 @@ namespace Kinetic.Tests
             var command = KineticCommand.CreateForTask(
                 execute: async () =>
                 {
-                    await Task.Yield(); 
+                    await Task.Yield();
                     return executions += 1;
                 });
             var result = command
@@ -212,7 +212,7 @@ namespace Kinetic.Tests
             var command = KineticCommand<int>.CreateForTask(
                 execute: async p =>
                 {
-                    await Task.Yield(); 
+                    await Task.Yield();
                     parameter = p;
                     return executions += 1;
                 });
@@ -251,7 +251,7 @@ namespace Kinetic.Tests
             var command = KineticCommand.Create(
                 execute: () => { executions += 1; },
                 canExecute: () => { validations += 1; return false; });
-            
+
             Assert.False(command.CanExecute());
             Assert.Equal(1, validations);
 
@@ -267,7 +267,7 @@ namespace Kinetic.Tests
             var command = KineticCommand<int>.Create(
                 execute: p => { executions += 1; },
                 canExecute: p => { validations += 1; return p == 0; });
-            
+
             Assert.False(command.CanExecute(42));
             Assert.Equal(1, validations);
 
@@ -291,7 +291,7 @@ namespace Kinetic.Tests
                 awaitCompletion);
             var result = command
                 .FirstOrDefaultAsync();
-            
+
             Assert.False(command.CanExecute());
             Assert.Equal(1, validations);
 
@@ -324,7 +324,7 @@ namespace Kinetic.Tests
             var command = KineticCommand.Create(
                 execute: () => executions += 1,
                 canExecute: () => { validations += 1; return false; });
-            
+
             Assert.False(command.CanExecute());
             Assert.Equal(1, validations);
 
@@ -340,7 +340,7 @@ namespace Kinetic.Tests
             var command = KineticCommand<int>.Create(
                 execute: p => executions += 1,
                 canExecute: p => { validations += 1; return p == 0; });
-            
+
             Assert.False(command.CanExecute(42));
             Assert.Equal(1, validations);
 
@@ -364,7 +364,7 @@ namespace Kinetic.Tests
                 awaitCompletion);
             var result = command
                 .FirstOrDefaultAsync();
-            
+
             Assert.False(command.CanExecute());
             Assert.Equal(1, validations);
 
@@ -398,7 +398,7 @@ namespace Kinetic.Tests
                 state.CanExecute.Changed,
                 execute: s => { },
                 canExecute: s => s);
-            
+
             command.CanExecuteChanged += (s, e) => events += 1;
 
             Assert.False(command.CanExecute());
@@ -419,7 +419,7 @@ namespace Kinetic.Tests
                 state.CanExecute.Changed,
                 execute: (s, p) => { },
                 canExecute: (s, p) => s && p);
-            
+
             command.CanExecuteChanged += (s, e) => events += 1;
 
             Assert.False(command.CanExecute(false));
@@ -442,7 +442,7 @@ namespace Kinetic.Tests
                 state.CanExecute.Changed,
                 execute: s => s,
                 canExecute: s => s);
-            
+
             command.CanExecuteChanged += (s, e) => events += 1;
 
             Assert.False(command.CanExecute());
@@ -463,7 +463,7 @@ namespace Kinetic.Tests
                 state.CanExecute.Changed,
                 execute: (s, p) => s && p,
                 canExecute: (s, p) => s && p);
-            
+
             command.CanExecuteChanged += (s, e) => events += 1;
 
             Assert.False(command.CanExecute(false));
@@ -486,8 +486,8 @@ namespace Kinetic.Tests
                 state.Counter.Changed,
                 execute: s => { },
                 canExecute: s => s == 0);
-            
-            command.CanExecuteChanged += (s, e) => events += 1;            
+
+            command.CanExecuteChanged += (s, e) => events += 1;
             state.Counter.Set(1);
 
             Assert.Equal(1, events);
@@ -507,8 +507,8 @@ namespace Kinetic.Tests
                 state.Counter.Changed,
                 execute: s => s,
                 canExecute: s => s == 0);
-            
-            command.CanExecuteChanged += (s, e) => events += 1;            
+
+            command.CanExecuteChanged += (s, e) => events += 1;
             state.Counter.Set(1);
 
             Assert.Equal(1, events);

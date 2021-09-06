@@ -1,5 +1,5 @@
 using System;
- 
+
 namespace Kinetic
 {
     public readonly ref struct KineticProperty<T>
@@ -26,4 +26,3 @@ namespace Kinetic
             new KineticReadOnlyProperty<T>(property.Owner, property.Offset);
     }
 }
- 

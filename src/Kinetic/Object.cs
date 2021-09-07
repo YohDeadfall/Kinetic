@@ -28,7 +28,7 @@ namespace Kinetic
         }
 
         protected void Set<T>(ReadOnlyProperty<T> property, T value) =>
-            property.EnsureOwner().Set(property.Offset, value);
+            property.Owner.Set(property.Offset, value);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         protected Property<T> Property<T>(ref T field)
@@ -169,20 +169,17 @@ namespace Kinetic
 
     public readonly ref struct Property<T>
     {
-        internal readonly Object? Owner;
+        internal readonly Object Owner;
         internal readonly IntPtr Offset;
 
-        internal Property(Object? owner, IntPtr offset) =>
+        internal Property(Object owner, IntPtr offset) =>
             (Owner, Offset) = (owner, offset);
 
-        internal Object EnsureOwner() =>
-            Owner ?? throw new InvalidOperationException();
+        public T Get() => Owner.Get<T>(Offset);
 
-        public T Get() => EnsureOwner().Get<T>(Offset);
+        public void Set(T value) => Owner.Set(Offset, value);
 
-        public void Set(T value) => EnsureOwner().Set(Offset, value);
-
-        public IObservable<T> Changed => EnsureOwner().Changed<T>(Offset);
+        public IObservable<T> Changed => Owner.Changed<T>(Offset);
 
         public static implicit operator T(Property<T> property) =>
             property.Get();
@@ -193,18 +190,15 @@ namespace Kinetic
 
     public readonly ref struct ReadOnlyProperty<T>
     {
-        internal readonly Object? Owner;
+        internal readonly Object Owner;
         internal readonly IntPtr Offset;
 
-        internal ReadOnlyProperty(Object? owner, IntPtr offset) =>
+        internal ReadOnlyProperty(Object owner, IntPtr offset) =>
             (Owner, Offset) = (owner, offset);
 
-        internal Object EnsureOwner() =>
-            Owner ?? throw new InvalidOperationException();
+        public T Get() => Owner.Get<T>(Offset);
 
-        public T Get() => EnsureOwner().Get<T>(Offset);
-
-        public IObservable<T> Changed => EnsureOwner().Changed<T>(Offset);
+        public IObservable<T> Changed => Owner.Changed<T>(Offset);
 
         public static implicit operator T(ReadOnlyProperty<T> property) =>
             property.Get();

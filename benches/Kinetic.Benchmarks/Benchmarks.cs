@@ -13,6 +13,7 @@ namespace Kinetic.Benchmarks
 
         [Params(false, true)]
         public bool WithSubscribtion;
+        public int Number;
         public TestObject Test = new();
 
         [GlobalSetup]
@@ -29,7 +30,7 @@ namespace Kinetic.Benchmarks
         public int Get() => Test.Number;
 
         [Benchmark]
-        public void Set() => Test.Number.Set(42);
+        public void Set() => Test.Number.Set(Number += 1);
 
         public sealed class TestObject : Object
         {

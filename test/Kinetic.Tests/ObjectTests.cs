@@ -58,6 +58,22 @@ namespace Kinetic.Tests
             Assert.Equal(new[] { 0, 3 }, numbers);
         }
 
+        [Fact]
+        public void SetterUsesEqualityComparer()
+        {
+            var test = new TestObject();
+            var numbers = new List<int>();
+
+            test.Number.Changed.Subscribe(
+                new Observer<int>(value => numbers.Add(value)));
+
+            test.Number.Set(0);
+            test.Number.Set(1);
+            test.Number.Set(1);
+
+            Assert.Equal(new[] { 0, 1 }, numbers);
+        }
+
         private sealed class TestObject : Object
         {
             private int _number;

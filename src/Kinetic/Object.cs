@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -55,6 +56,11 @@ namespace Kinetic
 
         internal void Set<T>(IntPtr offset, T value)
         {
+            if (EqualityComparer<T>.Default.Equals(value, Get<T>(offset)))
+            {
+                return;
+            }
+
             GetReference<T>(offset) = value;
 
             var observable = GetObservable<T>(offset);

@@ -3,6 +3,7 @@
     <OutputType>Exe</OutputType>
     <Optimize>true</Optimize>
     <Configuration>Release</Configuration>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kinetic\Kinetic.csproj" />

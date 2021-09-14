@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reactive.Linq;
 using Xunit;
 
 namespace Kinetic.Tests

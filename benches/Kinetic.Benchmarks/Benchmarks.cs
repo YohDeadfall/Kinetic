@@ -22,7 +22,7 @@ namespace Kinetic.Benchmarks
             if (WithSubscribtion)
             {
                 Test.Number.Changed.Subscribe(
-                    new Observer<int>(value => { }));
+                    static (value) => { });
             }
         }
 
@@ -37,16 +37,6 @@ namespace Kinetic.Benchmarks
             private int _number;
 
             public Property<int> Number => Property(ref _number);
-        }
-
-        public sealed class Observer<T> : IObserver<T>
-        {
-            public Action<T> Handler { get; }
-            public Observer(Action<T> handler) => Handler = handler;
-
-            public void OnNext(T value) => Handler(value);
-            public void OnError(Exception exception) { }
-            public void OnCompleted() { }
         }
     }
 }

@@ -130,7 +130,7 @@ namespace Kinetic
             ref var stateMachine = ref Unsafe.As<TStateMachine, IntPtr>(ref _stateMachine);
             ref var stateMachinePart = ref Unsafe.As<IntPtr, TStateMachinePart>(
                 ref Unsafe.AddByteOffset(ref stateMachine, offset));
-            return ref stateMachinePart;
+            return ref stateMachinePart!;
         }
 
         private IntPtr GetStateMachineOffset<TStateMachinePart>(ref TStateMachinePart stateMachine)

@@ -5,6 +5,27 @@ namespace Kinetic.Linq.Tests
     public class LinqTests
     {
         [Fact]
+        public void AnyWithPredicate()
+        {
+            var executions = 0;
+            var source = new Source<int>();
+
+            source.Value.Changed
+                .Any(delegate (int value) { return value > 2; })
+                .Subscribe(delegate (bool value)
+                {
+                    executions += 1;
+                    Assert.True(value);
+                });
+
+            source.Value.Set(1);
+            source.Value.Set(2);
+            source.Value.Set(3);
+
+            Assert.Equal(1, executions);
+        }
+
+        [Fact]
         public void AnyWithoutPredicate()
         {
             var executions = 0;

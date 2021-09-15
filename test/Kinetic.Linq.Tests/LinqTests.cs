@@ -30,7 +30,7 @@ namespace Kinetic.Linq.Tests
         public void AnyWithoutPredicate()
         {
             var executions = 0;
-            var source = new Source<bool>();
+            var source = new Source<int>();
 
             source.Value.Changed
                 .Any()
@@ -40,7 +40,8 @@ namespace Kinetic.Linq.Tests
                     Assert.True(value);
                 });
 
-            source.Value.Set(true);
+            source.Value.Set(1);
+            source.Value.Set(2);
 
             Assert.Equal(1, executions);
         }

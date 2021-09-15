@@ -61,24 +61,18 @@ namespace Kinetic
 
         public void Unsubscribe(ObservableSubscription<T> subscription)
         {
-            if (_head == subscription)
-            {
-                _head = subscription.Next;
-                return;
-            }
-
-            var current = _head;
+            ref var current = ref _head;
             while (current is not null)
             {
-                if (current.Next == subscription)
+                if (current == subscription)
                 {
-                    current.Next = subscription.Next;
+                    current = subscription.Next;
                     subscription.Observable = null;
                     subscription.Next = null;
                     return;
                 }
 
-                current = current.Next;
+                current = ref current.Next;
             }
         }
 

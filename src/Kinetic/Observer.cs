@@ -46,7 +46,7 @@ namespace Kinetic
             where TStateMachine : struct, IObserverStateMachine<T>
         {
             private TStateMachine _stateMachine;
-            private IObservable<T> _observable;
+            private IObservable<T>? _observable;
             private IDisposable? _subscription;
 
             public Subscribe(in TStateMachine stateMachine, IObservable<T> observable)
@@ -56,18 +56,54 @@ namespace Kinetic
                 _subscription = null;
             }
 
-            public void OnNext(T value) => _stateMachine.OnNext(value);
-            public void OnError(Exception error) => _stateMachine.OnError(error);
-            public void OnCompleted() => _stateMachine.OnCompleted();
+            public void OnNext(T value)
+            {
+                if (EnsureNotDisposed())
+                {
+                    _stateMachine.OnNext(value);
+                }
+            }
+
+            public void OnError(Exception error)
+            {
+                if (EnsureNotDisposed())
+                {
+                    _stateMachine.OnError(error);
+                }
+            }
+
+            public void OnCompleted()
+            {
+                if (EnsureNotDisposed())
+                {
+                    _stateMachine.OnCompleted();
+                }
+            }
 
             public void Initialize(IObserverStateMachineBox box)
             {
                 _stateMachine.Initialize(box);
-                _subscription = _observable.Subscribe((Observer<T>) box);
+                _subscription = _observable!.Subscribe((Observer<T>) box);
             }
 
-            public void Dispose() =>
+            public void Dispose()
+            {
                 _subscription?.Dispose();
+                _subscription = null;
+                _observable = null;
+            }
+
+            private bool EnsureNotDisposed()
+            {
+                if (_observable is null)
+                {
+                    _subscription?.Dispose();
+                    _subscription = null;
+                    return false;
+                }
+
+                return true;
+            }
         }
     }
 

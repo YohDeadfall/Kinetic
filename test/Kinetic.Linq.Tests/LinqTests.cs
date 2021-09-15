@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Xunit;
 
 namespace Kinetic.Linq.Tests
@@ -11,7 +12,7 @@ namespace Kinetic.Linq.Tests
             var source = new Source<int>();
 
             source.Value.Changed
-                .Any(delegate (int value) { return value > 2; })
+                .Any((int value) => value > 2)
                 .Subscribe(delegate (bool value)
                 {
                     executions += 1;
@@ -42,6 +43,24 @@ namespace Kinetic.Linq.Tests
             source.Value.Set(true);
 
             Assert.Equal(1, executions);
+        }
+
+        [Fact]
+        public void Where()
+        {
+            var source = new Source<int>();
+            var values = new List<int>();
+
+            source.Value.Changed
+                .Where((int value) => value > 2)
+                .Subscribe((int value) => values.Add(value));
+
+            source.Value.Set(1);
+            source.Value.Set(3);
+            source.Value.Set(2);
+            source.Value.Set(4);
+
+            Assert.Equal(new[] { 3, 4 }, values);
         }
 
         private sealed class Source<T> : Object

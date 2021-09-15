@@ -99,8 +99,9 @@ namespace Kinetic
             }
         }
 
-        private readonly struct DelegatedStateMachine<T> : IObserverStateMachine<T>
+        private struct DelegatedStateMachine<T> : IObserverStateMachine<T>
         {
+            private IDisposable? _box;
             private readonly Action<T> _onNext;
             private readonly Action<Exception> _onError;
             private readonly Action _onCompleted;
@@ -110,21 +111,36 @@ namespace Kinetic
                 Action<Exception> onError,
                 Action onCompleted)
             {
+                _box = null;
                 _onNext = onNext;
                 _onError = onError;
                 _onCompleted = onCompleted;
             }
 
-            public void Initialize(IObserverStateMachineBox box) { }
+            public void Initialize(IObserverStateMachineBox box) => _box = box;
             public void Dispose() { }
 
-            public void OnNext(T value) => _onNext(value);
-            public void OnError(Exception error) => _onError(error);
-            public void OnCompleted() => _onCompleted();
+            public void OnNext(T value)
+            {
+                _onNext(value);
+            }
+
+            public void OnError(Exception error)
+            {
+                _box!.Dispose();
+                _onError(error);
+            }
+
+            public void OnCompleted()
+            {
+                _box!.Dispose();
+                _onCompleted();
+            }
         }
 
-        private readonly struct DelegatedStateMachine<T, TState> : IObserverStateMachine<T>
+        private struct DelegatedStateMachine<T, TState> : IObserverStateMachine<T>
         {
+            private IDisposable? _box;
             private readonly TState _state;
             private readonly Action<TState, T> _onNext;
             private readonly Action<TState, Exception> _onError;
@@ -136,32 +152,64 @@ namespace Kinetic
                 Action<TState, Exception> onError,
                 Action<TState> onCompleted)
             {
+                _box = null;
                 _state = state;
                 _onNext = onNext;
                 _onError = onError;
                 _onCompleted = onCompleted;
             }
 
-            public void Initialize(IObserverStateMachineBox box) { }
+            public void Initialize(IObserverStateMachineBox box) => _box = box;
             public void Dispose() { }
 
-            public void OnNext(T value) => _onNext(_state, value);
-            public void OnError(Exception error) => _onError(_state, error);
-            public void OnCompleted() => _onCompleted(_state);
+            public void OnNext(T value)
+            {
+                _onNext(_state, value);
+            }
+
+            public void OnError(Exception error)
+            {
+                _box!.Dispose();
+                _onError(_state, error);
+            }
+
+            public void OnCompleted()
+            {
+                _box!.Dispose();
+                _onCompleted(_state);
+            }
         }
 
-        private readonly struct ObserverStateMachine<T> : IObserverStateMachine<T>
+        private struct ObserverStateMachine<T> : IObserverStateMachine<T>
         {
+            private IDisposable? _box;
             private readonly IObserver<T> _observer;
 
-            public ObserverStateMachine(IObserver<T> observer) => _observer = observer;
+            public ObserverStateMachine(IObserver<T> observer)
+            {
+                _box = null;
+                _observer = observer;
+            }
 
-            public void Initialize(IObserverStateMachineBox box) { }
+            public void Initialize(IObserverStateMachineBox box) => _box = box;
             public void Dispose() { }
 
-            public void OnNext(T value) => _observer.OnNext(value);
-            public void OnError(Exception error) => _observer.OnError(error);
-            public void OnCompleted() => _observer.OnCompleted();
+            public void OnNext(T value)
+            {
+                _observer.OnNext(value);
+            }
+
+            public void OnError(Exception error)
+            {
+                _box!.Dispose();
+                _observer.OnError(error);
+            }
+
+            public void OnCompleted()
+            {
+                _box!.Dispose();
+                _observer.OnCompleted();
+            }
         }
     }
 }

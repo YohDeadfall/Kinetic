@@ -46,8 +46,8 @@ namespace Kinetic.Linq
             _selector = selector;
         }
 
-        public void Initialize(IObserverStateMachineBox box) { }
-        public void Dispose() { }
+        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+        public void Dispose() => _continuation.Dispose();
 
         public void OnNext(TSource value)
         {

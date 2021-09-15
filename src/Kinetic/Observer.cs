@@ -8,7 +8,7 @@ namespace Kinetic
         void Initialize(IObserverStateMachineBox box);
     }
 
-    public interface IObserverStateMachineBox
+    public interface IObserverStateMachineBox : IDisposable
     {
         IDisposable Subscribe<T, TStateMachine>(IObservable<T> observable, ref TStateMachine stateMachine)
             where TStateMachine : struct, IObserverStateMachine<T>;
@@ -60,8 +60,11 @@ namespace Kinetic
             public void OnError(Exception error) => _stateMachine.OnError(error);
             public void OnCompleted() => _stateMachine.OnCompleted();
 
-            public void Initialize(IObserverStateMachineBox box) =>
+            public void Initialize(IObserverStateMachineBox box)
+            {
+                _stateMachine.Initialize(box);
                 _subscription = _observable.Subscribe((Observer<T>) box);
+            }
 
             public void Dispose() =>
                 _subscription?.Dispose();

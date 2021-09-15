@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.ExceptionServices;
 
 namespace Kinetic
 {
@@ -18,7 +19,7 @@ namespace Kinetic
 
         public static IDisposable Subscribe<T, TBuilder>(this TBuilder builder, Action<T> onNext)
             where TBuilder : struct, IObserverBuilder<T> =>
-            builder.Subscribe(onNext, onError: static (error) => { }, onCompleted: static () => { });
+            builder.Subscribe(onNext, onError: static (error) => ExceptionDispatchInfo.Throw(error), onCompleted: static () => { });
 
         public static IDisposable Subscribe<T, TBuilder>(this TBuilder builder, Action<T> onNext, Action<Exception> onError)
             where TBuilder : struct, IObserverBuilder<T> =>
@@ -26,7 +27,7 @@ namespace Kinetic
 
         public static IDisposable Subscribe<T, TBuilder>(this TBuilder builder, Action<T> onNext, Action onCompleted)
             where TBuilder : struct, IObserverBuilder<T> =>
-            builder.Subscribe(onNext, onError: static (error) => { }, onCompleted);
+            builder.Subscribe(onNext, onError: static (error) => ExceptionDispatchInfo.Throw(error), onCompleted);
 
         public static IDisposable Subscribe<T, TBuilder>(
             this TBuilder builder,
@@ -57,7 +58,7 @@ namespace Kinetic
 
         public static IDisposable Subscribe<T, TState, TBuilder>(this TBuilder builder, TState state, Action<TState, T> onNext)
             where TBuilder : struct, IObserverBuilder<T> =>
-            builder.Subscribe(state, onNext, onError: static (state, error) => { }, onCompleted: static (state) => { });
+            builder.Subscribe(state, onNext, onError: static (state, error) => ExceptionDispatchInfo.Throw(error), onCompleted: static (state) => { });
 
         public static IDisposable Subscribe<T, TState, TBuilder>(this TBuilder builder, TState state, Action<TState, T> onNext, Action<TState, Exception> onError)
             where TBuilder : struct, IObserverBuilder<T> =>
@@ -65,7 +66,7 @@ namespace Kinetic
 
         public static IDisposable Subscribe<T, TState, TBuilder>(this TBuilder builder, TState state, Action<TState, T> onNext, Action<TState> onCompleted)
             where TBuilder : struct, IObserverBuilder<T> =>
-            builder.Subscribe(state, onNext, onError: static (state, error) => { }, onCompleted);
+            builder.Subscribe(state, onNext, onError: static (state, error) => ExceptionDispatchInfo.Throw(error), onCompleted);
 
         public static IDisposable Subscribe<T, TState, TBuilder>(
             this TBuilder builder,

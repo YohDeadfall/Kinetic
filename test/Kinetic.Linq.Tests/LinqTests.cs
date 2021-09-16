@@ -13,7 +13,7 @@ namespace Kinetic.Linq.Tests
 
             source.Value.Changed
                 .Any((int value) => value > 2)
-                .Subscribe(delegate (bool value)
+                .Subscribe((bool value) =>
                 {
                     executions += 1;
                     Assert.True(value);
@@ -34,7 +34,7 @@ namespace Kinetic.Linq.Tests
 
             source.Value.Changed
                 .Any()
-                .Subscribe(delegate (bool value)
+                .Subscribe((bool value) =>
                 {
                     executions += 1;
                     Assert.True(value);
@@ -44,6 +44,23 @@ namespace Kinetic.Linq.Tests
             source.Value.Set(2);
 
             Assert.Equal(1, executions);
+        }
+
+        [Fact]
+        public void Skip()
+        {
+            var source = new Source<int>();
+            var values = new List<int>();
+
+            source.Value.Changed
+                .Skip(2)
+                .Subscribe((int value) => values.Add(value));
+
+            source.Value.Set(1);
+            source.Value.Set(2);
+            source.Value.Set(3);
+
+            Assert.Equal(new[] { 2, 3 }, values);
         }
 
         [Fact]

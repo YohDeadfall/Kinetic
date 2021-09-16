@@ -98,6 +98,23 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public void TakeWhile()
+        {
+            var source = new Source<int>();
+            var values = new List<int>();
+
+            source.Value.Changed
+                .TakeWhile((int value) => value < 2)
+                .Subscribe((int value) => values.Add(value));
+
+            source.Value.Set(1);
+            source.Value.Set(2);
+            source.Value.Set(3);
+
+            Assert.Equal(new[] { 0, 1 }, values);
+        }
+
+        [Fact]
         public void Where()
         {
             var source = new Source<int>();

@@ -38,12 +38,12 @@ namespace Kinetic.Linq
         where TContinuation : IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;
-        private int _count;
+        private uint _count;
 
         public TakeStateMachine(TContinuation continuation, uint count)
         {
             _continuation = continuation;
-            _count = (int) count;
+            _count = count;
         }
 
         public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);

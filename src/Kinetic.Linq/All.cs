@@ -25,12 +25,20 @@ namespace Kinetic.Linq
         private readonly TObservable _observable;
 
         public AllBuilder(in TObservable observable) => _observable = observable;
+
         public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
             where TStateMachine : struct, IObserverStateMachine<bool>
             where TFactory : struct, IObserverFactory
         {
             var observer = new AllStateMachine<TStateMachine>(stateMachine);
             _observable.Build(observer, ref factory);
+        }
+
+        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
+            where TStateMachine : struct, IObserverStateMachineFactory
+            where TFactory : struct, IObserverFactory
+        {
+            stateMachine.Create<bool, AllBuilder<TObservable>, TFactory>(this, ref factory);
         }
     }
 
@@ -50,10 +58,17 @@ namespace Kinetic.Linq
             where TStateMachine : struct, IObserverStateMachine<bool>
             where TFactory : struct, IObserverFactory
         {
-            var All = new AllStateMachine<TStateMachine>(stateMachine);
-            var select = new SelectStateMachine<AllStateMachine<TStateMachine>, TSource, bool>(All, _predicate);
+            var all = new AllStateMachine<TStateMachine>(stateMachine);
+            var select = new SelectStateMachine<AllStateMachine<TStateMachine>, TSource, bool>(all, _predicate);
 
             _observable.Build(select, ref factory);
+        }
+
+        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
+            where TStateMachine : struct, IObserverStateMachineFactory
+            where TFactory : struct, IObserverFactory
+        {
+            stateMachine.Create<bool, AllBuilder<TObservable, TSource>, TFactory>(this, ref factory);
         }
     }
 

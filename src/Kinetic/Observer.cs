@@ -14,13 +14,27 @@ namespace Kinetic
             where TStateMachine : struct, IObserverStateMachine<T>;
     }
 
+    public interface IObserverStateMachineFactory
+    {
+        void Create<T, TBuilder, TFactory>(in TBuilder builder, ref TFactory factory)
+            where TBuilder : struct, IObserverBuilder<T>
+            where TFactory : struct, IObserverFactory;
+    }
+
     public interface IObserverFactory
     {
         void Create<T, TStateMachine>(in TStateMachine stateMachine)
             where TStateMachine : struct, IObserverStateMachine<T>;
     }
 
-    public interface IObserverBuilder<T>
+    public interface IObserverBuilder
+    {
+        void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
+            where TStateMachine : struct, IObserverStateMachineFactory
+            where TFactory : struct, IObserverFactory;
+    }
+
+    public interface IObserverBuilder<T> : IObserverBuilder
     {
         void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
             where TStateMachine : struct, IObserverStateMachine<T>
@@ -40,6 +54,13 @@ namespace Kinetic
         {
             var subscribe = new Subscribe<TStateMachine>(stateMachine, _observable);
             factory.Create<T, Subscribe<TStateMachine>>(subscribe);
+        }
+
+        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
+            where TStateMachine : struct, IObserverStateMachineFactory
+            where TFactory : struct, IObserverFactory
+        {
+            stateMachine.Create<T, ObserverBuilder<T>, TFactory>(this, ref factory);
         }
 
         private struct Subscribe<TStateMachine> : IObserverStateMachine<T>

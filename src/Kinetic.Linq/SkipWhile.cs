@@ -32,6 +32,13 @@ namespace Kinetic.Linq
                 stateMachine: new SkipWhileStateMachine<TStateMachine, TSource>(stateMachine, _predicate),
                 ref factory);
         }
+
+        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
+            where TStateMachine : struct, IObserverStateMachineFactory
+            where TFactory : struct, IObserverFactory
+        {
+            stateMachine.Create<TSource, SkipWhileBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+        }
     }
 
     public struct SkipWhileStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>

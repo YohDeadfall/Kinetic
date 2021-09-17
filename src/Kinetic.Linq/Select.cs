@@ -32,6 +32,13 @@ namespace Kinetic.Linq
                 stateMachine: new SelectStateMachine<TStateMachine, TSource, TResult>(stateMachine, _selector),
                 ref factory);
         }
+
+        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
+            where TStateMachine : struct, IObserverStateMachineFactory
+            where TFactory : struct, IObserverFactory
+        {
+            stateMachine.Create<TResult, SelectBuilder<TObservable, TSource, TResult>, TFactory>(this, ref factory);
+        }
     }
 
     public struct SelectStateMachine<TContinuation, TSource, TResult> : IObserverStateMachine<TSource>

@@ -18,6 +18,7 @@ namespace Kinetic.Linq
         private readonly TObservable _observable;
 
         public CountBuilder(in TObservable observable) => _observable = observable;
+
         public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
             where TStateMachine : struct, IObserverStateMachine<int>
             where TFactory : struct, IObserverFactory
@@ -25,6 +26,13 @@ namespace Kinetic.Linq
             _observable.Build(
                 stateMachine: new CountStateMachine<TStateMachine, TSource>(stateMachine),
                 ref factory);
+        }
+
+        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
+            where TStateMachine : struct, IObserverStateMachineFactory
+            where TFactory : struct, IObserverFactory
+        {
+            stateMachine.Create<int, CountBuilder<TObservable, TSource>, TFactory>(this, ref factory);
         }
     }
 

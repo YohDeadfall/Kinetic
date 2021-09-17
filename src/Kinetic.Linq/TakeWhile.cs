@@ -32,6 +32,13 @@ namespace Kinetic.Linq
                 stateMachine: new TakeWhileStateMachine<TStateMachine, TSource>(stateMachine, _predicate),
                 ref factory);
         }
+
+        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
+            where TStateMachine : struct, IObserverStateMachineFactory
+            where TFactory : struct, IObserverFactory
+        {
+            stateMachine.Create<TSource, TakeWhileBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+        }
     }
 
     public struct TakeWhileStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>

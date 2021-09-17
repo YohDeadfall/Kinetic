@@ -51,3 +51,16 @@ var command = Command<string>.Create(p => p);
 command.CanExecute(null); // returns false
 command.CanExecute("text"); // returns true
 ```
+
+## Integration with UI
+
+Since all observable properties should be defined as `Property<T>` or `ReadOnlyProperty<T>`, there's a limitation on usage of Kinetic. It's supported only by Avalonia at the moment thanfully to the extensible binding system, but a general solution to support any XAML framework will come later.
+
+To make Avalonia recognize Kinetic properties, the `Kinetic.Avalonia` package should be added and one line of code at startup as well:
+
+```
+using Avalonia.Data.Core;
+using Kinetic.Avalonia;
+
+ExpressionObserver.PropertyAccessors.Insert(2, new PropertyAccessor());
+```

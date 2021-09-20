@@ -5,20 +5,20 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static FirstBuilder<ObserverBuilder<TSource>, TSource> First<TSource>(this IObservable<TSource> observable) =>
-            observable.ToBuilder().First<ObserverBuilder<TSource>, TSource>();
+        public static LastBuilder<ObserverBuilder<TSource>, TSource> Last<TSource>(this IObservable<TSource> observable) =>
+            observable.ToBuilder().Last<ObserverBuilder<TSource>, TSource>();
 
-        public static FirstBuilder<TObservable, TSource> First<TObservable, TSource>(this TObservable observable)
+        public static LastBuilder<TObservable, TSource> Last<TObservable, TSource>(this TObservable observable)
             where TObservable : struct, IObserverBuilder<TSource> =>
             new(observable);
     }
 
-    public readonly struct FirstBuilder<TObservable, TSource> : IObserverBuilder<TSource?>
+    public readonly struct LastBuilder<TObservable, TSource> : IObserverBuilder<TSource?>
         where TObservable : struct, IObserverBuilder<TSource>
     {
         private readonly TObservable _observable;
 
-        public FirstBuilder(in TObservable observable)
+        public LastBuilder(in TObservable observable)
         {
             _observable = observable;
         }
@@ -28,7 +28,7 @@ namespace Kinetic.Linq
             where TFactory : struct, IObserverFactory
         {
             _observable.Build(
-                stateMachine: new FirstStateMachine<TStateMachine, TSource>(stateMachine),
+                stateMachine: new LastStateMachine<TStateMachine, TSource>(stateMachine),
                 ref factory);
         }
 
@@ -36,24 +36,31 @@ namespace Kinetic.Linq
             where TStateMachine : struct, IObserverStateMachineFactory
             where TFactory : struct, IObserverFactory
         {
-            stateMachine.Create<TSource?, FirstBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            stateMachine.Create<TSource?, LastBuilder<TObservable, TSource>, TFactory>(this, ref factory);
         }
     }
 
-    public struct FirstStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    public struct LastStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<TSource?>
     {
         private TContinuation _continuation;
+        private TSource? _last;
+        private bool _hasLast;
 
-        public FirstStateMachine(TContinuation continuation) => _continuation = continuation;
+        public LastStateMachine(TContinuation continuation)
+        {
+            _continuation = continuation;
+            _last = default;
+            _hasLast = false;
+        }
 
         public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
         public void Dispose() => _continuation.Dispose();
 
         public void OnNext(TSource value)
         {
-            _continuation.OnNext(value);
-            _continuation.OnCompleted();
+            _last = value;
+            _hasLast = true;
         }
 
         public void OnError(Exception error)
@@ -63,7 +70,15 @@ namespace Kinetic.Linq
 
         public void OnCompleted()
         {
-            _continuation.OnError(new InvalidOperationException());
+            if (_hasLast)
+            {
+                _continuation.OnNext(_last!);
+                _continuation.OnCompleted();
+            }
+            else
+            {
+                _continuation.OnError(new InvalidOperationException());
+            }
         }
     }
 }

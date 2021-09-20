@@ -67,6 +67,24 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public void Distinct()
+        {
+            var source = new Source<int>();
+            var values = new List<int>();
+
+            source.Value.Changed
+                .Distinct()
+                .Subscribe((int value) => values.Add(value));
+
+            source.Value.Set(1);
+            source.Value.Set(1);
+            source.Value.Set(2);
+            source.Value.Set(2);
+
+            Assert.Equal(new[] { 0, 1, 2 }, values);
+        }
+
+        [Fact]
         public void Skip()
         {
             var source = new Source<int>();

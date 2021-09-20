@@ -84,6 +84,26 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public void First()
+        {
+            var executions = 0;
+            var source = new Source<int>();
+
+            source.Value.Changed
+                .First()
+                .Subscribe((int value) =>
+                {
+                    executions += 1;
+                    Assert.Equal(0, value);
+                });
+
+            source.Value.Set(1);
+            source.Value.Set(2);
+
+            Assert.Equal(1, executions);
+        }
+
+        [Fact]
         public void FirstOrDefault()
         {
             var executions = 0;

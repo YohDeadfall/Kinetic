@@ -47,6 +47,26 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public void Contains()
+        {
+            var executions = 0;
+            var source = new Source<int>();
+
+            source.Value.Changed
+                .Contains(2)
+                .Subscribe((bool value) =>
+                {
+                    executions += 1;
+                    Assert.True(value);
+                });
+
+            source.Value.Set(1);
+            source.Value.Set(2);
+
+            Assert.Equal(1, executions);
+        }
+
+        [Fact]
         public void Skip()
         {
             var source = new Source<int>();

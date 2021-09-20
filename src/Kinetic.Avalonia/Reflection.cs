@@ -46,7 +46,6 @@ namespace Kinetic.Avalonia
                 Debug.Assert(property.GetMethod is not null);
 
                 var getter = property.GetMethod
-                    .MakeGenericMethod(property.DeclaringType, property.PropertyType)
                     .CreateDelegate<RwGetter<TOwner, T>>();
 
                 return delegate (WeakReference<object> reference, out Property<T> property)
@@ -56,8 +55,9 @@ namespace Kinetic.Avalonia
             }
 
             return GetGenericDefinition(Wrapper<object>)
-                .MakeGenericMethod(property.DeclaringType)
-                .CreateDelegate<Func<PropertyInfo, PropertyGetter<T>>>()
+                .MakeGenericMethod(typeof(T), property.DeclaringType)
+                .CreateDelegate<Func<Func<PropertyInfo, PropertyGetter<T>>>>()
+                .Invoke()
                 .Invoke(property);
         }
 
@@ -92,7 +92,6 @@ namespace Kinetic.Avalonia
                 Debug.Assert(property.GetMethod is not null);
 
                 var getter = property.GetMethod
-                    .MakeGenericMethod(property.DeclaringType, property.PropertyType)
                     .CreateDelegate<RoGetter<TOwner, T>>();
 
                 return delegate (WeakReference<object> reference, out ReadOnlyProperty<T> property)
@@ -102,8 +101,9 @@ namespace Kinetic.Avalonia
             }
 
             return GetGenericDefinition(Wrapper<object>)
-                .MakeGenericMethod(property.DeclaringType)
-                .CreateDelegate<Func<PropertyInfo, ReadOnlyPropertyGetter<T>>>()
+                .MakeGenericMethod(typeof(T), property.DeclaringType)
+                .CreateDelegate<Func<Func<PropertyInfo, ReadOnlyPropertyGetter<T>>>>()
+                .Invoke()
                 .Invoke(property);
         }
 

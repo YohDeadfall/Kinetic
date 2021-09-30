@@ -5,7 +5,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<bool> Any<TSource>(this in ObserverBuilder<TSource> source) =>
-            source.ContinueWith<bool, AnyStateMachineFactory<TSource>>(default);
+            source.ContinueWith<AnyStateMachineFactory<TSource>, bool>(default);
 
         public static ObserverBuilder<bool> Any<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
             source.Where(predicate).Any();

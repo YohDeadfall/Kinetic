@@ -7,7 +7,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<TSource> Last<TSource>(this in ObserverBuilder<TSource> source) =>
-            source.ContinueWith<TSource, LastStateMachineFactory<TSource>>(default);
+            source.ContinueWith<LastStateMachineFactory<TSource>, TSource>(default);
 
         public static ObserverBuilder<TSource> Last<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
             source.Where(predicate).Last();

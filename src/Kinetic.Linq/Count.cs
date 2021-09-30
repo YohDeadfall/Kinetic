@@ -5,7 +5,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<int> Count<TSource>(this in ObserverBuilder<TSource> source) =>
-            source.ContinueWith<int, CountStateMachineFactory<TSource>>(default);
+            source.ContinueWith<CountStateMachineFactory<TSource>, int>(default);
 
         public static ObserverBuilder<int> Count<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
             source.Where(predicate).Count();

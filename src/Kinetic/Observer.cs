@@ -61,7 +61,7 @@ namespace Kinetic
             return builder;
         }
 
-        public ObserverBuilder<TResult> ContinueWith<TResult, TStateMachine>(in TStateMachine stateMachine)
+        public ObserverBuilder<TResult> ContinueWith<TStateMachine, TResult>(in TStateMachine stateMachine)
             where TStateMachine : struct, IObserverStateMachineFactory<TSource, TResult>
         {
             var step = new ObserverBuilderStateMachineStep<TSource, TResult, TStateMachine> { StateMachine = stateMachine, Next = _outer };

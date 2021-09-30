@@ -5,7 +5,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<bool> All(this in ObserverBuilder<bool> source) =>
-            source.ContinueWith<bool, AllStateMachineFactory>(default);
+            source.ContinueWith<AllStateMachineFactory, bool>(default);
 
         public static ObserverBuilder<bool> All<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
             source.Select(predicate).All();

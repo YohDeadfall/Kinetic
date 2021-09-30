@@ -5,7 +5,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<TSource> SkipWhile<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
-            source.ContinueWith<TSource, SkipWhileStateMachineFactory<TSource>>(new(predicate));
+            source.ContinueWith<SkipWhileStateMachineFactory<TSource>, TSource>(new(predicate));
 
         public static ObserverBuilder<TSource> SkipWhile<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
             source.ToBuilder().SkipWhile(predicate);

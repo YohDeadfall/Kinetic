@@ -6,7 +6,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<TSource?> FirstOrDefault<TSource>(this in ObserverBuilder<TSource> source) =>
-            source.ContinueWith<TSource?, FirstOrDefaultStateMachineFactory<TSource>>(default);
+            source.ContinueWith<FirstOrDefaultStateMachineFactory<TSource>, TSource?>(default);
 
         public static ObserverBuilder<TSource?> FirstOrDefault<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
             source.Where(predicate).FirstOrDefault();

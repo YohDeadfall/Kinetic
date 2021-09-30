@@ -5,7 +5,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<TSource> TakeWhile<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
-            source.ContinueWith<TSource, TakeWhileStateMachineFactory<TSource>>(new(predicate));
+            source.ContinueWith<TakeWhileStateMachineFactory<TSource>, TSource>(new(predicate));
 
         public static ObserverBuilder<TSource> TakeWhile<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
             source.ToBuilder().TakeWhile(predicate);

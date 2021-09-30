@@ -6,7 +6,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<bool> Contains<TSource>(this in ObserverBuilder<TSource> source, TSource value, IEqualityComparer<TSource>? comparer = null) =>
-            source.ContinueWith<bool, ContainsStateMachineFactory<TSource>>(new(value, comparer));
+            source.ContinueWith<ContainsStateMachineFactory<TSource>, bool>(new(value, comparer));
 
         public static ObserverBuilder<bool> Contains<TSource>(this IObservable<TSource> source, TSource value, IEqualityComparer<TSource>? comparer = null) =>
             source.ToBuilder().Contains(value, comparer);

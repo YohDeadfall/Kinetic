@@ -6,7 +6,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<TSource> Min<TSource>(this in ObserverBuilder<TSource> source, IComparer<TSource>? comparer = null) =>
-            source.ContinueWith<TSource, MinStateMachineBuilder<TSource>>(new(comparer));
+            source.ContinueWith<MinStateMachineBuilder<TSource>, TSource>(new(comparer));
 
         public static ObserverBuilder<TSource> Min<TSource>(this IObservable<TSource> source, IComparer<TSource>? comparer = null) =>
             source.ToBuilder().Min(comparer);

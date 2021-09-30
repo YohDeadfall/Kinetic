@@ -6,7 +6,7 @@ namespace Kinetic.Linq
     public static partial class Observable
     {
         public static ObserverBuilder<TSource> Distinct<TSource>(this in ObserverBuilder<TSource> source, IEqualityComparer<TSource>? comparer = null) =>
-            source.ContinueWith<TSource, DistinctStateMachineFactory<TSource>>(new(comparer));
+            source.ContinueWith<DistinctStateMachineFactory<TSource>, TSource>(new(comparer));
 
         public static ObserverBuilder<TSource> Distinct<TSource>(this IObservable<TSource> source, IEqualityComparer<TSource>? comparer = null) =>
             source.ToBuilder().Distinct(comparer);

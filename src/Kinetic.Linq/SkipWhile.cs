@@ -4,44 +4,30 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static SkipWhileBuilder<ObserverBuilder<TSource>, TSource> SkipWhile<TSource>(this IObservable<TSource> observable, Func<TSource, bool> predicate) =>
-            observable.ToBuilder().SkipWhile(predicate);
+        public static ObserverBuilder<TSource> SkipWhile<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
+            source.ContinueWith<TSource, SkipWhileStateMachineFactory<TSource>>(new(predicate));
 
-        public static SkipWhileBuilder<TObservable, TSource> SkipWhile<TObservable, TSource>(this TObservable observable, Func<TSource, bool> predicate)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable, predicate);
+        public static ObserverBuilder<TSource> SkipWhile<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
+            source.ToBuilder().SkipWhile(predicate);
     }
 
-    public readonly struct SkipWhileBuilder<TObservable, TSource> : IObserverBuilder<TSource>
-        where TObservable : struct, IObserverBuilder<TSource>
+    internal readonly struct SkipWhileStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        private readonly TObservable _observable;
         private readonly Func<TSource, bool> _predicate;
 
-        public SkipWhileBuilder(in TObservable observable, Func<TSource, bool> predicate)
+        public SkipWhileStateMachineFactory(Func<TSource, bool> predicate)
         {
-            _observable = observable;
             _predicate = predicate;
         }
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            _observable.Build(
-                stateMachine: new SkipWhileStateMachine<TStateMachine, TSource>(stateMachine, _predicate),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<TSource, SkipWhileBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new SkipWhileStateMachine<TContinuation, TSource>(continuation, _predicate));
         }
     }
 
-    public struct SkipWhileStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    internal struct SkipWhileStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;

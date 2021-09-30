@@ -5,44 +5,27 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static MinBuilder<ObserverBuilder<T>, T> Min<T>(this IObservable<T> observable, IComparer<T>? comparer = null) =>
-            observable.ToBuilder().Min(comparer);
+        public static ObserverBuilder<TSource> Min<TSource>(this in ObserverBuilder<TSource> source, IComparer<TSource>? comparer = null) =>
+            source.ContinueWith<TSource, MinStateMachineBuilder<TSource>>(new(comparer));
 
-        public static MinBuilder<TObservable, T> Min<TObservable, T>(this TObservable observable, IComparer<T>? comparer = null)
-            where TObservable : struct, IObserverBuilder<T> =>
-            new(observable, comparer);
+        public static ObserverBuilder<TSource> Min<TSource>(this IObservable<TSource> source, IComparer<TSource>? comparer = null) =>
+            source.ToBuilder().Min(comparer);
     }
 
-    public readonly struct MinBuilder<TObservable, T> : IObserverBuilder<T>
-        where TObservable : struct, IObserverBuilder<T>
+    internal readonly struct MinStateMachineBuilder<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        private readonly TObservable _observable;
-        private readonly IComparer<T>? _comparer;
+        private readonly IComparer<TSource>? _comparer;
 
-        public MinBuilder(in TObservable observable, IComparer<T>? comparer)
-        {
-            _observable = observable;
-            _comparer = comparer;
-        }
+        public MinStateMachineBuilder(IComparer<TSource>? comparer) => _comparer = comparer;
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<T>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            _observable.Build(
-                stateMachine: new MinStateMachine<TStateMachine, T>(stateMachine, _comparer),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<T, MinBuilder<TObservable, T>, TFactory>(this, ref factory);
+            source.ContinueWith(new MinStateMachine<TContinuation, TSource>(continuation, _comparer));
         }
     }
 
-    public struct MinStateMachine<TContinuation, T> : IObserverStateMachine<T>
+    internal struct MinStateMachine<TContinuation, T> : IObserverStateMachine<T>
         where TContinuation : IObserverStateMachine<T>
     {
         private TContinuation _continuation;

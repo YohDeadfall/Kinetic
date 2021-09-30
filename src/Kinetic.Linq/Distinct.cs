@@ -5,44 +5,30 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static DistinctBuilder<ObserverBuilder<TSource>, TSource> Distinct<TSource>(this IObservable<TSource> observable, IEqualityComparer<TSource>? comparer = null) =>
-            observable.ToBuilder().Distinct<ObserverBuilder<TSource>, TSource>(comparer);
+        public static ObserverBuilder<TSource> Distinct<TSource>(this in ObserverBuilder<TSource> source, IEqualityComparer<TSource>? comparer = null) =>
+            source.ContinueWith<TSource, DistinctStateMachineFactory<TSource>>(new(comparer));
 
-        public static DistinctBuilder<TObservable, TSource> Distinct<TObservable, TSource>(this TObservable observable, IEqualityComparer<TSource>? comparer = null)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable, comparer);
+        public static ObserverBuilder<TSource> Distinct<TSource>(this IObservable<TSource> source, IEqualityComparer<TSource>? comparer = null) =>
+            source.ToBuilder().Distinct(comparer);
     }
 
-    public readonly struct DistinctBuilder<TObservable, TSource> : IObserverBuilder<TSource>
-        where TObservable : struct, IObserverBuilder<TSource>
+    internal readonly struct DistinctStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        private readonly TObservable _observable;
         private readonly IEqualityComparer<TSource>? _comparer;
 
-        public DistinctBuilder(in TObservable observable, IEqualityComparer<TSource>? comparer)
+        public DistinctStateMachineFactory(IEqualityComparer<TSource>? comparer)
         {
-            _observable = observable;
             _comparer = comparer;
         }
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            _observable.Build(
-                stateMachine: new DistinctStateMachine<TStateMachine, TSource>(stateMachine, _comparer),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<TSource, DistinctBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new DistinctStateMachine<TContinuation, TSource>(continuation, _comparer));
         }
     }
 
-    public struct DistinctStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    internal struct DistinctStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;

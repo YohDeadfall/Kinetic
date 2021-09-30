@@ -4,39 +4,29 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static CountBuilder<ObserverBuilder<TSource>, TSource> Count<TSource>(this IObservable<TSource> observable) =>
-            observable.ToBuilder().Count<ObserverBuilder<TSource>, TSource>();
+        public static ObserverBuilder<int> Count<TSource>(this in ObserverBuilder<TSource> source) =>
+            source.ContinueWith<int, CountStateMachineFactory<TSource>>(default);
 
-        public static CountBuilder<TObservable, TSource> Count<TObservable, TSource>(this TObservable observable)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable);
+        public static ObserverBuilder<int> Count<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
+            source.Where(predicate).Count();
+
+        public static ObserverBuilder<int> Count<TSource>(this IObservable<TSource> source) =>
+            source.ToBuilder().Count();
+
+        public static ObserverBuilder<int> Count<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
+            source.ToBuilder().Count(predicate);
     }
 
-    public readonly struct CountBuilder<TObservable, TSource> : IObserverBuilder<int>
-        where TObservable : struct, IObserverBuilder<TSource>
+    internal readonly struct CountStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, int>
     {
-        private readonly TObservable _observable;
-
-        public CountBuilder(in TObservable observable) => _observable = observable;
-
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<int>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<int>
         {
-            _observable.Build(
-                stateMachine: new CountStateMachine<TStateMachine, TSource>(stateMachine),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<int, CountBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new CountStateMachine<TContinuation, TSource>(continuation));
         }
     }
 
-    public struct CountStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    internal struct CountStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<int>
     {
         private TContinuation _continuation;

@@ -1,50 +1,40 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static LastBuilder<ObserverBuilder<TSource>, TSource> Last<TSource>(this IObservable<TSource> observable) =>
-            observable.ToBuilder().Last<ObserverBuilder<TSource>, TSource>();
+        public static ObserverBuilder<TSource> Last<TSource>(this in ObserverBuilder<TSource> source) =>
+            source.ContinueWith<TSource, LastStateMachineFactory<TSource>>(default);
 
-        public static LastBuilder<TObservable, TSource> Last<TObservable, TSource>(this TObservable observable)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable);
+        public static ObserverBuilder<TSource> Last<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
+            source.Where(predicate).Last();
+
+        public static ObserverBuilder<TSource> Last<TSource>(this IObservable<TSource> source) =>
+            source.ToBuilder().Last();
+
+        public static ObserverBuilder<TSource> Last<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
+            source.ToBuilder().Last(predicate);
     }
 
-    public readonly struct LastBuilder<TObservable, TSource> : IObserverBuilder<TSource?>
-        where TObservable : struct, IObserverBuilder<TSource>
+    internal readonly struct LastStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        private readonly TObservable _observable;
-
-        public LastBuilder(in TObservable observable)
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            _observable = observable;
-        }
-
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<TSource?>
-            where TFactory : struct, IObserverFactory
-        {
-            _observable.Build(
-                stateMachine: new LastStateMachine<TStateMachine, TSource>(stateMachine),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<TSource?, LastBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new LastStateMachine<TContinuation, TSource>(continuation));
         }
     }
 
-    public struct LastStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : IObserverStateMachine<TSource?>
+    internal struct LastStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+        where TContinuation : IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;
-        private TSource? _last;
+
+        [AllowNull]
+        private TSource _last;
         private bool _hasLast;
 
         public LastStateMachine(TContinuation continuation)
@@ -72,7 +62,7 @@ namespace Kinetic.Linq
         {
             if (_hasLast)
             {
-                _continuation.OnNext(_last!);
+                _continuation.OnNext(_last);
                 _continuation.OnCompleted();
             }
             else

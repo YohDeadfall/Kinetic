@@ -4,44 +4,30 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static TakeWhileBuilder<ObserverBuilder<TSource>, TSource> TakeWhile<TSource>(this IObservable<TSource> observable, Func<TSource, bool> predicate) =>
-            observable.ToBuilder().TakeWhile(predicate);
+        public static ObserverBuilder<TSource> TakeWhile<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
+            source.ContinueWith<TSource, TakeWhileStateMachineFactory<TSource>>(new(predicate));
 
-        public static TakeWhileBuilder<TObservable, TSource> TakeWhile<TObservable, TSource>(this TObservable observable, Func<TSource, bool> predicate)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable, predicate);
+        public static ObserverBuilder<TSource> TakeWhile<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
+            source.ToBuilder().TakeWhile(predicate);
     }
 
-    public readonly struct TakeWhileBuilder<TObservable, TSource> : IObserverBuilder<TSource>
-        where TObservable : struct, IObserverBuilder<TSource>
+    internal readonly struct TakeWhileStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        private readonly TObservable _observable;
         private readonly Func<TSource, bool> _predicate;
 
-        public TakeWhileBuilder(in TObservable observable, Func<TSource, bool> predicate)
+        public TakeWhileStateMachineFactory(Func<TSource, bool> predicate)
         {
-            _observable = observable;
             _predicate = predicate;
         }
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            _observable.Build(
-                stateMachine: new TakeWhileStateMachine<TStateMachine, TSource>(stateMachine, _predicate),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<TSource, TakeWhileBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new TakeWhileStateMachine<TContinuation, TSource>(continuation, _predicate));
         }
     }
 
-    public struct TakeWhileStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    internal struct TakeWhileStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;

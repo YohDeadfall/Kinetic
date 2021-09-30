@@ -4,75 +4,29 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static AllBuilder<ObserverBuilder<bool>> All(this IObservable<bool> observable) =>
-            observable.ToBuilder().All();
+        public static ObserverBuilder<bool> All(this in ObserverBuilder<bool> source) =>
+            source.ContinueWith<bool, AllStateMachineFactory>(default);
 
-        public static AllBuilder<TObservable> All<TObservable>(this TObservable observable)
-            where TObservable : struct, IObserverBuilder<bool> =>
-            new(observable);
+        public static ObserverBuilder<bool> All<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
+            source.Select(predicate).All();
 
-        public static AllBuilder<ObserverBuilder<TSource>, TSource> All<TSource>(this IObservable<TSource> observable, Func<TSource, bool> predicate) =>
-            observable.ToBuilder().All(predicate);
+        public static ObserverBuilder<bool> All(this IObservable<bool> source) =>
+            source.ToBuilder().All();
 
-        public static AllBuilder<TObservable, TSource> All<TObservable, TSource>(this TObservable observable, Func<TSource, bool> predicate)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable, predicate);
+        public static ObserverBuilder<bool> All<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
+            source.ToBuilder().All(predicate);
     }
 
-    public readonly struct AllBuilder<TObservable> : IObserverBuilder<bool>
-        where TObservable : struct, IObserverBuilder<bool>
+    internal readonly struct AllStateMachineFactory : IObserverStateMachineFactory<bool, bool>
     {
-        private readonly TObservable _observable;
-
-        public AllBuilder(in TObservable observable) => _observable = observable;
-
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<bool>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<bool> source)
+            where TContinuation : struct, IObserverStateMachine<bool>
         {
-            var observer = new AllStateMachine<TStateMachine>(stateMachine);
-            _observable.Build(observer, ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<bool, AllBuilder<TObservable>, TFactory>(this, ref factory);
+            source.ContinueWith(new AllStateMachine<TContinuation>(continuation));
         }
     }
 
-    public readonly struct AllBuilder<TObservable, TSource> : IObserverBuilder<bool>
-        where TObservable : struct, IObserverBuilder<TSource>
-    {
-        private readonly TObservable _observable;
-        private readonly Func<TSource, bool> _predicate;
-
-        public AllBuilder(in TObservable observable, Func<TSource, bool> predicate)
-        {
-            _observable = observable;
-            _predicate = predicate;
-        }
-
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<bool>
-            where TFactory : struct, IObserverFactory
-        {
-            var all = new AllStateMachine<TStateMachine>(stateMachine);
-            var select = new SelectStateMachine<AllStateMachine<TStateMachine>, TSource, bool>(all, _predicate);
-
-            _observable.Build(select, ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<bool, AllBuilder<TObservable, TSource>, TFactory>(this, ref factory);
-        }
-    }
-
-    public struct AllStateMachine<TContinuation> : IObserverStateMachine<bool>
+    internal struct AllStateMachine<TContinuation> : IObserverStateMachine<bool>
         where TContinuation : IObserverStateMachine<bool>
     {
         private TContinuation _continuation;

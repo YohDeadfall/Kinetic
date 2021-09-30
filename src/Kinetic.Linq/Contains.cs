@@ -5,46 +5,32 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static ContainsBuilder<ObserverBuilder<TSource>, TSource> Contains<TSource>(this IObservable<TSource> observable, TSource value, IEqualityComparer<TSource>? comparer = null) =>
-            observable.ToBuilder().Contains<ObserverBuilder<TSource>, TSource>(value, comparer);
+        public static ObserverBuilder<bool> Contains<TSource>(this in ObserverBuilder<TSource> source, TSource value, IEqualityComparer<TSource>? comparer = null) =>
+            source.ContinueWith<bool, ContainsStateMachineFactory<TSource>>(new(value, comparer));
 
-        public static ContainsBuilder<TObservable, TSource> Contains<TObservable, TSource>(this TObservable observable, TSource value, IEqualityComparer<TSource>? comparer = null)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable, value, comparer);
+        public static ObserverBuilder<bool> Contains<TSource>(this IObservable<TSource> source, TSource value, IEqualityComparer<TSource>? comparer = null) =>
+            source.ToBuilder().Contains(value, comparer);
     }
 
-    public readonly struct ContainsBuilder<TObservable, TSource> : IObserverBuilder<bool>
-        where TObservable : struct, IObserverBuilder<TSource>
+    internal readonly struct ContainsStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, bool>
     {
-        private readonly TObservable _observable;
         private readonly TSource _value;
         private readonly IEqualityComparer<TSource>? _comparer;
 
-        public ContainsBuilder(in TObservable observable, TSource value, IEqualityComparer<TSource>? comparer)
+        public ContainsStateMachineFactory(TSource value, IEqualityComparer<TSource>? comparer)
         {
-            _observable = observable;
             _value = value;
             _comparer = comparer;
         }
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<bool>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<bool>
         {
-            _observable.Build(
-                stateMachine: new ContainsStateMachine<TStateMachine, TSource>(stateMachine, _value, _comparer),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<bool, ContainsBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new ContainsStateMachine<TContinuation, TSource>(continuation, _value, _comparer));
         }
     }
 
-    public struct ContainsStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    internal struct ContainsStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<bool>
     {
         private TContinuation _continuation;

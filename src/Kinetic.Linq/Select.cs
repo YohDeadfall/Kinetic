@@ -4,44 +4,27 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static SelectBuilder<ObserverBuilder<TSource>, TSource, TResult> Select<TSource, TResult>(this IObservable<TSource> observable, Func<TSource, TResult> selector) =>
-            observable.ToBuilder().Select(selector);
+        public static ObserverBuilder<TResult> Select<TSource, TResult>(this in ObserverBuilder<TSource> source, Func<TSource, TResult> selector) =>
+            source.ContinueWith<TResult, SelectStateMachineFactory<TSource, TResult>>(new(selector));
 
-        public static SelectBuilder<TObservable, TSource, TResult> Select<TObservable, TSource, TResult>(this TObservable observable, Func<TSource, TResult> selector)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable, selector);
+        public static ObserverBuilder<TResult> Select<TSource, TResult>(this IObservable<TSource> source, Func<TSource, TResult> selector) =>
+            source.ToBuilder().Select(selector);
     }
 
-    public readonly struct SelectBuilder<TObservable, TSource, TResult> : IObserverBuilder<TResult>
-        where TObservable : struct, IObserverBuilder<TSource>
+    internal readonly struct SelectStateMachineFactory<TSource, TResult> : IObserverStateMachineFactory<TSource, TResult>
     {
-        private readonly TObservable _observable;
         private readonly Func<TSource, TResult> _selector;
 
-        public SelectBuilder(in TObservable observable, Func<TSource, TResult> selector)
-        {
-            _observable = observable;
-            _selector = selector;
-        }
+        public SelectStateMachineFactory(Func<TSource, TResult> selector) => _selector = selector;
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<TResult>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TResult>
         {
-            _observable.Build(
-                stateMachine: new SelectStateMachine<TStateMachine, TSource, TResult>(stateMachine, _selector),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<TResult, SelectBuilder<TObservable, TSource, TResult>, TFactory>(this, ref factory);
+            source.ContinueWith(new SelectStateMachine<TContinuation, TSource, TResult>(continuation, _selector));
         }
     }
 
-    public struct SelectStateMachine<TContinuation, TSource, TResult> : IObserverStateMachine<TSource>
+    internal struct SelectStateMachine<TContinuation, TSource, TResult> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<TResult>
     {
         private TContinuation _continuation;

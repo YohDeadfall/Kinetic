@@ -4,44 +4,30 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static SkipBuilder<ObserverBuilder<TSource>, TSource> Skip<TSource>(this IObservable<TSource> observable, int count) =>
-            observable.ToBuilder().Skip<ObserverBuilder<TSource>, TSource>(count);
+        public static ObserverBuilder<TSource> Skip<TSource>(this in ObserverBuilder<TSource> source, int count) =>
+            source.ContinueWith<TSource, SkipStateMachineFactory<TSource>>(new(count));
 
-        public static SkipBuilder<TObservable, TSource> Skip<TObservable, TSource>(this TObservable observable, int count)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable, count);
+        public static ObserverBuilder<TSource> Skip<TSource>(this IObservable<TSource> source, int count) =>
+            source.ToBuilder().Skip(count);
     }
 
-    public readonly struct SkipBuilder<TObservable, TSource> : IObserverBuilder<TSource>
-        where TObservable : struct, IObserverBuilder<TSource>
+    public readonly struct SkipStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        private readonly TObservable _observable;
         private readonly int _count;
 
-        public SkipBuilder(in TObservable observable, int count)
+        public SkipStateMachineFactory(int count)
         {
-            _observable = observable;
             _count = count >= 0 ? count : throw new ArgumentOutOfRangeException(nameof(count));
         }
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            _observable.Build(
-                stateMachine: new SkipStateMachine<TStateMachine, TSource>(stateMachine, (uint) _count),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<TSource, SkipBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new SkipStateMachine<TContinuation, TSource>(continuation, (uint) _count));
         }
     }
 
-    public struct SkipStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    internal struct SkipStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;

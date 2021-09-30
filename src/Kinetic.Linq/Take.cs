@@ -4,44 +4,30 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static TakeBuilder<ObserverBuilder<TSource>, TSource> Take<TSource>(this IObservable<TSource> observable, int count) =>
-            observable.ToBuilder().Take<ObserverBuilder<TSource>, TSource>(count);
+        public static ObserverBuilder<TSource> Take<TSource>(this in ObserverBuilder<TSource> source, int count) =>
+            source.ContinueWith<TSource, TakeStateMachineFactory<TSource>>(new(count));
 
-        public static TakeBuilder<TObservable, TSource> Take<TObservable, TSource>(this TObservable observable, int count)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable, count);
+        public static ObserverBuilder<TSource> Take<TSource>(this IObservable<TSource> source, int count) =>
+            source.ToBuilder().Take(count);
     }
 
-    public readonly struct TakeBuilder<TObservable, TSource> : IObserverBuilder<TSource>
-        where TObservable : struct, IObserverBuilder<TSource>
+    public readonly struct TakeStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        private readonly TObservable _observable;
         private readonly int _count;
 
-        public TakeBuilder(in TObservable observable, int count)
+        public TakeStateMachineFactory(int count)
         {
-            _observable = observable;
             _count = count >= 0 ? count : throw new ArgumentOutOfRangeException(nameof(count));
         }
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            _observable.Build(
-                stateMachine: new TakeStateMachine<TStateMachine, TSource>(stateMachine, (uint) _count),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<TSource, TakeBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new TakeStateMachine<TContinuation, TSource>(continuation, (uint) _count));
         }
     }
 
-    public struct TakeStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    internal struct TakeStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;

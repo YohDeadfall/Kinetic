@@ -5,42 +5,29 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static FirstOrDefaultBuilder<ObserverBuilder<TSource>, TSource> FirstOrDefault<TSource>(this IObservable<TSource> observable) =>
-            observable.ToBuilder().FirstOrDefault<ObserverBuilder<TSource>, TSource>();
+        public static ObserverBuilder<TSource?> FirstOrDefault<TSource>(this in ObserverBuilder<TSource> source) =>
+            source.ContinueWith<TSource?, FirstOrDefaultStateMachineFactory<TSource>>(default);
 
-        public static FirstOrDefaultBuilder<TObservable, TSource> FirstOrDefault<TObservable, TSource>(this TObservable observable)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable);
+        public static ObserverBuilder<TSource?> FirstOrDefault<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
+            source.Where(predicate).FirstOrDefault();
+
+        public static ObserverBuilder<TSource?> FirstOrDefault<TSource>(this IObservable<TSource> source) =>
+            source.ToBuilder().FirstOrDefault();
+
+        public static ObserverBuilder<TSource?> FirstOrDefault<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
+            source.ToBuilder().FirstOrDefault(predicate);
     }
 
-    public readonly struct FirstOrDefaultBuilder<TObservable, TSource> : IObserverBuilder<TSource?>
-        where TObservable : struct, IObserverBuilder<TSource>
+    internal readonly struct FirstOrDefaultStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource?>
     {
-        private readonly TObservable _observable;
-
-        public FirstOrDefaultBuilder(in TObservable observable)
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource?>
         {
-            _observable = observable;
-        }
-
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<TSource?>
-            where TFactory : struct, IObserverFactory
-        {
-            _observable.Build(
-                stateMachine: new FirstOrDefaultStateMachine<TStateMachine, TSource>(stateMachine),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<TSource?, FirstOrDefaultBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new FirstOrDefaultStateMachine<TContinuation, TSource>(continuation));
         }
     }
 
-    public struct FirstOrDefaultStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    internal struct FirstOrDefaultStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<TSource?>
     {
         private TContinuation _continuation;

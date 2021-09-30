@@ -4,44 +4,27 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static WhereBuilder<ObserverBuilder<TSource>, TSource> Where<TSource>(this IObservable<TSource> observable, Func<TSource, bool> predicate) =>
-            observable.ToBuilder().Where(predicate);
+        public static ObserverBuilder<TSource> Where<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
+            source.ContinueWith<TSource, WhereStateMachineFactory<TSource>>(new(predicate));
 
-        public static WhereBuilder<TObservable, TSource> Where<TObservable, TSource>(this TObservable observable, Func<TSource, bool> predicate)
-            where TObservable : struct, IObserverBuilder<TSource> =>
-            new(observable, predicate);
+        public static ObserverBuilder<TSource> Where<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
+            source.ToBuilder().Where(predicate);
     }
 
-    public readonly struct WhereBuilder<TObservable, TSource> : IObserverBuilder<TSource>
-        where TObservable : struct, IObserverBuilder<TSource>
+    internal readonly struct WhereStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        private readonly TObservable _observable;
         private readonly Func<TSource, bool> _predicate;
 
-        public WhereBuilder(in TObservable observable, Func<TSource, bool> predicate)
-        {
-            _observable = observable;
-            _predicate = predicate;
-        }
+        public WhereStateMachineFactory(Func<TSource, bool> predicate) => _predicate = predicate;
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            _observable.Build(
-                stateMachine: new WhereStateMachine<TStateMachine, TSource>(stateMachine, _predicate),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<TSource, WhereBuilder<TObservable, TSource>, TFactory>(this, ref factory);
+            source.ContinueWith(new WhereStateMachine<TContinuation, TSource>(continuation, _predicate));
         }
     }
 
-    public struct WhereStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+    internal struct WhereStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
         where TContinuation : IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;

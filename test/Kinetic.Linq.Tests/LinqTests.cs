@@ -12,8 +12,8 @@ namespace Kinetic.Linq.Tests
             var source = new Source<int>();
 
             source.Value.Changed
-                .Any((int value) => value > 2)
-                .Subscribe((bool value) =>
+                .Any(value => value > 2)
+                .Subscribe(value =>
                 {
                     executions += 1;
                     Assert.True(value);
@@ -34,7 +34,7 @@ namespace Kinetic.Linq.Tests
 
             source.Value.Changed
                 .Any()
-                .Subscribe((bool value) =>
+                .Subscribe(value =>
                 {
                     executions += 1;
                     Assert.True(value);
@@ -54,7 +54,7 @@ namespace Kinetic.Linq.Tests
 
             source.Value.Changed
                 .Contains(2)
-                .Subscribe((bool value) =>
+                .Subscribe(value =>
                 {
                     executions += 1;
                     Assert.True(value);
@@ -74,7 +74,7 @@ namespace Kinetic.Linq.Tests
 
             source.Value.Changed
                 .Distinct()
-                .Subscribe((int value) => values.Add(value));
+                .Subscribe(value => values.Add(value));
 
             source.Value.Set(1);
             source.Value.Set(1);
@@ -92,7 +92,7 @@ namespace Kinetic.Linq.Tests
 
             source.Value.Changed
                 .Skip(2)
-                .Subscribe((int value) => values.Add(value));
+                .Subscribe(value => values.Add(value));
 
             source.Value.Set(1);
             source.Value.Set(2);
@@ -109,7 +109,7 @@ namespace Kinetic.Linq.Tests
 
             source.Value.Changed
                 .First()
-                .Subscribe((int value) =>
+                .Subscribe(value =>
                 {
                     executions += 1;
                     Assert.Equal(0, value);
@@ -129,7 +129,7 @@ namespace Kinetic.Linq.Tests
 
             source.Value.Changed
                 .FirstOrDefault()
-                .Subscribe((int value) =>
+                .Subscribe(value =>
                 {
                     executions += 1;
                     Assert.Equal(0, value);
@@ -148,8 +148,8 @@ namespace Kinetic.Linq.Tests
             var values = new List<int>();
 
             source.Value.Changed
-                .SkipWhile((int value) => value < 2)
-                .Subscribe((int value) => values.Add(value));
+                .SkipWhile(value => value < 2)
+                .Subscribe(value => values.Add(value));
 
             source.Value.Set(1);
             source.Value.Set(2);
@@ -166,7 +166,7 @@ namespace Kinetic.Linq.Tests
 
             source.Value.Changed
                 .Take(2)
-                .Subscribe((int value) => values.Add(value));
+                .Subscribe(value => values.Add(value));
 
             source.Value.Set(1);
             source.Value.Set(2);
@@ -182,8 +182,8 @@ namespace Kinetic.Linq.Tests
             var values = new List<int>();
 
             source.Value.Changed
-                .TakeWhile((int value) => value < 2)
-                .Subscribe((int value) => values.Add(value));
+                .TakeWhile(value => value < 2)
+                .Subscribe(value => values.Add(value));
 
             source.Value.Set(1);
             source.Value.Set(2);
@@ -199,8 +199,8 @@ namespace Kinetic.Linq.Tests
             var values = new List<int>();
 
             source.Value.Changed
-                .Where((int value) => value > 2)
-                .Subscribe((int value) => values.Add(value));
+                .Where(value => value > 2)
+                .Subscribe(value => values.Add(value));
 
             source.Value.Set(1);
             source.Value.Set(3);

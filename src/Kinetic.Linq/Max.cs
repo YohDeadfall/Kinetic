@@ -5,52 +5,35 @@ namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        public static MaxBuilder<ObserverBuilder<T>, T> Max<T>(this IObservable<T> observable, IComparer<T>? comparer = null) =>
-            observable.ToBuilder().Max(comparer);
+        public static ObserverBuilder<TSource> Max<TSource>(this in ObserverBuilder<TSource> source, IComparer<TSource>? comparer = null) =>
+            source.ContinueWith<TSource, MaxStateMachineBuilder<TSource>>(new(comparer));
 
-        public static MaxBuilder<TObservable, T> Max<TObservable, T>(this TObservable observable, IComparer<T>? comparer = null)
-            where TObservable : struct, IObserverBuilder<T> =>
-            new(observable, comparer);
+        public static ObserverBuilder<TSource> Max<TSource>(this IObservable<TSource> source, IComparer<TSource>? comparer = null) =>
+            source.ToBuilder().Max(comparer);
     }
 
-    public readonly struct MaxBuilder<TObservable, T> : IObserverBuilder<T>
-        where TObservable : struct, IObserverBuilder<T>
+    internal readonly struct MaxStateMachineBuilder<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        private readonly TObservable _observable;
-        private readonly IComparer<T>? _comparer;
+        private readonly IComparer<TSource>? _comparer;
 
-        public MaxBuilder(in TObservable observable, IComparer<T>? comparer)
-        {
-            _observable = observable;
-            _comparer = comparer;
-        }
+        public MaxStateMachineBuilder(IComparer<TSource>? comparer) => _comparer = comparer;
 
-        public void Build<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachine<T>
-            where TFactory : struct, IObserverFactory
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            _observable.Build(
-                stateMachine: new MaxStateMachine<TStateMachine, T>(stateMachine, _comparer),
-                ref factory);
-        }
-
-        public void BuildWithFactory<TStateMachine, TFactory>(in TStateMachine stateMachine, ref TFactory factory)
-            where TStateMachine : struct, IObserverStateMachineFactory
-            where TFactory : struct, IObserverFactory
-        {
-            stateMachine.Create<T, MaxBuilder<TObservable, T>, TFactory>(this, ref factory);
+            source.ContinueWith(new MaxStateMachine<TContinuation, TSource>(continuation, _comparer));
         }
     }
 
-    public struct MaxStateMachine<TContinuation, T> : IObserverStateMachine<T>
-        where TContinuation : IObserverStateMachine<T>
+    internal struct MaxStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+        where TContinuation : IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;
-        private IComparer<T>? _comparer;
-        private T _value;
+        private IComparer<TSource>? _comparer;
+        private TSource _value;
         private bool _hasValue;
 
-        public MaxStateMachine(TContinuation continuation, IComparer<T>? comparer)
+        public MaxStateMachine(TContinuation continuation, IComparer<TSource>? comparer)
         {
             _continuation = continuation;
             _comparer = comparer;
@@ -61,13 +44,13 @@ namespace Kinetic.Linq
         public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
         public void Dispose() => _continuation.Dispose();
 
-        public void OnNext(T value)
+        public void OnNext(TSource value)
         {
             if (_hasValue)
             {
                 var result =
                     _comparer?.Compare(_value, value) ??
-                    Comparer<T>.Default.Compare(_value, value);
+                    Comparer<TSource>.Default.Compare(_value, value);
                 if (result < 0)
                 {
                     _value = value;

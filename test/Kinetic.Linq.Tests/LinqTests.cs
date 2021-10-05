@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace Kinetic.Linq.Tests
@@ -6,64 +7,46 @@ namespace Kinetic.Linq.Tests
     public class LinqTests
     {
         [Fact]
-        public void AnyWithPredicate()
+        public async ValueTask AnyWithPredicate()
         {
-            var executions = 0;
             var source = new Source<int>();
-
-            source.Value.Changed
+            var task = source.Value.Changed
                 .Any(value => value > 2)
-                .Subscribe(value =>
-                {
-                    executions += 1;
-                    Assert.True(value);
-                });
+                .ToValueTask();
 
             source.Value.Set(1);
             source.Value.Set(2);
             source.Value.Set(3);
 
-            Assert.Equal(1, executions);
+            Assert.True(await task);
         }
 
         [Fact]
-        public void AnyWithoutPredicate()
+        public async ValueTask AnyWithoutPredicate()
         {
-            var executions = 0;
             var source = new Source<int>();
-
-            source.Value.Changed
+            var task = source.Value.Changed
                 .Any()
-                .Subscribe(value =>
-                {
-                    executions += 1;
-                    Assert.True(value);
-                });
+                .ToValueTask();
 
             source.Value.Set(1);
             source.Value.Set(2);
 
-            Assert.Equal(1, executions);
+            Assert.True(await task);
         }
 
         [Fact]
-        public void Contains()
+        public async ValueTask Contains()
         {
-            var executions = 0;
             var source = new Source<int>();
-
-            source.Value.Changed
+            var task = source.Value.Changed
                 .Contains(2)
-                .Subscribe(value =>
-                {
-                    executions += 1;
-                    Assert.True(value);
-                });
+                .ToValueTask();
 
             source.Value.Set(1);
             source.Value.Set(2);
 
-            Assert.Equal(1, executions);
+            Assert.True(await task);
         }
 
         [Fact]
@@ -102,43 +85,31 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
-        public void First()
+        public async ValueTask First()
         {
-            var executions = 0;
             var source = new Source<int>();
-
-            source.Value.Changed
+            var task = source.Value.Changed
                 .First()
-                .Subscribe(value =>
-                {
-                    executions += 1;
-                    Assert.Equal(0, value);
-                });
+                .ToValueTask();
 
             source.Value.Set(1);
             source.Value.Set(2);
 
-            Assert.Equal(1, executions);
+            Assert.Equal(0, await task);
         }
 
         [Fact]
-        public void FirstOrDefault()
+        public async ValueTask FirstOrDefault()
         {
-            var executions = 0;
             var source = new Source<int>();
-
-            source.Value.Changed
+            var task = source.Value.Changed
                 .FirstOrDefault()
-                .Subscribe(value =>
-                {
-                    executions += 1;
-                    Assert.Equal(0, value);
-                });
+                .ToValueTask();
 
             source.Value.Set(1);
             source.Value.Set(2);
 
-            Assert.Equal(1, executions);
+            Assert.Equal(0, await task);
         }
 
         [Fact]

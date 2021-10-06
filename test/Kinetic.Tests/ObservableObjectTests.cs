@@ -74,7 +74,7 @@ namespace Kinetic.Tests
             Assert.Equal(new[] { 0, 1 }, numbers);
         }
 
-        private sealed class TestObject : Object
+        private sealed class TestObject : ObservableObject
         {
             private int _number;
             private string _text = string.Empty;

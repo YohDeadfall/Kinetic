@@ -49,7 +49,7 @@ namespace Kinetic.Avalonia.Tests
             Assert.Equal("bar", source.TextReadOnly);
         }
 
-        private sealed class Source : Object
+        private sealed class Source : ObservableObject
         {
             private string _text = string.Empty;
             private string _textReadOnly = string.Empty;

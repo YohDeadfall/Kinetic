@@ -63,7 +63,7 @@ namespace Kinetic.Avalonia
 
         private AccessorFactory? GetAccessorFactory(object? obj, string propertyName)
         {
-            if (obj is not Object)
+            if (obj is not ObservableObject)
             {
                 return null;
             }

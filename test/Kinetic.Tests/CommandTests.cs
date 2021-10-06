@@ -519,7 +519,7 @@ namespace Kinetic.Tests
             Assert.Equal(1, events);
         }
 
-        private sealed class State : Object
+        private sealed class State : ObservableObject
         {
             private bool _canExecute;
             private int _counter;

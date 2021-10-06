@@ -33,7 +33,7 @@ namespace Kinetic.Benchmarks
         [Benchmark]
         public void Set() => Test.Number.Set(Number += 1);
 
-        public sealed class TestObject : Object
+        public sealed class TestObject : ObservableObject
         {
             private int _number;
 

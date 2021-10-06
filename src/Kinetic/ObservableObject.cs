@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace Kinetic
 {
-    public abstract class Object
+    public abstract class ObservableObject
     {
         private PropertyObservable? _observables;
         private uint _suppressions;
@@ -97,9 +97,9 @@ namespace Kinetic
 
         public readonly struct SuppressNotificationsScope : IDisposable
         {
-            private readonly Object? _owner;
+            private readonly ObservableObject? _owner;
 
-            internal SuppressNotificationsScope(Object owner)
+            internal SuppressNotificationsScope(ObservableObject owner)
             {
                 if (owner._suppressions == 0)
                 {
@@ -131,13 +131,13 @@ namespace Kinetic
 
         private abstract class PropertyObservable
         {
-            internal readonly Object Owner;
+            internal readonly ObservableObject Owner;
             internal readonly PropertyObservable? Next;
             internal readonly IntPtr Offset;
 
             internal uint Version;
 
-            protected PropertyObservable(Object owner, IntPtr offset, PropertyObservable? next) =>
+            protected PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next) =>
                 (Owner, Offset, Next) = (owner, offset, next);
 
             public abstract void Changed();
@@ -147,7 +147,7 @@ namespace Kinetic
         {
             private ObservableSubscriptions<T> _subscriptions;
 
-            public PropertyObservable(Object owner, IntPtr offset, PropertyObservable? next)
+            public PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next)
                 : base(owner, offset, next) { }
 
             public override void Changed() =>
@@ -169,10 +169,10 @@ namespace Kinetic
 
     public readonly ref struct Property<T>
     {
-        internal readonly Object Owner;
+        internal readonly ObservableObject Owner;
         internal readonly IntPtr Offset;
 
-        internal Property(Object owner, IntPtr offset) =>
+        internal Property(ObservableObject owner, IntPtr offset) =>
             (Owner, Offset) = (owner, offset);
 
         public T Get() => Owner.Get<T>(Offset);
@@ -190,10 +190,10 @@ namespace Kinetic
 
     public readonly ref struct ReadOnlyProperty<T>
     {
-        internal readonly Object Owner;
+        internal readonly ObservableObject Owner;
         internal readonly IntPtr Offset;
 
-        internal ReadOnlyProperty(Object owner, IntPtr offset) =>
+        internal ReadOnlyProperty(ObservableObject owner, IntPtr offset) =>
             (Owner, Offset) = (owner, offset);
 
         public T Get() => Owner.Get<T>(Offset);

@@ -181,7 +181,7 @@ namespace Kinetic.Linq.Tests
             Assert.Equal(new[] { 3, 4 }, values);
         }
 
-        private sealed class Source<T> : Object
+        private sealed class Source<T> : ObservableObject
         {
             private T _value;
 

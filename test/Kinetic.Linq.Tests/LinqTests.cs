@@ -7,6 +7,36 @@ namespace Kinetic.Linq.Tests
     public class LinqTests
     {
         [Fact]
+        public async ValueTask AllWithPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .Any(value => value < 4)
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
+            source.Complete();
+
+            Assert.True(await task);
+        }
+
+        [Fact]
+        public async ValueTask AllWithoutPredicate()
+        {
+            var source = new Source<bool>();
+            var task = source
+                .ToValueTask();
+
+            source.Next(true);
+            source.Next(true);
+            source.Complete();
+
+            Assert.True(await task);
+        }
+
+        [Fact]
         public async ValueTask AnyWithPredicate()
         {
             var source = new Source<int>();
@@ -50,6 +80,37 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public async ValueTask CountWithPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .Count(value => value > 2)
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
+            source.Complete();
+
+            Assert.Equal(1, await task);
+        }
+
+        [Fact]
+        public async ValueTask CountWithoutPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
+            source.Complete();
+
+            Assert.Equal(3, await task);
+        }
+
+        [Fact]
         public void Distinct()
         {
             var source = new Source<int>();
@@ -68,6 +129,168 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public async ValueTask FirstWithPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .First(value => value > 1)
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+
+            Assert.Equal(2, await task);
+        }
+
+        [Fact]
+        public async ValueTask FirstWithoutPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .First()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+
+            Assert.Equal(1, await task);
+        }
+
+        [Fact]
+        public async ValueTask FirstOrDefaultWithPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .FirstOrDefault(value => value > 1)
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+
+            Assert.Equal(2, await task);
+        }
+
+        [Fact]
+        public async ValueTask FirstOrDefaultWithoutPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .FirstOrDefault()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+
+            Assert.Equal(1, await task);
+        }
+
+        [Fact]
+        public async ValueTask LastWithPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .Last(value => value < 2)
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Complete();
+
+            Assert.Equal(1, await task);
+        }
+
+        [Fact]
+        public async ValueTask LastWithoutPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .Last()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Complete();
+
+            Assert.Equal(2, await task);
+        }
+
+        [Fact]
+        public async ValueTask LastOrDefaultWithPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .LastOrDefault(value => value < 2)
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Complete();
+
+            Assert.Equal(1, await task);
+        }
+
+        [Fact]
+        public async ValueTask LastOrDefaultWithoutPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .LastOrDefault()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Complete();
+
+            Assert.Equal(2, await task);
+        }
+
+        [Fact]
+        public async ValueTask Max()
+        {
+            var source = new Source<int>();
+            var task = source
+                .Max()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Complete();
+
+            Assert.Equal(2, await task);
+        }
+
+        [Fact]
+        public async ValueTask Min()
+        {
+            var source = new Source<int>();
+            var task = source
+                .Min()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Complete();
+
+            Assert.Equal(1, await task);
+        }
+
+        [Fact]
+        public void Select()
+        {
+            var source = new Source<int>();
+            var values = new List<int>();
+
+            source
+                .Select(value => value * 10)
+                .Subscribe(value => values.Add(value));
+
+            source.Next(1);
+            source.Next(2);
+
+            Assert.Equal(new[] { 10, 20 }, values);
+        }
+
+        [Fact]
         public void Skip()
         {
             var source = new Source<int>();
@@ -83,34 +306,6 @@ namespace Kinetic.Linq.Tests
             source.Next(3);
 
             Assert.Equal(new[] { 2, 3 }, values);
-        }
-
-        [Fact]
-        public async ValueTask First()
-        {
-            var source = new Source<int>();
-            var task = source
-                .First()
-                .ToValueTask();
-
-            source.Next(1);
-            source.Next(2);
-
-            Assert.Equal(1, await task);
-        }
-
-        [Fact]
-        public async ValueTask FirstOrDefault()
-        {
-            var source = new Source<int>();
-            var task = source
-                .FirstOrDefault()
-                .ToValueTask();
-
-            source.Next(1);
-            source.Next(2);
-
-            Assert.Equal(1, await task);
         }
 
         [Fact]
@@ -186,6 +381,7 @@ namespace Kinetic.Linq.Tests
         private sealed class Source<T> : Observable<T>
         {
             public void Next(T value) => OnNext(value);
+            public void Complete() => OnCompleted();
         }
     }
 }

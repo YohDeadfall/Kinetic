@@ -1,7 +1,7 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Sources;
-using System.Runtime.CompilerServices;
 
 namespace Kinetic.Linq
 {

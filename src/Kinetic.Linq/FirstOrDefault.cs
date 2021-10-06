@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq
 {

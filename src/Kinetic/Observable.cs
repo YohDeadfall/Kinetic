@@ -107,4 +107,22 @@ namespace Kinetic
             }
         }
     }
+
+    public abstract class Observable<T> : IObservableInternal<T>
+    {
+        private ObservableSubscriptions<T> _subscriptions;
+
+        public IDisposable Subscribe(IObserver<T> observer) =>
+            _subscriptions.Subscribe(this, observer);
+
+        void IObservableInternal<T>.Subscribe(ObservableSubscription<T> subscription) =>
+            _subscriptions.Subscribe(this, subscription);
+
+        void IObservableInternal<T>.Unsubscribe(ObservableSubscription<T> subscription) =>
+            _subscriptions.Unsubscribe(subscription);
+
+        protected void OnNext(T value) => _subscriptions.OnNext(value);
+        protected void OnError(Exception error) => _subscriptions.OnError(error);
+        protected void OnCompleted() => _subscriptions.OnCompleted();
+    }
 }

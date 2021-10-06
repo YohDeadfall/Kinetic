@@ -2,6 +2,7 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Sources;
+using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq
 {

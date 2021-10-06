@@ -1,4 +1,5 @@
 using System;
+using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq
 {

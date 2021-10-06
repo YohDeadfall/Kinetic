@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
-namespace Kinetic
+namespace Kinetic.Linq.StateMachines
 {
     public interface IObserverStateMachine<TSource> : IObserver<TSource>, IDisposable
     {
@@ -145,71 +145,6 @@ namespace Kinetic
         TObserver Observer { get; }
     }
 
-    internal sealed class Observer<TSource, TStateMachine> : IObserver<TSource>, IObserverStateMachineBox, IDisposable
-        where TStateMachine : struct, IObserverStateMachine<TSource>
-    {
-        private TStateMachine _stateMachine;
-
-        public Observer(in TStateMachine stateMachine)
-        {
-            try
-            {
-                _stateMachine = stateMachine;
-                _stateMachine.Initialize(this);
-            }
-            catch
-            {
-                _stateMachine.Dispose();
-                throw;
-            }
-        }
-
-        public IDisposable Subscribe<T, TStateMachinePart>(IObservable<T> observable, in TStateMachinePart stateMachine)
-            where TStateMachinePart : struct, IObserverStateMachine<T>
-        {
-            return observable.Subscribe(
-                state: (self: this, offset: GetStateMachineOffset(stateMachine)),
-                onNext: static (state, value) =>
-                {
-                    state.self
-                        .GetStateMachine<TStateMachinePart>(state.offset)
-                        .OnNext(value);
-                },
-                onError: static (state, error) =>
-                {
-                    state.self
-                        .GetStateMachine<TStateMachinePart>(state.offset)
-                        .OnError(error);
-                },
-                onCompleted: static (state) =>
-                {
-                    state.self
-                        .GetStateMachine<TStateMachinePart>(state.offset)
-                        .OnCompleted();
-                });
-        }
-
-        private ref TStateMachinePart GetStateMachine<TStateMachinePart>(IntPtr offset)
-        {
-            ref var stateMachine = ref Unsafe.As<TStateMachine, IntPtr>(ref _stateMachine);
-            ref var stateMachinePart = ref Unsafe.As<IntPtr, TStateMachinePart>(
-                ref Unsafe.AddByteOffset(ref stateMachine, offset));
-            return ref stateMachinePart!;
-        }
-
-        private IntPtr GetStateMachineOffset<TStateMachinePart>(in TStateMachinePart stateMachine)
-        {
-            return Unsafe.ByteOffset(
-                ref Unsafe.As<TStateMachine, IntPtr>(ref _stateMachine),
-                ref Unsafe.As<TStateMachinePart, IntPtr>(ref Unsafe.AsRef(stateMachine)));
-        }
-
-        public void Dispose() => _stateMachine.Dispose();
-        void IObserver<TSource>.OnNext(TSource value) => _stateMachine.OnNext(value);
-        void IObserver<TSource>.OnError(Exception error) => _stateMachine.OnError(error);
-        void IObserver<TSource>.OnCompleted() => _stateMachine.OnCompleted();
-    }
-
     internal struct ObserverStateMachine<TStateMachine, T> : IObserverStateMachine<T>
         where TStateMachine : struct, IObserverStateMachine<T>
     {
@@ -282,119 +217,6 @@ namespace Kinetic
             where TContinuation : struct, IObserverStateMachine<T>
         {
             source.ContinueWith(new ObserverStateMachine<TContinuation, T>(continuation, _observable));
-        }
-    }
-
-    internal struct ObserverFactory : IObserverFactory<IDisposable>
-    {
-        public IDisposable Create<TSource, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
-        {
-            return new Observer<TSource, TStateMachine>(stateMachine);
-        }
-    }
-
-    internal abstract class Observable<T> : IObservableInternal<T>
-    {
-        private ObservableSubscriptions<T> _subscriptions;
-
-        public IDisposable Subscribe(IObserver<T> observer) =>
-            _subscriptions.Subscribe(this, observer);
-
-        public void Subscribe(ObservableSubscription<T> subscription) =>
-            _subscriptions.Subscribe(this, subscription);
-
-        public void Unsubscribe(ObservableSubscription<T> subscription) =>
-            _subscriptions.Unsubscribe(subscription);
-
-        public void OnNext(T value) => _subscriptions.OnNext(value);
-        public void OnError(Exception error) => _subscriptions.OnError(error);
-        public void OnCompleted() => _subscriptions.OnCompleted();
-    }
-
-    internal sealed class Observable<TResult, TSource, TStateMachine> : Observable<TResult>, IObserver<TSource>, IObserverStateMachineBox, IDisposable
-        where TStateMachine : struct, IObserverStateMachine<TSource>
-    {
-        private TStateMachine _stateMachine;
-
-        public Observable(in TStateMachine stateMachine)
-        {
-            try
-            {
-                _stateMachine = stateMachine;
-                _stateMachine.Initialize(this);
-            }
-            catch
-            {
-                _stateMachine.Dispose();
-                throw;
-            }
-        }
-
-        public IDisposable Subscribe<T, TStateMachinePart>(IObservable<T> observable, in TStateMachinePart stateMachine)
-            where TStateMachinePart : struct, IObserverStateMachine<T>
-        {
-            return observable.Subscribe(
-                state: (self: this, offset: GetStateMachineOffset(stateMachine)),
-                onNext: static (state, value) =>
-                {
-                    state.self
-                        .GetStateMachine<TStateMachinePart>(state.offset)
-                        .OnNext(value);
-                },
-                onError: static (state, error) =>
-                {
-                    state.self
-                        .GetStateMachine<TStateMachinePart>(state.offset)
-                        .OnError(error);
-                },
-                onCompleted: static (state) =>
-                {
-                    state.self
-                        .GetStateMachine<TStateMachinePart>(state.offset)
-                        .OnCompleted();
-                });
-        }
-
-        private ref TStateMachinePart GetStateMachine<TStateMachinePart>(IntPtr offset)
-        {
-            ref var stateMachine = ref Unsafe.As<TStateMachine, IntPtr>(ref _stateMachine);
-            ref var stateMachinePart = ref Unsafe.As<IntPtr, TStateMachinePart>(
-                ref Unsafe.AddByteOffset(ref stateMachine, offset));
-            return ref stateMachinePart!;
-        }
-
-        private IntPtr GetStateMachineOffset<TStateMachinePart>(in TStateMachinePart stateMachine)
-        {
-            return Unsafe.ByteOffset(
-                ref Unsafe.As<TStateMachine, IntPtr>(ref _stateMachine),
-                ref Unsafe.As<TStateMachinePart, IntPtr>(ref Unsafe.AsRef(stateMachine)));
-        }
-
-        public void Dispose() => _stateMachine.Dispose();
-        void IObserver<TSource>.OnNext(TSource value) => _stateMachine.OnNext(value);
-        void IObserver<TSource>.OnError(Exception error) => _stateMachine.OnError(error);
-        void IObserver<TSource>.OnCompleted() => _stateMachine.OnCompleted();
-    }
-
-    internal struct ObservableStateMachine<T, TStateMachine> : IObserverStateMachine<T>
-    {
-        private Observable<T> _observable;
-
-        public void Initialize(IObserverStateMachineBox box) => _observable = (Observable<T>) box;
-        public void Dispose() { }
-
-        public void OnNext(T value) => _observable.OnNext(value);
-        public void OnError(Exception error) => _observable.OnError(error);
-        public void OnCompleted() => _observable.OnCompleted();
-    }
-
-    internal struct ObservableFactory<TResult> : IObserverFactory<Observable<TResult>>
-    {
-        public Observable<TResult> Create<TSource, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
-        {
-            return new Observable<TResult, TSource, TStateMachine>(stateMachine);
         }
     }
 }

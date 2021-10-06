@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.CompilerServices;
+using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq
 {

@@ -1,6 +1,7 @@
 ﻿using System;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Kinetic.Linq;
 
 namespace Kinetic.Benchmarks
 {

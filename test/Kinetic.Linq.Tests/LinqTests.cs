@@ -10,13 +10,13 @@ namespace Kinetic.Linq.Tests
         public async ValueTask AnyWithPredicate()
         {
             var source = new Source<int>();
-            var task = source.Value.Changed
+            var task = source
                 .Any(value => value > 2)
                 .ToValueTask();
 
-            source.Value.Set(1);
-            source.Value.Set(2);
-            source.Value.Set(3);
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
 
             Assert.True(await task);
         }
@@ -25,12 +25,12 @@ namespace Kinetic.Linq.Tests
         public async ValueTask AnyWithoutPredicate()
         {
             var source = new Source<int>();
-            var task = source.Value.Changed
+            var task = source
                 .Any()
                 .ToValueTask();
 
-            source.Value.Set(1);
-            source.Value.Set(2);
+            source.Next(1);
+            source.Next(2);
 
             Assert.True(await task);
         }
@@ -39,12 +39,12 @@ namespace Kinetic.Linq.Tests
         public async ValueTask Contains()
         {
             var source = new Source<int>();
-            var task = source.Value.Changed
+            var task = source
                 .Contains(2)
                 .ToValueTask();
 
-            source.Value.Set(1);
-            source.Value.Set(2);
+            source.Next(1);
+            source.Next(2);
 
             Assert.True(await task);
         }
@@ -55,16 +55,16 @@ namespace Kinetic.Linq.Tests
             var source = new Source<int>();
             var values = new List<int>();
 
-            source.Value.Changed
+            source
                 .Distinct()
                 .Subscribe(value => values.Add(value));
 
-            source.Value.Set(1);
-            source.Value.Set(1);
-            source.Value.Set(2);
-            source.Value.Set(2);
+            source.Next(1);
+            source.Next(1);
+            source.Next(2);
+            source.Next(2);
 
-            Assert.Equal(new[] { 0, 1, 2 }, values);
+            Assert.Equal(new[] { 1, 2 }, values);
         }
 
         [Fact]
@@ -73,13 +73,14 @@ namespace Kinetic.Linq.Tests
             var source = new Source<int>();
             var values = new List<int>();
 
-            source.Value.Changed
+            source
                 .Skip(2)
                 .Subscribe(value => values.Add(value));
 
-            source.Value.Set(1);
-            source.Value.Set(2);
-            source.Value.Set(3);
+            source.Next(0);
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
 
             Assert.Equal(new[] { 2, 3 }, values);
         }
@@ -88,28 +89,28 @@ namespace Kinetic.Linq.Tests
         public async ValueTask First()
         {
             var source = new Source<int>();
-            var task = source.Value.Changed
+            var task = source
                 .First()
                 .ToValueTask();
 
-            source.Value.Set(1);
-            source.Value.Set(2);
+            source.Next(1);
+            source.Next(2);
 
-            Assert.Equal(0, await task);
+            Assert.Equal(1, await task);
         }
 
         [Fact]
         public async ValueTask FirstOrDefault()
         {
             var source = new Source<int>();
-            var task = source.Value.Changed
+            var task = source
                 .FirstOrDefault()
                 .ToValueTask();
 
-            source.Value.Set(1);
-            source.Value.Set(2);
+            source.Next(1);
+            source.Next(2);
 
-            Assert.Equal(0, await task);
+            Assert.Equal(1, await task);
         }
 
         [Fact]
@@ -118,13 +119,13 @@ namespace Kinetic.Linq.Tests
             var source = new Source<int>();
             var values = new List<int>();
 
-            source.Value.Changed
+            source
                 .SkipWhile(value => value < 2)
                 .Subscribe(value => values.Add(value));
 
-            source.Value.Set(1);
-            source.Value.Set(2);
-            source.Value.Set(3);
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
 
             Assert.Equal(new[] { 2, 3 }, values);
         }
@@ -135,15 +136,15 @@ namespace Kinetic.Linq.Tests
             var source = new Source<int>();
             var values = new List<int>();
 
-            source.Value.Changed
+            source
                 .Take(2)
                 .Subscribe(value => values.Add(value));
 
-            source.Value.Set(1);
-            source.Value.Set(2);
-            source.Value.Set(3);
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
 
-            Assert.Equal(new[] { 0, 1 }, values);
+            Assert.Equal(new[] { 1, 2 }, values);
         }
 
         [Fact]
@@ -152,13 +153,14 @@ namespace Kinetic.Linq.Tests
             var source = new Source<int>();
             var values = new List<int>();
 
-            source.Value.Changed
+            source
                 .TakeWhile(value => value < 2)
                 .Subscribe(value => values.Add(value));
 
-            source.Value.Set(1);
-            source.Value.Set(2);
-            source.Value.Set(3);
+            source.Next(0);
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
 
             Assert.Equal(new[] { 0, 1 }, values);
         }
@@ -169,25 +171,21 @@ namespace Kinetic.Linq.Tests
             var source = new Source<int>();
             var values = new List<int>();
 
-            source.Value.Changed
+            source
                 .Where(value => value > 2)
                 .Subscribe(value => values.Add(value));
 
-            source.Value.Set(1);
-            source.Value.Set(3);
-            source.Value.Set(2);
-            source.Value.Set(4);
+            source.Next(1);
+            source.Next(3);
+            source.Next(2);
+            source.Next(4);
 
             Assert.Equal(new[] { 3, 4 }, values);
         }
 
-        private sealed class Source<T> : ObservableObject
+        private sealed class Source<T> : Observable<T>
         {
-            private T _value;
-
-            public Source() => _value = default!;
-            public Source(T value) => _value = value;
-            public Property<T> Value => Property(ref _value);
+            public void Next(T value) => OnNext(value);
         }
     }
 }

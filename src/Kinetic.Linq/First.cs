@@ -17,41 +17,41 @@ namespace Kinetic.Linq
 
         public static ObserverBuilder<TSource> First<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
             source.ToBuilder().First(predicate);
-    }
 
-    internal readonly struct FirstStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
-    {
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
+        private readonly struct FirstStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
         {
-            source.ContinueWith(new FirstStateMachine<TContinuation, TSource>(continuation));
-        }
-    }
-
-    internal struct FirstStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : IObserverStateMachine<TSource>
-    {
-        private TContinuation _continuation;
-
-        public FirstStateMachine(TContinuation continuation) => _continuation = continuation;
-
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
-
-        public void OnNext(TSource value)
-        {
-            _continuation.OnNext(value);
-            _continuation.OnCompleted();
+            public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+                where TContinuation : struct, IObserverStateMachine<TSource>
+            {
+                source.ContinueWith(new FirstStateMachine<TContinuation, TSource>(continuation));
+            }
         }
 
-        public void OnError(Exception error)
+        private struct FirstStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+            where TContinuation : IObserverStateMachine<TSource>
         {
-            _continuation.OnError(error);
-        }
+            private TContinuation _continuation;
 
-        public void OnCompleted()
-        {
-            _continuation.OnError(new InvalidOperationException());
+            public FirstStateMachine(TContinuation continuation) => _continuation = continuation;
+
+            public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+            public void Dispose() => _continuation.Dispose();
+
+            public void OnNext(TSource value)
+            {
+                _continuation.OnNext(value);
+                _continuation.OnCompleted();
+            }
+
+            public void OnError(Exception error)
+            {
+                _continuation.OnError(error);
+            }
+
+            public void OnCompleted()
+            {
+                _continuation.OnError(new InvalidOperationException());
+            }
         }
     }
 }

@@ -17,42 +17,42 @@ namespace Kinetic.Linq
 
         public static ObserverBuilder<TSource?> FirstOrDefault<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
             source.ToBuilder().FirstOrDefault(predicate);
-    }
 
-    internal readonly struct FirstOrDefaultStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource?>
-    {
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource?>
+        private readonly struct FirstOrDefaultStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource?>
         {
-            source.ContinueWith(new FirstOrDefaultStateMachine<TContinuation, TSource>(continuation));
-        }
-    }
-
-    internal struct FirstOrDefaultStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : IObserverStateMachine<TSource?>
-    {
-        private TContinuation _continuation;
-
-        public FirstOrDefaultStateMachine(TContinuation continuation) => _continuation = continuation;
-
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
-
-        public void OnNext(TSource value)
-        {
-            _continuation.OnNext(value);
-            _continuation.OnCompleted();
+            public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+                where TContinuation : struct, IObserverStateMachine<TSource?>
+            {
+                source.ContinueWith(new FirstOrDefaultStateMachine<TContinuation, TSource>(continuation));
+            }
         }
 
-        public void OnError(Exception error)
+        private struct FirstOrDefaultStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+            where TContinuation : IObserverStateMachine<TSource?>
         {
-            _continuation.OnError(error);
-        }
+            private TContinuation _continuation;
 
-        public void OnCompleted()
-        {
-            _continuation.OnNext(default);
-            _continuation.OnCompleted();
+            public FirstOrDefaultStateMachine(TContinuation continuation) => _continuation = continuation;
+
+            public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+            public void Dispose() => _continuation.Dispose();
+
+            public void OnNext(TSource value)
+            {
+                _continuation.OnNext(value);
+                _continuation.OnCompleted();
+            }
+
+            public void OnError(Exception error)
+            {
+                _continuation.OnError(error);
+            }
+
+            public void OnCompleted()
+            {
+                _continuation.OnNext(default);
+                _continuation.OnCompleted();
+            }
         }
     }
 }

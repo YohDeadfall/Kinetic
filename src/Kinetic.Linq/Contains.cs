@@ -11,64 +11,64 @@ namespace Kinetic.Linq
 
         public static ObserverBuilder<bool> Contains<TSource>(this IObservable<TSource> source, TSource value, IEqualityComparer<TSource>? comparer = null) =>
             source.ToBuilder().Contains(value, comparer);
-    }
 
-    internal readonly struct ContainsStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, bool>
-    {
-        private readonly TSource _value;
-        private readonly IEqualityComparer<TSource>? _comparer;
-
-        public ContainsStateMachineFactory(TSource value, IEqualityComparer<TSource>? comparer)
+        private readonly struct ContainsStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, bool>
         {
-            _value = value;
-            _comparer = comparer;
-        }
+            private readonly TSource _value;
+            private readonly IEqualityComparer<TSource>? _comparer;
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<bool>
-        {
-            source.ContinueWith(new ContainsStateMachine<TContinuation, TSource>(continuation, _value, _comparer));
-        }
-    }
-
-    internal struct ContainsStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : IObserverStateMachine<bool>
-    {
-        private TContinuation _continuation;
-        private TSource _value;
-        private IEqualityComparer<TSource>? _comparer;
-
-        public ContainsStateMachine(TContinuation continuation, TSource value, IEqualityComparer<TSource>? comparer)
-        {
-            _continuation = continuation;
-            _value = value;
-            _comparer = comparer;
-        }
-
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
-
-        public void OnNext(TSource value)
-        {
-            var result =
-                _comparer?.Equals(_value, value) ??
-                EqualityComparer<TSource>.Default.Equals(_value, value);
-            if (result)
+            public ContainsStateMachineFactory(TSource value, IEqualityComparer<TSource>? comparer)
             {
-                _continuation.OnNext(true);
-                _continuation.OnCompleted();
+                _value = value;
+                _comparer = comparer;
+            }
+
+            public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+                where TContinuation : struct, IObserverStateMachine<bool>
+            {
+                source.ContinueWith(new ContainsStateMachine<TContinuation, TSource>(continuation, _value, _comparer));
             }
         }
 
-        public void OnError(Exception error)
+        private struct ContainsStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+            where TContinuation : IObserverStateMachine<bool>
         {
-            _continuation.OnError(error);
-        }
+            private TContinuation _continuation;
+            private TSource _value;
+            private IEqualityComparer<TSource>? _comparer;
 
-        public void OnCompleted()
-        {
-            _continuation.OnNext(false);
-            _continuation.OnCompleted();
+            public ContainsStateMachine(TContinuation continuation, TSource value, IEqualityComparer<TSource>? comparer)
+            {
+                _continuation = continuation;
+                _value = value;
+                _comparer = comparer;
+            }
+
+            public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+            public void Dispose() => _continuation.Dispose();
+
+            public void OnNext(TSource value)
+            {
+                var result =
+                    _comparer?.Equals(_value, value) ??
+                    EqualityComparer<TSource>.Default.Equals(_value, value);
+                if (result)
+                {
+                    _continuation.OnNext(true);
+                    _continuation.OnCompleted();
+                }
+            }
+
+            public void OnError(Exception error)
+            {
+                _continuation.OnError(error);
+            }
+
+            public void OnCompleted()
+            {
+                _continuation.OnNext(false);
+                _continuation.OnCompleted();
+            }
         }
     }
 }

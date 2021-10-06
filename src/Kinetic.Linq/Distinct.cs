@@ -11,55 +11,55 @@ namespace Kinetic.Linq
 
         public static ObserverBuilder<TSource> Distinct<TSource>(this IObservable<TSource> source, IEqualityComparer<TSource>? comparer = null) =>
             source.ToBuilder().Distinct(comparer);
-    }
 
-    internal readonly struct DistinctStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
-    {
-        private readonly IEqualityComparer<TSource>? _comparer;
-
-        public DistinctStateMachineFactory(IEqualityComparer<TSource>? comparer)
+        private readonly struct DistinctStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
         {
-            _comparer = comparer;
-        }
+            private readonly IEqualityComparer<TSource>? _comparer;
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
-        {
-            source.ContinueWith(new DistinctStateMachine<TContinuation, TSource>(continuation, _comparer));
-        }
-    }
-
-    internal struct DistinctStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : IObserverStateMachine<TSource>
-    {
-        private TContinuation _continuation;
-        private HashSet<TSource> _set;
-
-        public DistinctStateMachine(TContinuation continuation, IEqualityComparer<TSource>? comparer)
-        {
-            _continuation = continuation;
-            _set = new HashSet<TSource>(comparer);
-        }
-
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
-
-        public void OnNext(TSource value)
-        {
-            if (_set.Add(value))
+            public DistinctStateMachineFactory(IEqualityComparer<TSource>? comparer)
             {
-                _continuation.OnNext(value);
+                _comparer = comparer;
+            }
+
+            public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+                where TContinuation : struct, IObserverStateMachine<TSource>
+            {
+                source.ContinueWith(new DistinctStateMachine<TContinuation, TSource>(continuation, _comparer));
             }
         }
 
-        public void OnError(Exception error)
+        private struct DistinctStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+            where TContinuation : IObserverStateMachine<TSource>
         {
-            _continuation.OnError(error);
-        }
+            private TContinuation _continuation;
+            private HashSet<TSource> _set;
 
-        public void OnCompleted()
-        {
-            _continuation.OnCompleted();
+            public DistinctStateMachine(TContinuation continuation, IEqualityComparer<TSource>? comparer)
+            {
+                _continuation = continuation;
+                _set = new HashSet<TSource>(comparer);
+            }
+
+            public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+            public void Dispose() => _continuation.Dispose();
+
+            public void OnNext(TSource value)
+            {
+                if (_set.Add(value))
+                {
+                    _continuation.OnNext(value);
+                }
+            }
+
+            public void OnError(Exception error)
+            {
+                _continuation.OnError(error);
+            }
+
+            public void OnCompleted()
+            {
+                _continuation.OnCompleted();
+            }
         }
     }
 }

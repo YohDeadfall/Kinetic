@@ -10,52 +10,52 @@ namespace Kinetic.Linq
 
         public static ObserverBuilder<TSource> Skip<TSource>(this IObservable<TSource> source, int count) =>
             source.ToBuilder().Skip(count);
-    }
 
-    public readonly struct SkipStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
-    {
-        private readonly int _count;
-
-        public SkipStateMachineFactory(int count)
+        private readonly struct SkipStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
         {
-            _count = count >= 0 ? count : throw new ArgumentOutOfRangeException(nameof(count));
-        }
+            private readonly int _count;
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
-        {
-            source.ContinueWith(new SkipStateMachine<TContinuation, TSource>(continuation, (uint) _count));
-        }
-    }
-
-    internal struct SkipStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : IObserverStateMachine<TSource>
-    {
-        private TContinuation _continuation;
-        private uint _count;
-
-        public SkipStateMachine(TContinuation continuation, uint count)
-        {
-            _continuation = continuation;
-            _count = count;
-        }
-
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
-
-        public void OnNext(TSource value)
-        {
-            if (_count != 0)
+            public SkipStateMachineFactory(int count)
             {
-                _count -= 1;
+                _count = count >= 0 ? count : throw new ArgumentOutOfRangeException(nameof(count));
             }
-            else
+
+            public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+                where TContinuation : struct, IObserverStateMachine<TSource>
             {
-                _continuation.OnNext(value);
+                source.ContinueWith(new SkipStateMachine<TContinuation, TSource>(continuation, (uint) _count));
             }
         }
 
-        public void OnError(Exception error) => _continuation.OnError(error);
-        public void OnCompleted() => _continuation.OnCompleted();
+        private struct SkipStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+            where TContinuation : IObserverStateMachine<TSource>
+        {
+            private TContinuation _continuation;
+            private uint _count;
+
+            public SkipStateMachine(TContinuation continuation, uint count)
+            {
+                _continuation = continuation;
+                _count = count;
+            }
+
+            public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+            public void Dispose() => _continuation.Dispose();
+
+            public void OnNext(TSource value)
+            {
+                if (_count != 0)
+                {
+                    _count -= 1;
+                }
+                else
+                {
+                    _continuation.OnNext(value);
+                }
+            }
+
+            public void OnError(Exception error) => _continuation.OnError(error);
+            public void OnCompleted() => _continuation.OnCompleted();
+        }
     }
 }

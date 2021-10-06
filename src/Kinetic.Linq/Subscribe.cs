@@ -61,87 +61,87 @@ namespace Kinetic.Linq
             source.Build<SubscribeStateMachine<TSource, TState>, ObserverStateMachineBoxFactory, IDisposable>(
                 continuation: new(state, onNext, onError, onCompleted),
                 factory: new());
-    }
 
-    internal struct SubscribeStateMachine<TSource> : IObserverStateMachine<TSource>
-    {
-        [AllowNull]
-        private IDisposable _box;
-        private readonly Action<TSource> _onNext;
-        private readonly Action<Exception> _onError;
-        private readonly Action _onCompleted;
-
-        public SubscribeStateMachine(
-            Action<TSource> onNext,
-            Action<Exception> onError,
-            Action onCompleted)
+        private struct SubscribeStateMachine<TSource> : IObserverStateMachine<TSource>
         {
-            _box = null;
-            _onNext = onNext;
-            _onError = onError;
-            _onCompleted = onCompleted;
+            [AllowNull]
+            private IDisposable _box;
+            private readonly Action<TSource> _onNext;
+            private readonly Action<Exception> _onError;
+            private readonly Action _onCompleted;
+
+            public SubscribeStateMachine(
+                Action<TSource> onNext,
+                Action<Exception> onError,
+                Action onCompleted)
+            {
+                _box = null;
+                _onNext = onNext;
+                _onError = onError;
+                _onCompleted = onCompleted;
+            }
+
+            public void Initialize(IObserverStateMachineBox box) => _box = box;
+            public void Dispose() { }
+
+            public void OnNext(TSource value)
+            {
+                _onNext(value);
+            }
+
+            public void OnError(Exception error)
+            {
+                _box.Dispose();
+                _onError(error);
+            }
+
+            public void OnCompleted()
+            {
+                _box.Dispose();
+                _onCompleted();
+            }
         }
 
-        public void Initialize(IObserverStateMachineBox box) => _box = box;
-        public void Dispose() { }
-
-        public void OnNext(TSource value)
+        private struct SubscribeStateMachine<TSource, TState> : IObserverStateMachine<TSource>
         {
-            _onNext(value);
-        }
+            private IDisposable? _box;
+            private readonly TState _state;
+            private readonly Action<TState, TSource> _onNext;
+            private readonly Action<TState, Exception> _onError;
+            private readonly Action<TState> _onCompleted;
 
-        public void OnError(Exception error)
-        {
-            _box.Dispose();
-            _onError(error);
-        }
+            public SubscribeStateMachine(
+                TState state,
+                Action<TState, TSource> onNext,
+                Action<TState, Exception> onError,
+                Action<TState> onCompleted)
+            {
+                _box = null;
+                _state = state;
+                _onNext = onNext;
+                _onError = onError;
+                _onCompleted = onCompleted;
+            }
 
-        public void OnCompleted()
-        {
-            _box.Dispose();
-            _onCompleted();
-        }
-    }
+            public void Initialize(IObserverStateMachineBox box) => _box = box;
+            public void Dispose() { }
 
-    internal struct SubscribeStateMachine<TSource, TState> : IObserverStateMachine<TSource>
-    {
-        private IDisposable? _box;
-        private readonly TState _state;
-        private readonly Action<TState, TSource> _onNext;
-        private readonly Action<TState, Exception> _onError;
-        private readonly Action<TState> _onCompleted;
+            public void OnNext(TSource value)
+            {
+                _onNext(_state, value);
+            }
 
-        public SubscribeStateMachine(
-            TState state,
-            Action<TState, TSource> onNext,
-            Action<TState, Exception> onError,
-            Action<TState> onCompleted)
-        {
-            _box = null;
-            _state = state;
-            _onNext = onNext;
-            _onError = onError;
-            _onCompleted = onCompleted;
-        }
+            public void OnError(Exception error)
+            {
+                _box!.Dispose();
+                _onError(_state, error);
+            }
 
-        public void Initialize(IObserverStateMachineBox box) => _box = box;
-        public void Dispose() { }
-
-        public void OnNext(TSource value)
-        {
-            _onNext(_state, value);
-        }
-
-        public void OnError(Exception error)
-        {
-            _box!.Dispose();
-            _onError(_state, error);
-        }
-
-        public void OnCompleted()
-        {
-            _box!.Dispose();
-            _onCompleted(_state);
+            public void OnCompleted()
+            {
+                _box!.Dispose();
+                _onCompleted(_state);
+            }
         }
     }
 }

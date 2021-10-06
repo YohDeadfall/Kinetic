@@ -16,39 +16,39 @@ namespace Kinetic.Linq
 
         public static ObserverBuilder<int> Count<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
             source.ToBuilder().Count(predicate);
-    }
 
-    internal readonly struct CountStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, int>
-    {
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<int>
+        private readonly struct CountStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, int>
         {
-            source.ContinueWith(new CountStateMachine<TContinuation, TSource>(continuation));
-        }
-    }
-
-    internal struct CountStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : IObserverStateMachine<int>
-    {
-        private TContinuation _continuation;
-        private int _count;
-
-        public CountStateMachine(TContinuation continuation)
-        {
-            _continuation = continuation;
-            _count = 0;
+            public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+                where TContinuation : struct, IObserverStateMachine<int>
+            {
+                source.ContinueWith(new CountStateMachine<TContinuation, TSource>(continuation));
+            }
         }
 
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
-
-        public void OnNext(TSource value) => _count += 1;
-        public void OnError(Exception error) => _continuation.OnError(error);
-
-        public void OnCompleted()
+        private struct CountStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+            where TContinuation : IObserverStateMachine<int>
         {
-            _continuation.OnNext(_count);
-            _continuation.OnCompleted();
+            private TContinuation _continuation;
+            private int _count;
+
+            public CountStateMachine(TContinuation continuation)
+            {
+                _continuation = continuation;
+                _count = 0;
+            }
+
+            public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+            public void Dispose() => _continuation.Dispose();
+
+            public void OnNext(TSource value) => _count += 1;
+            public void OnError(Exception error) => _continuation.OnError(error);
+
+            public void OnCompleted()
+            {
+                _continuation.OnNext(_count);
+                _continuation.OnCompleted();
+            }
         }
     }
 }

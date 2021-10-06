@@ -291,6 +291,64 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public async ValueTask SingleWithPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .Single(value => value > 1)
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Complete();
+
+            Assert.Equal(2, await task);
+        }
+
+        [Fact]
+        public async ValueTask SingleWithoutPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .Single()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Complete();
+
+            Assert.Equal(1, await task);
+        }
+
+        [Fact]
+        public async ValueTask SingleOrDefaultWithPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .SingleOrDefault(value => value > 1)
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Complete();
+
+            Assert.Equal(2, await task);
+        }
+
+        [Fact]
+        public async ValueTask SingleOrDefaultWithoutPredicate()
+        {
+            var source = new Source<int>();
+            var task = source
+                .SingleOrDefault()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Complete();
+
+            Assert.Equal(1, await task);
+        }
+
+        [Fact]
         public void Skip()
         {
             var source = new Source<int>();

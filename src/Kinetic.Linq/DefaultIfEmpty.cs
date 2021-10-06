@@ -9,7 +9,7 @@ namespace Kinetic.Linq
             source.DefaultIfEmpty(default);
 
         public static ObserverBuilder<TSource?> DefaultIfEmpty<TSource>(this in ObserverBuilder<TSource> source, TSource? defaultValue) =>
-            source.ContinueWith<DefaultIfEmptyStateMachineFactory<TSource>, TSource?>(new (defaultValue));
+            source.ContinueWith<DefaultIfEmptyStateMachineFactory<TSource>, TSource?>(new(defaultValue));
 
         public static ObserverBuilder<TSource?> DefaultIfEmpty<TSource>(this IObservable<TSource> source) =>
             source.ToBuilder().DefaultIfEmpty();

@@ -14,8 +14,8 @@ namespace Kinetic.Linq
         public static ValueTask<TResult> ToValueTask<TResult>(this in ObserverBuilder<TResult> source)
         {
             var taskSource = source.Build<ValueTaskSourceStateMachine<TResult>, ValueTaskSourceFactory<TResult>, ValueTaskSource<TResult>>(
-                continuation: new ValueTaskSourceStateMachine<TResult>(),
-                factory: new ValueTaskSourceFactory<TResult>());
+                continuation: new(),
+                factory: new());
 
             return new ValueTask<TResult>(taskSource, taskSource.Token);
         }

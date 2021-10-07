@@ -466,6 +466,23 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public void ToObservable()
+        {
+            var source = new Source<int>();
+            var values = new List<int>();
+            var observable = source
+                .Select(value => value)
+                .ToObservable();
+
+            observable.Subscribe(value => values.Add(value));
+
+            source.Next(1);
+            source.Next(2);
+
+            Assert.Equal(new[] { 1, 2 }, values);
+        }
+
+        [Fact]
         public void Where()
         {
             var source = new Source<int>();

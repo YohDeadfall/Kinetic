@@ -77,14 +77,14 @@ namespace Kinetic.Linq.StateMachines
         void IObserver<TSource>.OnCompleted() => _stateMachine.OnCompleted();
     }
 
-    internal struct ObservableStateMachine<T, TStateMachine> : IObserverStateMachine<T>
+    internal struct ObservableStateMachine<TResult> : IObserverStateMachine<TResult>
     {
-        private ObservableStateMachineBox<T> _observable;
+        private ObservableStateMachineBox<TResult> _observable;
 
-        public void Initialize(IObserverStateMachineBox box) => _observable = (ObservableStateMachineBox<T>) box;
+        public void Initialize(IObserverStateMachineBox box) => _observable = (ObservableStateMachineBox<TResult>) box;
         public void Dispose() { }
 
-        public void OnNext(T value) => _observable.OnNext(value);
+        public void OnNext(TResult value) => _observable.OnNext(value);
         public void OnError(Exception error) => _observable.OnError(error);
         public void OnCompleted() => _observable.OnCompleted();
     }

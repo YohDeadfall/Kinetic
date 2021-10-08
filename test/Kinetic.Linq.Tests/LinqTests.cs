@@ -466,6 +466,35 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public async ValueTask ToDictionary()
+        {
+            var source = new Source<(string text, int number)>();
+            var taskWithoutComparer = source
+                .ToDictionary(value => value.text, value => value.number * 3)
+                .ToValueTask();
+            var taskWithComparer = source
+                .ToDictionary(value => value.text, value => value.number * 3, StringComparer.OrdinalIgnoreCase)
+                .ToValueTask();
+
+            source.Next(("One", 1));
+            source.Next(("Two", 2));
+
+            var dictionaryWithoutComparer = await taskWithoutComparer;
+            var dictionaryWithComparer = await taskWithComparer;
+            var expected = new[]
+            {
+                KeyValuePair.Create("One", 3),
+                KeyValuePair.Create("Two", 6)
+            };
+
+            Assert.Equal(dictionaryWithoutComparer, expected);
+            Assert.Equal(dictionaryWithoutComparer.Comparer, EqualityComparer<string>.Default);
+
+            Assert.Equal(dictionaryWithComparer, expected);
+            Assert.Equal(dictionaryWithoutComparer.Comparer, StringComparer.OrdinalIgnoreCase);
+        }
+
+        [Fact]
         public void ToObservable()
         {
             var source = new Source<int>();

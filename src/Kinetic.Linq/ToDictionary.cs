@@ -67,7 +67,7 @@ namespace Kinetic.Linq
         }
 
         private struct ToDictionaryStateMachine<TContinuation, TSource, TKey, TValue> : IObserverStateMachine<TSource>
-            where TContinuation : IObserverStateMachine<Dictionary<TKey, TValue>>
+            where TContinuation : struct, IObserverStateMachine<Dictionary<TKey, TValue>>
             where TKey : notnull
         {
             private TContinuation _continuation;

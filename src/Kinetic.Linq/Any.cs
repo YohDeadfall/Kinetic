@@ -27,7 +27,7 @@ namespace Kinetic.Linq
         }
 
         private struct AnyStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-            where TContinuation : IObserverStateMachine<bool>
+            where TContinuation : struct, IObserverStateMachine<bool>
         {
             private TContinuation _continuation;
 

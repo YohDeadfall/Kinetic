@@ -32,7 +32,7 @@ namespace Kinetic.Linq
         }
 
         private struct DefaultIfEmptyStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-            where TContinuation : IObserverStateMachine<TSource?>
+            where TContinuation : struct, IObserverStateMachine<TSource?>
         {
             private TContinuation _continuation;
             private readonly TSource? _defaultValue;

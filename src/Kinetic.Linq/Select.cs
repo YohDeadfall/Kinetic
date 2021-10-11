@@ -25,7 +25,7 @@ namespace Kinetic.Linq
         }
 
         private struct SelectStateMachine<TContinuation, TSource, TResult> : IObserverStateMachine<TSource>
-            where TContinuation : IObserverStateMachine<TResult>
+            where TContinuation : struct, IObserverStateMachine<TResult>
         {
             private TContinuation _continuation;
             private Func<TSource, TResult> _selector;

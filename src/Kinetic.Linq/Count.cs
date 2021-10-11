@@ -27,7 +27,7 @@ namespace Kinetic.Linq
         }
 
         private struct CountStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-            where TContinuation : IObserverStateMachine<int>
+            where TContinuation : struct, IObserverStateMachine<int>
         {
             private TContinuation _continuation;
             private int _count;

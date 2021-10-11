@@ -26,7 +26,7 @@ namespace Kinetic.Linq
         }
 
         private struct MaxStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-            where TContinuation : IObserverStateMachine<TSource>
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
             private TContinuation _continuation;
             private IComparer<TSource>? _comparer;

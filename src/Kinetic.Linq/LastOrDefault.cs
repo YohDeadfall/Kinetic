@@ -28,7 +28,7 @@ namespace Kinetic.Linq
         }
 
         private struct LastOrDefaultStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-            where TContinuation : IObserverStateMachine<TSource?>
+            where TContinuation : struct, IObserverStateMachine<TSource?>
         {
             private TContinuation _continuation;
             private TSource? _last;

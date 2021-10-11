@@ -28,7 +28,7 @@ namespace Kinetic.Linq
         }
 
         private struct SkipStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-            where TContinuation : IObserverStateMachine<TSource>
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
             private TContinuation _continuation;
             private uint _count;

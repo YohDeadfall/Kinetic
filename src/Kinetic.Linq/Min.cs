@@ -26,7 +26,7 @@ namespace Kinetic.Linq
         }
 
         private struct MinStateMachine<TContinuation, T> : IObserverStateMachine<T>
-            where TContinuation : IObserverStateMachine<T>
+            where TContinuation : struct, IObserverStateMachine<T>
         {
             private TContinuation _continuation;
             private IComparer<T>? _comparer;

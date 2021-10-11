@@ -466,6 +466,33 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public void Then()
+        {
+            var container = new Container<int>();
+            var values = new List<int>();
+
+            container.Source.Changed
+                .Then(value => value)
+                .Subscribe(value => values.Add(value));
+
+            var source = container.Source.Get();
+
+            source.Next(1);
+            source.Next(2);
+
+            var sourceNew = new Source<int>();
+
+            container.Source.Set(sourceNew);
+            sourceNew.Next(10);
+            sourceNew.Next(20);
+
+            source.Next(3);
+            source.Next(4);
+
+            Assert.Equal(new[] { 1, 2, 10, 20 }, values);
+        }
+
+        [Fact]
         public async ValueTask ToDictionary()
         {
             var source = new Source<(string text, int number)>();
@@ -533,6 +560,14 @@ namespace Kinetic.Linq.Tests
         {
             public void Next(T value) => OnNext(value);
             public void Complete() => OnCompleted();
+        }
+
+        private sealed class Container<T> : ObservableObject
+        {
+            private Source<T> _source;
+
+            public Container() => _source = new Source<T>();
+            public Property<Source<T>> Source => Property(ref _source);
         }
     }
 }

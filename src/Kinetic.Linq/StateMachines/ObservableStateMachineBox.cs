@@ -12,7 +12,7 @@ namespace Kinetic.Linq.StateMachines
         public new void OnCompleted() => base.OnCompleted();
     }
 
-    internal sealed class ObservableStateMachineBox<TResult, TSource, TStateMachine> : ObservableStateMachineBox<TResult>, IObserver<TSource>, IObserverStateMachineBox, IDisposable
+    internal sealed class ObservableStateMachineBox<TResult, TSource, TStateMachine> : ObservableStateMachineBox<TResult>, IObserver<TSource>, IObserverStateMachineBox
         where TStateMachine : struct, IObserverStateMachine<TSource>
     {
         private TStateMachine _stateMachine;

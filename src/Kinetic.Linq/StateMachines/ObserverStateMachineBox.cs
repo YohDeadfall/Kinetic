@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 
 namespace Kinetic.Linq.StateMachines
 {
-    internal sealed class ObserverStateMachineBox<TSource, TStateMachine> : IObserver<TSource>, IObserverStateMachineBox, IDisposable
+    internal sealed class ObserverStateMachineBox<TSource, TStateMachine> : IObserver<TSource>, IObserverStateMachineBox
         where TStateMachine : struct, IObserverStateMachine<TSource>
     {
         private TStateMachine _stateMachine;

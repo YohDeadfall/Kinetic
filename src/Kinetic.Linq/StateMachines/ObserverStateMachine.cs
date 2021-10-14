@@ -65,7 +65,7 @@ namespace Kinetic.Linq.StateMachines
             where TStateMachine : struct, IObserverStateMachineFactory<TSource, TResult>
         {
             var step = new ObserverBuilderStateMachineStep<TSource, TResult, TStateMachine> { StateMachine = stateMachine, Next = _outer };
-            var builder = new ObserverBuilder<TResult> { _outer = step, _inner = _inner };
+            var builder = new ObserverBuilder<TResult> { _outer = step, _inner = _inner ?? step };
 
             return builder;
         }

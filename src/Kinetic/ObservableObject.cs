@@ -167,7 +167,7 @@ namespace Kinetic
         }
     }
 
-    public readonly ref struct Property<T>
+    public readonly struct Property<T>
     {
         internal readonly ObservableObject Owner;
         internal readonly IntPtr Offset;
@@ -188,7 +188,7 @@ namespace Kinetic
             new ReadOnlyProperty<T>(property.Owner, property.Offset);
     }
 
-    public readonly ref struct ReadOnlyProperty<T>
+    public readonly struct ReadOnlyProperty<T>
     {
         internal readonly ObservableObject Owner;
         internal readonly IntPtr Offset;

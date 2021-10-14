@@ -2,7 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace Kinetic.Avalonia
+namespace Kinetic.Data
 {
     internal delegate bool PropertyGetter<T>(WeakReference<object> reference, out Property<T> property);
     internal delegate bool ReadOnlyPropertyGetter<T>(WeakReference<object> reference, out ReadOnlyProperty<T> property);

@@ -5,7 +5,7 @@ using System.Reflection;
 using Avalonia.Data;
 using Avalonia.Data.Core.Plugins;
 
-namespace Kinetic.Avalonia
+namespace Kinetic.Data
 {
     public sealed class PropertyAccessor : IPropertyAccessorPlugin
     {

@@ -1,10 +1,9 @@
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Data;
 using Avalonia.Data.Core;
 using Xunit;
 
-namespace Kinetic.Avalonia.Tests
+namespace Kinetic.Data.Tests
 {
     public class PropertyAccessorTests
     {
@@ -16,7 +15,7 @@ namespace Kinetic.Avalonia.Tests
         {
             var source = new Source();
             var target = new TextBox { DataContext = source };
-            var binding = new Binding { Path = "Text" };
+            var binding = new Avalonia.Data.Binding { Path = "Text" };
 
             target.Bind(TextBox.TextProperty, binding);
 
@@ -35,7 +34,7 @@ namespace Kinetic.Avalonia.Tests
         {
             var source = new Source();
             var target = new TextBox { DataContext = source };
-            var binding = new Binding { Path = "TextReadOnly" };
+            var binding = new Avalonia.Data.Binding { Path = "TextReadOnly" };
 
             target.Bind(TextBox.TextProperty, binding);
 

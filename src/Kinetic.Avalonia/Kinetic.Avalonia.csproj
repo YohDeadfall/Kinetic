@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\Kinetic\Kinetic.csproj" />
+    <ProjectReference Include="..\Kinetic.Linq\Kinetic.Linq.csproj" />
     <PackageReference Include="Avalonia" Version="0.10.8" />
   </ItemGroup>
 </Project>

@@ -522,6 +522,23 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public async ValueTask ToList()
+        {
+            var source = new Source<int>();
+            var task = source
+                .ToList()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
+
+            Assert.Equal(
+                expected: new[] { 1, 2, 3 },
+                actual: await task);
+        }
+
+        [Fact]
         public void ToObservable()
         {
             var source = new Source<int>();

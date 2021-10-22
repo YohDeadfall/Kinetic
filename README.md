@@ -4,8 +4,6 @@ Kinetic is an alternative implementation of the Reactive framework focused on pe
 
 ## Features
 
-> The project is in progress and doesn't provide replacement for `System.Reactive.Linq` yet, but it's planned in future releases. For please use Reactive for that part as it's demonstrated in tests.
-
 ### Objects
 
 To achive the goal Kinetic doesn't support the `INotifyPropertyChanged` interface and fully relies on `IObservable<T>`. To make it work an observable property should via `Property<T>` or `ReadOnlyProperty<T>` structures which bundle a getter, a setter and an observable. Calling the `Set` method on a property sets the corresponind field and notifyies observers about the change. The `Changed` property returns an observable for the property which is a cached and reused, and no LINQ expressions allocated as it happens when `WhenAnyValue` is used from Reactive.
@@ -52,15 +50,22 @@ command.CanExecute(null); // returns false
 command.CanExecute("text"); // returns true
 ```
 
+## LINQ
+
+The project provides a subset of LINQ extensions, which are contained by `Kinetic.Linq` package. The key idea of it is to build a single state machine for a chain of extension method call to minimize memory occupied by the resulting observer, and to avoid many interface calls which happen in Reactive.
+
 ## Integration with UI
 
 Since all observable properties should be defined as `Property<T>` or `ReadOnlyProperty<T>`, there's a limitation on usage of Kinetic. It's supported only by Avalonia at the moment thanfully to the extensible binding system, but a general solution to support any XAML framework will come later.
 
 To make Avalonia recognize Kinetic properties, the `Kinetic.Avalonia` package should be added and one line of code at startup as well:
 
-```
+```csharp
 using Avalonia.Data.Core;
-using Kinetic.Avalonia;
+using Kinetic.Data;
 
+// Adds the accessor for Kinetic properties before the CLR property accessor  
 ExpressionObserver.PropertyAccessors.Insert(2, new PropertyAccessor());
 ```
+
+> This approach is incompatible with compiled bindings since XAMLIL has no idea about Kinetic properties and treats them as usual properties. Ability to create compiled bindings in XAML will come in one of next releases, but it's already available in code behind using `OneWay` and `TwoWay` methods of `Binding` type in `Kinetic.Data`.

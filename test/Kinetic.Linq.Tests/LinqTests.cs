@@ -493,6 +493,23 @@ namespace Kinetic.Linq.Tests
         }
 
         [Fact]
+        public async ValueTask ToArray()
+        {
+            var source = new Source<int>();
+            var task = source
+                .ToArray()
+                .ToValueTask();
+
+            source.Next(1);
+            source.Next(2);
+            source.Next(3);
+
+            Assert.Equal(
+                expected: new[] { 1, 2, 3 },
+                actual: await task);
+        }
+
+        [Fact]
         public async ValueTask ToDictionary()
         {
             var source = new Source<(string text, int number)>();

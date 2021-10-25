@@ -1,15 +1,11 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.ExceptionServices;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq
 {
     public static partial class Observable
     {
-        private static readonly Action<Exception> OnError = (error) => ExceptionDispatchInfo.Throw(error);
-        private static readonly Action OnCompleted = () => { };
-
         public static IDisposable Subscribe<TSource>(this IObservable<TSource> source, Action<TSource> onNext) =>
             source.ToBuilder().Subscribe(onNext);
 
@@ -23,13 +19,13 @@ namespace Kinetic.Linq
             source.ToBuilder().Subscribe(onNext, onError, onCompleted);
 
         public static IDisposable Subscribe<TSource>(this in ObserverBuilder<TSource> source, Action<TSource> onNext) =>
-            source.Subscribe(onNext, OnError, OnCompleted);
+            source.Subscribe(onNext, ThrowOnError, NothingOnCompleted);
 
         public static IDisposable Subscribe<TSource>(this in ObserverBuilder<TSource> source, Action<TSource> onNext, Action<Exception> onError) =>
-            source.Subscribe(onNext, onError, OnCompleted);
+            source.Subscribe(onNext, onError, NothingOnCompleted);
 
         public static IDisposable Subscribe<TSource>(this in ObserverBuilder<TSource> source, Action<TSource> onNext, Action onCompleted) =>
-            source.Subscribe(onNext, OnError, onCompleted);
+            source.Subscribe(onNext, ThrowOnError, onCompleted);
 
         public static IDisposable Subscribe<TSource>(this in ObserverBuilder<TSource> source, Action<TSource> onNext, Action<Exception> onError, Action onCompleted) =>
             source.Build<SubscribeStateMachine<TSource>, ObserverStateMachineBoxFactory, IDisposable>(

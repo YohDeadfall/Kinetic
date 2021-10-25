@@ -28,5 +28,4 @@ jobs:
 
     - name: Formatting
       run: |
-        dotnet tool install -g dotnet-format
-        dotnet format --check
+        dotnet format --verify-no-changes

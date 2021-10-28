@@ -1,7 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Kinetic.Linq.StateMachines;
 using ReactiveUI;
+using KineticLinq = Kinetic.Linq.Observable;
+using ReactiveLinq = System.Reactive.Linq.Observable;
 
 namespace Kinetic.Benchmarks
 {
@@ -51,7 +55,7 @@ namespace Kinetic.Benchmarks
         {
             if (WithObserver)
             {
-                var observer = new Observer();
+                var observer = new Observer<int>();
                 KineticObject.Property.Changed
                     .Subscribe(observer);
                 ReactiveObject
@@ -67,11 +71,56 @@ namespace Kinetic.Benchmarks
         [Benchmark] public void Kinetic() => KineticObject.Property.Set(_value += _change);
         [Benchmark] public void Reactive() => ReactiveObject.Property = _value += _change;
 
-        private class Observer : IObserver<int>
+        private class Observer<T> : IObserver<T>
         {
-            public void OnNext(int value) { }
+            public void OnNext(T value) { }
             public void OnError(Exception error) { }
             public void OnCompleted() { }
         }
+    }
+
+    public abstract class LinqBenchmarks
+    {
+        private TestObservable<int> _kinetic = new();
+        private TestObservable<int> _reactive = new();
+        private class TestObservable<T> : Observable<T>
+        {
+            public void Next(T value) => OnNext(value);
+        }
+
+        protected abstract ObserverBuilder<int> SetupKinetic(ObserverBuilder<int> source);
+        protected abstract IObservable<int> SetupReactive(IObservable<int> source);
+
+        [GlobalSetup]
+        public void Setup()
+        {
+                var kineticBuilder = _kinetic.ToBuilder();
+                var reactiveBuilder = _reactive as IObservable<int>;
+
+                for (int index = 0; index < ChainLength; index += 1)
+                {
+                    kineticBuilder = SetupKinetic(kineticBuilder);
+                    reactiveBuilder = SetupReactive(reactiveBuilder);
+                }
+
+                KineticLinq.Subscribe(kineticBuilder, value => { });
+                System.ObservableExtensions.Subscribe<int>(reactiveBuilder, value => { });
+        }
+
+        [Params(1, 5, 10, 20, 30, 40, 50)] public int ChainLength { get; set; }
+        [Benchmark] public void Kinetic() => _kinetic.Next(42);
+        [Benchmark] public void Reactive() => _reactive.Next(42);
+    }
+
+    public class LinqSelectBenchmarks : LinqBenchmarks
+    {
+        protected override ObserverBuilder<int> SetupKinetic(ObserverBuilder<int> source) => KineticLinq.Select(source, static value => value);
+        protected override IObservable<int> SetupReactive(IObservable<int> source) => ReactiveLinq.Select(source, static value => value);
+    }
+
+    public class LinqWhereBenchmarks : LinqBenchmarks
+    {
+        protected override ObserverBuilder<int> SetupKinetic(ObserverBuilder<int> source) => KineticLinq.Where(source, static value => value > 0);
+        protected override IObservable<int> SetupReactive(IObservable<int> source) => ReactiveLinq.Where(source, static value => value > 0);
     }
 }

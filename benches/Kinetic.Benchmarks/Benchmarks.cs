@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Kinetic.Linq.StateMachines;
@@ -94,17 +93,17 @@ namespace Kinetic.Benchmarks
         [GlobalSetup]
         public void Setup()
         {
-                var kineticBuilder = _kinetic.ToBuilder();
-                var reactiveBuilder = _reactive as IObservable<int>;
+            var kineticBuilder = _kinetic.ToBuilder();
+            var reactiveBuilder = _reactive as IObservable<int>;
 
-                for (int index = 0; index < ChainLength; index += 1)
-                {
-                    kineticBuilder = SetupKinetic(kineticBuilder);
-                    reactiveBuilder = SetupReactive(reactiveBuilder);
-                }
+            for (int index = 0; index < ChainLength; index += 1)
+            {
+                kineticBuilder = SetupKinetic(kineticBuilder);
+                reactiveBuilder = SetupReactive(reactiveBuilder);
+            }
 
-                KineticLinq.Subscribe(kineticBuilder, value => { });
-                System.ObservableExtensions.Subscribe<int>(reactiveBuilder, value => { });
+            KineticLinq.Subscribe(kineticBuilder, value => { });
+            System.ObservableExtensions.Subscribe<int>(reactiveBuilder, value => { });
         }
 
         [Params(1, 5, 10, 20, 30, 40, 50)] public int ChainLength { get; set; }

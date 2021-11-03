@@ -10,6 +10,6 @@
     <ProjectReference Include="..\..\src\Kinetic.Linq\Kinetic.Linq.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.13.1" />
     <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.1"/>
-    <PackageReference Include="ReactiveUI" Version="16.3.5" />
+    <PackageReference Include="ReactiveUI" Version="16.3.9" />
   </ItemGroup>
 </Project>

@@ -2,6 +2,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Kinetic\Kinetic.csproj" />
     <ProjectReference Include="..\Kinetic.Linq\Kinetic.Linq.csproj" />
-    <PackageReference Include="Avalonia" Version="0.10.10" />
+    <PackageReference Include="Avalonia" Version="0.10.14" />
   </ItemGroup>
 </Project>

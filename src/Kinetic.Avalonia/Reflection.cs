@@ -4,8 +4,8 @@ using System.Reflection;
 
 namespace Kinetic.Data
 {
-    internal delegate bool PropertyGetter<T>(WeakReference<object> reference, out Property<T> property);
-    internal delegate bool ReadOnlyPropertyGetter<T>(WeakReference<object> reference, out ReadOnlyProperty<T> property);
+    internal delegate bool PropertyGetter<T>(WeakReference<object?> reference, out Property<T> property);
+    internal delegate bool ReadOnlyPropertyGetter<T>(WeakReference<object?> reference, out ReadOnlyProperty<T> property);
 
     internal static class Reflection
     {
@@ -26,7 +26,7 @@ namespace Kinetic.Data
 
             static PropertyGetter<T> Factory<TOwner>(PropertyInfo property)
             {
-                static bool Getter(WeakReference<object> reference, RwGetter<TOwner, T> getter, out Property<T> property)
+                static bool Getter(WeakReference<object?> reference, RwGetter<TOwner, T> getter, out Property<T> property)
                 {
                     if (reference.TryGetTarget(out var target) &&
                         target is TOwner owner)
@@ -48,7 +48,7 @@ namespace Kinetic.Data
                 var getter = property.GetMethod
                     .CreateDelegate<RwGetter<TOwner, T>>();
 
-                return delegate (WeakReference<object> reference, out Property<T> property)
+                return delegate (WeakReference<object?> reference, out Property<T> property)
                 {
                     return Getter(reference, getter, out property);
                 };
@@ -72,7 +72,7 @@ namespace Kinetic.Data
 
             static ReadOnlyPropertyGetter<T> Factory<TOwner>(PropertyInfo property)
             {
-                static bool Getter(WeakReference<object> reference, RoGetter<TOwner, T> getter, out ReadOnlyProperty<T> property)
+                static bool Getter(WeakReference<object?> reference, RoGetter<TOwner, T> getter, out ReadOnlyProperty<T> property)
                 {
                     if (reference.TryGetTarget(out var target) &&
                         target is TOwner owner)
@@ -94,7 +94,7 @@ namespace Kinetic.Data
                 var getter = property.GetMethod
                     .CreateDelegate<RoGetter<TOwner, T>>();
 
-                return delegate (WeakReference<object> reference, out ReadOnlyProperty<T> property)
+                return delegate (WeakReference<object?> reference, out ReadOnlyProperty<T> property)
                 {
                     return Getter(reference, getter, out property);
                 };

@@ -15,7 +15,7 @@ namespace Kinetic.Data
     {
         public abstract InstancedBinding Initiate(
             IAvaloniaObject target,
-            AvaloniaProperty targetProperty,
+            AvaloniaProperty? targetProperty,
             object? anchor = null,
             bool enableDataValidation = false);
 
@@ -142,7 +142,7 @@ namespace Kinetic.Data
 
         public override InstancedBinding Initiate(
             IAvaloniaObject target,
-            AvaloniaProperty targetProperty,
+            AvaloniaProperty? targetProperty,
             object? anchor = null,
             bool enableDataValidation = false)
         {
@@ -158,7 +158,7 @@ namespace Kinetic.Data
 
         public override InstancedBinding Initiate(
             IAvaloniaObject target,
-            AvaloniaProperty targetProperty,
+            AvaloniaProperty? targetProperty,
             object? anchor = null,
             bool enableDataValidation = false)
         {

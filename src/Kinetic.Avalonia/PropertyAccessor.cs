@@ -9,7 +9,7 @@ namespace Kinetic.Data
 {
     public sealed class PropertyAccessor : IPropertyAccessorPlugin
     {
-        private delegate IPropertyAccessor AccessorFactory(WeakReference<object> reference);
+        private delegate IPropertyAccessor AccessorFactory(WeakReference<object?> reference);
 
         private readonly Dictionary<(Type, string), AccessorFactory?> _propertyLookup = new();
         private readonly MethodInfo _factoryRo = Create(CreateRoAccessorFactory<object>);
@@ -45,7 +45,7 @@ namespace Kinetic.Data
             return GetAccessorFactory(obj, propertyName) is not null;
         }
 
-        public IPropertyAccessor Start(WeakReference<object> reference, string propertyName)
+        public IPropertyAccessor Start(WeakReference<object?> reference, string propertyName)
         {
             reference.TryGetTarget(out var target);
 
@@ -101,17 +101,17 @@ namespace Kinetic.Data
 
         private sealed class Accessor<T> : AccessorBase<T, PropertyGetter<T>>
         {
-            public Accessor(WeakReference<object> reference, PropertyGetter<T> getter)
+            public Accessor(WeakReference<object?> reference, PropertyGetter<T> getter)
                 : base(reference, getter) { }
 
             public override object? Value =>
                 Getter(Reference, out var property) ? property.Get() : null;
 
-            public override bool SetValue(object value, BindingPriority priority)
+            public override bool SetValue(object? value, BindingPriority priority)
             {
                 if (Getter(Reference, out var property))
                 {
-                    property.Set((T) value);
+                    property.Set((T) value!);
                     return true;
                 }
 
@@ -124,13 +124,13 @@ namespace Kinetic.Data
 
         private sealed class AccessorReadOnly<T> : AccessorBase<T, ReadOnlyPropertyGetter<T>>
         {
-            public AccessorReadOnly(WeakReference<object> reference, ReadOnlyPropertyGetter<T> getter)
+            public AccessorReadOnly(WeakReference<object?> reference, ReadOnlyPropertyGetter<T> getter)
                 : base(reference, getter) { }
 
             public override object? Value =>
                 Getter(Reference, out var property) ? property.Get() : null;
 
-            public override bool SetValue(object value, BindingPriority priority) =>
+            public override bool SetValue(object? value, BindingPriority priority) =>
                 false;
 
             protected override void SubscribeCore() => SubscribeCore(
@@ -140,12 +140,12 @@ namespace Kinetic.Data
         private abstract class AccessorBase<T, TGetter> : PropertyAccessorBase, IObserver<T>
             where TGetter : Delegate
         {
-            protected readonly WeakReference<object> Reference;
+            protected readonly WeakReference<object?> Reference;
             protected readonly TGetter Getter;
 
             private IDisposable? _subscription;
 
-            protected AccessorBase(WeakReference<object> reference, TGetter getter) =>
+            protected AccessorBase(WeakReference<object?> reference, TGetter getter) =>
                 (Reference, Getter) = (reference, getter);
 
             public override Type PropertyType => typeof(T);

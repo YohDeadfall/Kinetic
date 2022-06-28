@@ -2,6 +2,7 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Kinetic.Linq.StateMachines;
+using Kinetic.Subjects;
 using ReactiveUI;
 using KineticLinq = Kinetic.Linq.Observable;
 using ReactiveLinq = System.Reactive.Linq.Observable;
@@ -80,12 +81,8 @@ public class SetterBenchmarks : ObjectBenchmarks
 
 public abstract class LinqBenchmarks
 {
-    private TestObservable<int> _kinetic = new();
-    private TestObservable<int> _reactive = new();
-    private class TestObservable<T> : Observable<T>
-    {
-        public void Next(T value) => OnNext(value);
-    }
+    private Subject<int> _kinetic = new();
+    private Subject<int> _reactive = new();
 
     protected abstract ObserverBuilder<int> SetupKinetic(ObserverBuilder<int> source);
     protected abstract IObservable<int> SetupReactive(IObservable<int> source);
@@ -107,8 +104,8 @@ public abstract class LinqBenchmarks
     }
 
     [Params(1, 5, 10, 20, 30, 40, 50)] public int ChainLength { get; set; }
-    [Benchmark] public void Kinetic() => _kinetic.Next(42);
-    [Benchmark] public void Reactive() => _reactive.Next(42);
+    [Benchmark] public void Kinetic() => _kinetic.OnNext(42);
+    [Benchmark] public void Reactive() => _reactive.OnNext(42);
 }
 
 public class LinqSelectBenchmarks : LinqBenchmarks

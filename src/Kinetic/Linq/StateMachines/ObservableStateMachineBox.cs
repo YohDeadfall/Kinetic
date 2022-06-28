@@ -1,15 +1,24 @@
 using System;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Kinetic.Linq.StateMachines;
 
-internal abstract class ObservableStateMachineBox<T> : Observable<T>
+internal abstract class ObservableStateMachineBox<T> : IObservableInternal<T>
 {
-    public new void OnNext(T value) => base.OnNext(value);
-    public new void OnError(Exception error) => base.OnError(error);
-    public new void OnCompleted() => base.OnCompleted();
+    private ObservableSubscriptions<T> _subscriptions;
+
+    public IDisposable Subscribe(IObserver<T> observer) =>
+        _subscriptions.Subscribe(this, observer);
+
+    void IObservableInternal<T>.Subscribe(ObservableSubscription<T> subscription) =>
+        _subscriptions.Subscribe(this, subscription);
+
+    void IObservableInternal<T>.Unsubscribe(ObservableSubscription<T> subscription) =>
+        _subscriptions.Unsubscribe(subscription);
+
+    public void OnNext(T value) => _subscriptions.OnNext(value);
+    public void OnError(Exception error) => _subscriptions.OnError(error);
+    public void OnCompleted() => _subscriptions.OnCompleted();
 }
 
 internal sealed class ObservableStateMachineBox<TResult, TSource, TStateMachine> : ObservableStateMachineBox<TResult>, IObserver<TSource>, IObserverStateMachineBox

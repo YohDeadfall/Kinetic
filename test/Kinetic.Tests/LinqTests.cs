@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Kinetic.Subjects;
 using Xunit;
 
 namespace Kinetic.Linq.Tests;
@@ -10,7 +11,7 @@ public class LinqTests
     [Fact]
     public async ValueTask All_WithPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var greaterThanTwo = source
             .Any(value => value > 2)
             .ToValueTask();
@@ -18,9 +19,9 @@ public class LinqTests
             .Any(value => value < 2)
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.False(await greaterThanTwo);
         Assert.True(await lessThanTwo);
@@ -29,21 +30,21 @@ public class LinqTests
     [Fact]
     public async ValueTask All_WithoutPredicate()
     {
-        var sourceFalse = new Source<bool>();
+        var sourceFalse = new Subject<bool>();
         var returnsFalse = sourceFalse.ToValueTask();
 
-        sourceFalse.Next(false);
-        sourceFalse.Next(true);
-        sourceFalse.Complete();
+        sourceFalse.OnNext(false);
+        sourceFalse.OnNext(true);
+        sourceFalse.OnCompleted();
 
         Assert.False(await returnsFalse);
 
-        var sourceTrue = new Source<bool>();
+        var sourceTrue = new Subject<bool>();
         var returnsTrue = sourceTrue.ToValueTask();
 
-        sourceTrue.Next(true);
-        sourceTrue.Next(true);
-        sourceTrue.Complete();
+        sourceTrue.OnNext(true);
+        sourceTrue.OnNext(true);
+        sourceTrue.OnCompleted();
 
         Assert.True(await returnsTrue);
     }
@@ -51,7 +52,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Any_WithPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var greaterThanOne = source
             .Any(value => value > 1)
             .ToValueTask();
@@ -59,8 +60,8 @@ public class LinqTests
             .Any(value => value < 1)
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
+        source.OnNext(1);
+        source.OnNext(2);
 
         Assert.True(await greaterThanOne);
         Assert.False(await lessThanOne);
@@ -69,21 +70,21 @@ public class LinqTests
     [Fact]
     public async ValueTask Any_WithoutPredicate()
     {
-        var sourceEmpty = new Source<int>();
+        var sourceEmpty = new Subject<int>();
         var returnsFalse = sourceEmpty
             .Any()
             .ToValueTask();
 
-        sourceEmpty.Complete();
+        sourceEmpty.OnCompleted();
 
         Assert.False(await returnsFalse);
 
-        var sourceNonEmpty = new Source<int>();
+        var sourceNonEmpty = new Subject<int>();
         var returnsTrue = sourceNonEmpty
             .Any()
             .ToValueTask();
 
-        sourceNonEmpty.Next(1);
+        sourceNonEmpty.OnNext(1);
 
         Assert.True(await returnsTrue);
     }
@@ -91,7 +92,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Contains_WithComparer()
     {
-        var source = new Source<string>();
+        var source = new Subject<string>();
         var containsTwo = source
             .Contains("two", StringComparer.OrdinalIgnoreCase)
             .ToValueTask();
@@ -99,8 +100,8 @@ public class LinqTests
             .Contains("three", StringComparer.OrdinalIgnoreCase)
             .ToValueTask();
 
-        source.Next("One");
-        source.Next("Two");
+        source.OnNext("One");
+        source.OnNext("Two");
 
         Assert.True(await containsTwo);
         Assert.False(await containsThree);
@@ -109,7 +110,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Contains_WithoutComparer()
     {
-        var source = new Source<string>();
+        var source = new Subject<string>();
         var containsTwo = source
             .Contains("Two")
             .ToValueTask();
@@ -117,8 +118,8 @@ public class LinqTests
             .Contains("Three")
             .ToValueTask();
 
-        source.Next("One");
-        source.Next("Two");
+        source.OnNext("One");
+        source.OnNext("Two");
 
         Assert.True(await containsTwo);
         Assert.False(await containsThree);
@@ -127,7 +128,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Count_WithPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var lessThanTwo = source
             .Count(value => value < 2)
             .ToValueTask();
@@ -135,9 +136,9 @@ public class LinqTests
             .Count(value => value < 2)
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(1, await lessThanTwo);
         Assert.Equal(0, await greaterThanTwo);
@@ -146,13 +147,13 @@ public class LinqTests
     [Fact]
     public async ValueTask Count_WithoutPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var count = source
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(3, await count);
     }
@@ -160,16 +161,16 @@ public class LinqTests
     [Fact]
     public async ValueTask Distinct()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var values = source
             .Distinct()
             .ToArray()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(1);
-        source.Next(2);
-        source.Next(2);
+        source.OnNext(1);
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnNext(2);
 
         Assert.Equal(new[] { 1, 2 }, await values);
     }
@@ -177,13 +178,13 @@ public class LinqTests
     [Fact]
     public async ValueTask First_WithPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .First(value => value > 1)
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
+        source.OnNext(1);
+        source.OnNext(2);
 
         Assert.Equal(2, await value);
     }
@@ -191,13 +192,13 @@ public class LinqTests
     [Fact]
     public async ValueTask First_WithoutPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .First()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
+        source.OnNext(1);
+        source.OnNext(2);
 
         Assert.Equal(1, await value);
     }
@@ -205,13 +206,13 @@ public class LinqTests
     [Fact]
     public async ValueTask FirstOrDefault_WithPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .FirstOrDefault(value => value > 1)
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
+        source.OnNext(1);
+        source.OnNext(2);
 
         Assert.Equal(2, await value);
     }
@@ -219,13 +220,13 @@ public class LinqTests
     [Fact]
     public async ValueTask FirstOrDefault_WithoutPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .FirstOrDefault()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
+        source.OnNext(1);
+        source.OnNext(2);
 
         Assert.Equal(1, await value);
     }
@@ -233,14 +234,14 @@ public class LinqTests
     [Fact]
     public async ValueTask Last_WithPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .Last(value => value < 2)
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(1, await value);
     }
@@ -248,14 +249,14 @@ public class LinqTests
     [Fact]
     public async ValueTask Last_WithoutPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .Last()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(2, await value);
     }
@@ -263,14 +264,14 @@ public class LinqTests
     [Fact]
     public async ValueTask LastOrDefault_WithPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .LastOrDefault(value => value < 2)
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(1, await value);
     }
@@ -278,14 +279,14 @@ public class LinqTests
     [Fact]
     public async ValueTask LastOrDefault_WithoutPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .LastOrDefault()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(2, await value);
     }
@@ -293,14 +294,14 @@ public class LinqTests
     [Fact]
     public async ValueTask Max()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .Max()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(2, await value);
     }
@@ -308,14 +309,14 @@ public class LinqTests
     [Fact]
     public async ValueTask Min()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .Min()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(1, await value);
     }
@@ -323,14 +324,14 @@ public class LinqTests
     [Fact]
     public async ValueTask Select()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var values = source
             .Select(value => value * 10)
             .ToArray()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
+        source.OnNext(1);
+        source.OnNext(2);
 
         Assert.Equal(new[] { 10, 20 }, await values);
     }
@@ -338,14 +339,14 @@ public class LinqTests
     [Fact]
     public async ValueTask Single_WithPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .Single(value => value > 1)
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(2, await value);
     }
@@ -353,13 +354,13 @@ public class LinqTests
     [Fact]
     public async ValueTask Single_WithoutPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .Single()
             .ToValueTask();
 
-        source.Next(1);
-        source.Complete();
+        source.OnNext(1);
+        source.OnCompleted();
 
         Assert.Equal(1, await value);
     }
@@ -367,14 +368,14 @@ public class LinqTests
     [Fact]
     public async ValueTask SingleOrDefault_WithPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .SingleOrDefault(value => value > 1)
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Complete();
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnCompleted();
 
         Assert.Equal(2, await value);
     }
@@ -382,13 +383,13 @@ public class LinqTests
     [Fact]
     public async ValueTask SingleOrDefault_WithoutPredicate()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .SingleOrDefault()
             .ToValueTask();
 
-        source.Next(1);
-        source.Complete();
+        source.OnNext(1);
+        source.OnCompleted();
 
         Assert.Equal(1, await value);
     }
@@ -396,16 +397,16 @@ public class LinqTests
     [Fact]
     public async ValueTask Skip()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var values = source
             .Skip(2)
             .ToArray()
             .ToValueTask();
 
-        source.Next(0);
-        source.Next(1);
-        source.Next(2);
-        source.Next(3);
+        source.OnNext(0);
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnNext(3);
 
         Assert.Equal(new[] { 2, 3 }, await values);
     }
@@ -413,15 +414,15 @@ public class LinqTests
     [Fact]
     public async ValueTask SkipWhile()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var values = source
             .SkipWhile(value => value < 2)
             .ToArray()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Next(3);
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnNext(3);
 
         Assert.Equal(new[] { 2, 3 }, await values);
     }
@@ -429,15 +430,15 @@ public class LinqTests
     [Fact]
     public async ValueTask Take()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var values = source
             .Take(2)
             .ToArray()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Next(3);
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnNext(3);
 
         Assert.Equal(new[] { 1, 2 }, await values);
     }
@@ -445,16 +446,16 @@ public class LinqTests
     [Fact]
     public async ValueTask TakeWhile()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var values = source
             .TakeWhile(value => value < 2)
             .ToArray()
             .ToValueTask();
 
-        source.Next(0);
-        source.Next(1);
-        source.Next(2);
-        source.Next(3);
+        source.OnNext(0);
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnNext(3);
 
         Assert.Equal(new[] { 0, 1 }, await values);
     }
@@ -463,24 +464,24 @@ public class LinqTests
     public async ValueTask Then()
     {
         var container = new Container<int>();
-        var values = container.Source.Changed
+        var values = container.Subject.Changed
             .Then(value => value)
             .ToArray()
             .ToValueTask();
 
-        var source = container.Source.Get();
+        var source = container.Subject.Get();
 
-        source.Next(1);
-        source.Next(2);
+        source.OnNext(1);
+        source.OnNext(2);
 
-        var sourceNew = new Source<int>();
+        var sourceNew = new Subject<int>();
 
-        container.Source.Set(sourceNew);
-        sourceNew.Next(10);
-        sourceNew.Next(20);
+        container.Subject.Set(sourceNew);
+        sourceNew.OnNext(10);
+        sourceNew.OnNext(20);
 
-        source.Next(3);
-        source.Next(4);
+        source.OnNext(3);
+        source.OnNext(4);
 
         Assert.Equal(new[] { 1, 2, 10, 20 }, await values);
     }
@@ -488,14 +489,14 @@ public class LinqTests
     [Fact]
     public async ValueTask ToArray()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .ToArray()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Next(3);
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnNext(3);
 
         Assert.Equal(
             expected: new[] { 1, 2, 3 },
@@ -505,7 +506,7 @@ public class LinqTests
     [Fact]
     public async ValueTask ToDictionary()
     {
-        var source = new Source<(string text, int number)>();
+        var source = new Subject<(string text, int number)>();
         var taskWithoutComparer = source
             .ToDictionary(value => value.text, value => value.number * 3)
             .ToValueTask();
@@ -513,8 +514,8 @@ public class LinqTests
             .ToDictionary(value => value.text, value => value.number * 3, StringComparer.OrdinalIgnoreCase)
             .ToValueTask();
 
-        source.Next(("One", 1));
-        source.Next(("Two", 2));
+        source.OnNext(("One", 1));
+        source.OnNext(("Two", 2));
 
         var dictionaryWithoutComparer = await taskWithoutComparer;
         var dictionaryWithComparer = await taskWithComparer;
@@ -534,14 +535,14 @@ public class LinqTests
     [Fact]
     public async ValueTask ToList()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var value = source
             .ToList()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
-        source.Next(3);
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnNext(3);
 
         Assert.Equal(new[] { 1, 2, 3 }, await value);
     }
@@ -549,7 +550,7 @@ public class LinqTests
     [Fact]
     public async ValueTask ToObservable()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var observable = source
             .Select(value => value)
             .ToObservable();
@@ -558,8 +559,8 @@ public class LinqTests
             .ToArray()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(2);
+        source.OnNext(1);
+        source.OnNext(2);
 
         Assert.Equal(new[] { 1, 2 }, await values);
     }
@@ -567,31 +568,25 @@ public class LinqTests
     [Fact]
     public async ValueTask Where()
     {
-        var source = new Source<int>();
+        var source = new Subject<int>();
         var values = source
             .Where(value => value > 2)
             .ToArray()
             .ToValueTask();
 
-        source.Next(1);
-        source.Next(3);
-        source.Next(2);
-        source.Next(4);
+        source.OnNext(1);
+        source.OnNext(3);
+        source.OnNext(2);
+        source.OnNext(4);
 
         Assert.Equal(new[] { 3, 4 }, await values);
     }
 
-    private sealed class Source<T> : Observable<T>
-    {
-        public void Next(T value) => OnNext(value);
-        public void Complete() => OnCompleted();
-    }
-
     private sealed class Container<T> : ObservableObject
     {
-        private Source<T> _source;
+        private Subject<T> _source;
 
-        public Container() => _source = new Source<T>();
-        public Property<Source<T>> Source => Property(ref _source);
+        public Container() => _source = new Subject<T>();
+        public Property<Subject<T>> Subject => Property(ref _source);
     }
 }

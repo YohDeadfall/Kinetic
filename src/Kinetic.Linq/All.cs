@@ -1,59 +1,58 @@
 using System;
 using Kinetic.Linq.StateMachines;
 
-namespace Kinetic.Linq
+namespace Kinetic.Linq;
+
+public static partial class Observable
 {
-    public static partial class Observable
+    public static ObserverBuilder<bool> All(this in ObserverBuilder<bool> source) =>
+        source.ContinueWith<AllStateMachineFactory, bool>(default);
+
+    public static ObserverBuilder<bool> All<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
+        source.Select(predicate).All();
+
+    public static ObserverBuilder<bool> All(this IObservable<bool> source) =>
+        source.ToBuilder().All();
+
+    public static ObserverBuilder<bool> All<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
+        source.ToBuilder().All(predicate);
+
+    private readonly struct AllStateMachineFactory : IObserverStateMachineFactory<bool, bool>
     {
-        public static ObserverBuilder<bool> All(this in ObserverBuilder<bool> source) =>
-            source.ContinueWith<AllStateMachineFactory, bool>(default);
-
-        public static ObserverBuilder<bool> All<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
-            source.Select(predicate).All();
-
-        public static ObserverBuilder<bool> All(this IObservable<bool> source) =>
-            source.ToBuilder().All();
-
-        public static ObserverBuilder<bool> All<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
-            source.ToBuilder().All(predicate);
-
-        private readonly struct AllStateMachineFactory : IObserverStateMachineFactory<bool, bool>
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<bool> source)
+            where TContinuation : struct, IObserverStateMachine<bool>
         {
-            public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<bool> source)
-                where TContinuation : struct, IObserverStateMachine<bool>
+            source.ContinueWith(new AllStateMachine<TContinuation>(continuation));
+        }
+    }
+
+    private struct AllStateMachine<TContinuation> : IObserverStateMachine<bool>
+        where TContinuation : struct, IObserverStateMachine<bool>
+    {
+        private TContinuation _continuation;
+
+        public AllStateMachine(in TContinuation continuation) => _continuation = continuation;
+        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+        public void Dispose() => _continuation.Dispose();
+
+        public void OnNext(bool value)
+        {
+            if (!value)
             {
-                source.ContinueWith(new AllStateMachine<TContinuation>(continuation));
+                _continuation.OnNext(false);
+                _continuation.OnCompleted();
             }
         }
 
-        private struct AllStateMachine<TContinuation> : IObserverStateMachine<bool>
-            where TContinuation : struct, IObserverStateMachine<bool>
+        public void OnError(Exception error)
         {
-            private TContinuation _continuation;
+            _continuation.OnError(error);
+        }
 
-            public AllStateMachine(in TContinuation continuation) => _continuation = continuation;
-            public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
-            public void Dispose() => _continuation.Dispose();
-
-            public void OnNext(bool value)
-            {
-                if (!value)
-                {
-                    _continuation.OnNext(false);
-                    _continuation.OnCompleted();
-                }
-            }
-
-            public void OnError(Exception error)
-            {
-                _continuation.OnError(error);
-            }
-
-            public void OnCompleted()
-            {
-                _continuation.OnNext(true);
-                _continuation.OnCompleted();
-            }
+        public void OnCompleted()
+        {
+            _continuation.OnNext(true);
+            _continuation.OnCompleted();
         }
     }
 }

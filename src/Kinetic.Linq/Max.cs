@@ -2,83 +2,82 @@ using System;
 using System.Collections.Generic;
 using Kinetic.Linq.StateMachines;
 
-namespace Kinetic.Linq
+namespace Kinetic.Linq;
+
+public static partial class Observable
 {
-    public static partial class Observable
+    public static ObserverBuilder<TSource> Max<TSource>(this in ObserverBuilder<TSource> source, IComparer<TSource>? comparer = null) =>
+        source.ContinueWith<MaxStateMachineBuilder<TSource>, TSource>(new(comparer));
+
+    public static ObserverBuilder<TSource> Max<TSource>(this IObservable<TSource> source, IComparer<TSource>? comparer = null) =>
+        source.ToBuilder().Max(comparer);
+
+    private readonly struct MaxStateMachineBuilder<TSource> : IObserverStateMachineFactory<TSource, TSource>
     {
-        public static ObserverBuilder<TSource> Max<TSource>(this in ObserverBuilder<TSource> source, IComparer<TSource>? comparer = null) =>
-            source.ContinueWith<MaxStateMachineBuilder<TSource>, TSource>(new(comparer));
+        private readonly IComparer<TSource>? _comparer;
 
-        public static ObserverBuilder<TSource> Max<TSource>(this IObservable<TSource> source, IComparer<TSource>? comparer = null) =>
-            source.ToBuilder().Max(comparer);
+        public MaxStateMachineBuilder(IComparer<TSource>? comparer) => _comparer = comparer;
 
-        private readonly struct MaxStateMachineBuilder<TSource> : IObserverStateMachineFactory<TSource, TSource>
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IObserverStateMachine<TSource>
         {
-            private readonly IComparer<TSource>? _comparer;
+            source.ContinueWith(new MaxStateMachine<TContinuation, TSource>(continuation, _comparer));
+        }
+    }
 
-            public MaxStateMachineBuilder(IComparer<TSource>? comparer) => _comparer = comparer;
+    private struct MaxStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+        where TContinuation : struct, IObserverStateMachine<TSource>
+    {
+        private TContinuation _continuation;
+        private IComparer<TSource>? _comparer;
+        private TSource _value;
+        private bool _hasValue;
 
-            public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-                where TContinuation : struct, IObserverStateMachine<TSource>
+        public MaxStateMachine(TContinuation continuation, IComparer<TSource>? comparer)
+        {
+            _continuation = continuation;
+            _comparer = comparer;
+            _value = default!;
+            _hasValue = false;
+        }
+
+        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+        public void Dispose() => _continuation.Dispose();
+
+        public void OnNext(TSource value)
+        {
+            if (_hasValue)
             {
-                source.ContinueWith(new MaxStateMachine<TContinuation, TSource>(continuation, _comparer));
+                var result =
+                    _comparer?.Compare(_value, value) ??
+                    Comparer<TSource>.Default.Compare(_value, value);
+                if (result < 0)
+                {
+                    _value = value;
+                }
+            }
+            else
+            {
+                _value = value;
+                _hasValue = true;
             }
         }
 
-        private struct MaxStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-            where TContinuation : struct, IObserverStateMachine<TSource>
+        public void OnError(Exception error)
         {
-            private TContinuation _continuation;
-            private IComparer<TSource>? _comparer;
-            private TSource _value;
-            private bool _hasValue;
+            _continuation.OnError(error);
+        }
 
-            public MaxStateMachine(TContinuation continuation, IComparer<TSource>? comparer)
+        public void OnCompleted()
+        {
+            if (_hasValue)
             {
-                _continuation = continuation;
-                _comparer = comparer;
-                _value = default!;
-                _hasValue = false;
+                _continuation.OnNext(_value);
+                _continuation.OnCompleted();
             }
-
-            public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
-            public void Dispose() => _continuation.Dispose();
-
-            public void OnNext(TSource value)
+            else
             {
-                if (_hasValue)
-                {
-                    var result =
-                        _comparer?.Compare(_value, value) ??
-                        Comparer<TSource>.Default.Compare(_value, value);
-                    if (result < 0)
-                    {
-                        _value = value;
-                    }
-                }
-                else
-                {
-                    _value = value;
-                    _hasValue = true;
-                }
-            }
-
-            public void OnError(Exception error)
-            {
-                _continuation.OnError(error);
-            }
-
-            public void OnCompleted()
-            {
-                if (_hasValue)
-                {
-                    _continuation.OnNext(_value);
-                    _continuation.OnCompleted();
-                }
-                else
-                {
-                    _continuation.OnError(new InvalidOperationException());
-                }
+                _continuation.OnError(new InvalidOperationException());
             }
         }
     }

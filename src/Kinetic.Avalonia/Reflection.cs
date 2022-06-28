@@ -2,113 +2,112 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 
-namespace Kinetic.Data
+namespace Kinetic.Data;
+
+internal delegate bool PropertyGetter<T>(WeakReference<object?> reference, out Property<T> property);
+internal delegate bool ReadOnlyPropertyGetter<T>(WeakReference<object?> reference, out ReadOnlyProperty<T> property);
+
+internal static class Reflection
 {
-    internal delegate bool PropertyGetter<T>(WeakReference<object?> reference, out Property<T> property);
-    internal delegate bool ReadOnlyPropertyGetter<T>(WeakReference<object?> reference, out ReadOnlyProperty<T> property);
+    private delegate Property<T> RwGetter<TOwner, T>(TOwner owner);
+    private delegate ReadOnlyProperty<T> RoGetter<TOwner, T>(TOwner owner);
 
-    internal static class Reflection
+    public static MethodInfo GetGenericDefinition<T>(Func<T> method) =>
+        method.Method.GetGenericMethodDefinition();
+
+    public static PropertyGetter<T> CreateRwGetter<T>(PropertyInfo property)
     {
-        private delegate Property<T> RwGetter<TOwner, T>(TOwner owner);
-        private delegate ReadOnlyProperty<T> RoGetter<TOwner, T>(TOwner owner);
+        Debug.Assert(property.DeclaringType is not null);
+        Debug.Assert(property.PropertyType == typeof(Property<T>));
+        Debug.Assert(property.GetMethod is not null);
 
-        public static MethodInfo GetGenericDefinition<T>(Func<T> method) =>
-            method.Method.GetGenericMethodDefinition();
+        static Func<PropertyInfo, PropertyGetter<T>> Wrapper<TOwner>() =>
+            property => Factory<TOwner>(property);
 
-        public static PropertyGetter<T> CreateRwGetter<T>(PropertyInfo property)
+        static PropertyGetter<T> Factory<TOwner>(PropertyInfo property)
         {
-            Debug.Assert(property.DeclaringType is not null);
+            static bool Getter(WeakReference<object?> reference, RwGetter<TOwner, T> getter, out Property<T> property)
+            {
+                if (reference.TryGetTarget(out var target) &&
+                    target is TOwner owner)
+                {
+                    property = getter(owner);
+                    return true;
+                }
+                else
+                {
+                    property = default;
+                    return false;
+                }
+            }
+
+            Debug.Assert(property.DeclaringType == typeof(TOwner));
             Debug.Assert(property.PropertyType == typeof(Property<T>));
             Debug.Assert(property.GetMethod is not null);
 
-            static Func<PropertyInfo, PropertyGetter<T>> Wrapper<TOwner>() =>
-                property => Factory<TOwner>(property);
+            var getter = property.GetMethod
+                .CreateDelegate<RwGetter<TOwner, T>>();
 
-            static PropertyGetter<T> Factory<TOwner>(PropertyInfo property)
+            return delegate (WeakReference<object?> reference, out Property<T> property)
             {
-                static bool Getter(WeakReference<object?> reference, RwGetter<TOwner, T> getter, out Property<T> property)
-                {
-                    if (reference.TryGetTarget(out var target) &&
-                        target is TOwner owner)
-                    {
-                        property = getter(owner);
-                        return true;
-                    }
-                    else
-                    {
-                        property = default;
-                        return false;
-                    }
-                }
-
-                Debug.Assert(property.DeclaringType == typeof(TOwner));
-                Debug.Assert(property.PropertyType == typeof(Property<T>));
-                Debug.Assert(property.GetMethod is not null);
-
-                var getter = property.GetMethod
-                    .CreateDelegate<RwGetter<TOwner, T>>();
-
-                return delegate (WeakReference<object?> reference, out Property<T> property)
-                {
-                    return Getter(reference, getter, out property);
-                };
-            }
-
-            return GetGenericDefinition(Wrapper<object>)
-                .MakeGenericMethod(typeof(T), property.DeclaringType)
-                .CreateDelegate<Func<Func<PropertyInfo, PropertyGetter<T>>>>()
-                .Invoke()
-                .Invoke(property);
+                return Getter(reference, getter, out property);
+            };
         }
 
-        public static ReadOnlyPropertyGetter<T> CreateRoGetter<T>(PropertyInfo property)
+        return GetGenericDefinition(Wrapper<object>)
+            .MakeGenericMethod(typeof(T), property.DeclaringType)
+            .CreateDelegate<Func<Func<PropertyInfo, PropertyGetter<T>>>>()
+            .Invoke()
+            .Invoke(property);
+    }
+
+    public static ReadOnlyPropertyGetter<T> CreateRoGetter<T>(PropertyInfo property)
+    {
+        Debug.Assert(property.DeclaringType is not null);
+        Debug.Assert(property.PropertyType == typeof(ReadOnlyProperty<T>));
+        Debug.Assert(property.GetMethod is not null);
+
+        static Func<PropertyInfo, ReadOnlyPropertyGetter<T>> Wrapper<TOwner>() =>
+            property => Factory<TOwner>(property);
+
+        static ReadOnlyPropertyGetter<T> Factory<TOwner>(PropertyInfo property)
         {
-            Debug.Assert(property.DeclaringType is not null);
+            static bool Getter(WeakReference<object?> reference, RoGetter<TOwner, T> getter, out ReadOnlyProperty<T> property)
+            {
+                if (reference.TryGetTarget(out var target) &&
+                    target is TOwner owner)
+                {
+                    property = getter(owner);
+                    return true;
+                }
+                else
+                {
+                    property = default;
+                    return false;
+                }
+            }
+
+            Debug.Assert(property.DeclaringType == typeof(TOwner));
             Debug.Assert(property.PropertyType == typeof(ReadOnlyProperty<T>));
             Debug.Assert(property.GetMethod is not null);
 
-            static Func<PropertyInfo, ReadOnlyPropertyGetter<T>> Wrapper<TOwner>() =>
-                property => Factory<TOwner>(property);
+            var getter = property.GetMethod
+                .CreateDelegate<RoGetter<TOwner, T>>();
 
-            static ReadOnlyPropertyGetter<T> Factory<TOwner>(PropertyInfo property)
+            return delegate (WeakReference<object?> reference, out ReadOnlyProperty<T> property)
             {
-                static bool Getter(WeakReference<object?> reference, RoGetter<TOwner, T> getter, out ReadOnlyProperty<T> property)
-                {
-                    if (reference.TryGetTarget(out var target) &&
-                        target is TOwner owner)
-                    {
-                        property = getter(owner);
-                        return true;
-                    }
-                    else
-                    {
-                        property = default;
-                        return false;
-                    }
-                }
-
-                Debug.Assert(property.DeclaringType == typeof(TOwner));
-                Debug.Assert(property.PropertyType == typeof(ReadOnlyProperty<T>));
-                Debug.Assert(property.GetMethod is not null);
-
-                var getter = property.GetMethod
-                    .CreateDelegate<RoGetter<TOwner, T>>();
-
-                return delegate (WeakReference<object?> reference, out ReadOnlyProperty<T> property)
-                {
-                    return Getter(reference, getter, out property);
-                };
-            }
-
-            return GetGenericDefinition(Wrapper<object>)
-                .MakeGenericMethod(typeof(T), property.DeclaringType)
-                .CreateDelegate<Func<Func<PropertyInfo, ReadOnlyPropertyGetter<T>>>>()
-                .Invoke()
-                .Invoke(property);
+                return Getter(reference, getter, out property);
+            };
         }
 
-        internal static T CreateDelegate<T>(this MethodInfo method)
-            where T : Delegate =>
-            (T) method.CreateDelegate(typeof(T));
+        return GetGenericDefinition(Wrapper<object>)
+            .MakeGenericMethod(typeof(T), property.DeclaringType)
+            .CreateDelegate<Func<Func<PropertyInfo, ReadOnlyPropertyGetter<T>>>>()
+            .Invoke()
+            .Invoke(property);
     }
+
+    internal static T CreateDelegate<T>(this MethodInfo method)
+        where T : Delegate =>
+        (T) method.CreateDelegate(typeof(T));
 }

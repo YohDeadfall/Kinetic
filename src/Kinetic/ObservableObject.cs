@@ -156,8 +156,11 @@ public abstract class ObservableObject
         public void Changed(T value) =>
             _subscriptions.OnNext(value);
 
-        public IDisposable Subscribe(IObserver<T> observer) =>
-            _subscriptions.Subscribe(this, observer, Owner.Get<T>(Offset));
+        public IDisposable Subscribe(IObserver<T> observer)
+        {
+            observer.OnNext(Owner.Get<T>(Offset));
+            return _subscriptions.Subscribe(this, observer);
+        }
 
         public void Subscribe(ObservableSubscription<T> subscription) =>
             _subscriptions.Subscribe(this, subscription);

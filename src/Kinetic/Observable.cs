@@ -1,4 +1,5 @@
 using System;
+using System.Threading;
 
 namespace Kinetic;
 
@@ -28,14 +29,6 @@ internal struct ObservableSubscriptions<T>
 {
     private ObservableSubscription<T>? _head;
 
-    public IDisposable Subscribe(IObservableInternal<T> observable, IObserver<T> observer, T value)
-    {
-        var subscription = new ObservableSubscription<T>(observer);
-
-        Subscribe(observable, subscription, value);
-        return subscription;
-    }
-
     public IDisposable Subscribe(IObservableInternal<T> observable, IObserver<T> observer)
     {
         var subscription = new ObservableSubscription<T>(observer);
@@ -44,19 +37,14 @@ internal struct ObservableSubscriptions<T>
         return subscription;
     }
 
-    public void Subscribe(IObservableInternal<T> observable, ObservableSubscription<T> subscription, T value)
-    {
-        subscription.OnNext(value);
-        subscription.Observable = observable;
-        subscription.Next = _head;
-        _head = subscription;
-    }
-
     public void Subscribe(IObservableInternal<T> observable, ObservableSubscription<T> subscription)
     {
         subscription.Observable = observable;
-        subscription.Next = _head;
-        _head = subscription;
+        do
+        {
+            subscription.Next = _head;
+        }
+        while (Interlocked.CompareExchange(ref _head, subscription, subscription.Next) != subscription.Next);
     }
 
     public void Unsubscribe(ObservableSubscription<T> subscription)
@@ -66,9 +54,11 @@ internal struct ObservableSubscriptions<T>
         {
             if (current == subscription)
             {
-                current = subscription.Next;
+                Interlocked.CompareExchange(ref current, subscription.Next, subscription);
+
                 subscription.Observable = null;
                 subscription.Next = null;
+
                 return;
             }
 

@@ -11,7 +11,7 @@ public class LinqTests
     [Fact]
     public async ValueTask All_WithPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var greaterThanTwo = source
             .Any(value => value > 2)
             .ToValueTask();
@@ -30,7 +30,7 @@ public class LinqTests
     [Fact]
     public async ValueTask All_WithoutPredicate()
     {
-        var sourceFalse = new Subject<bool>();
+        var sourceFalse = new PublishSubject<bool>();
         var returnsFalse = sourceFalse.ToValueTask();
 
         sourceFalse.OnNext(false);
@@ -39,7 +39,7 @@ public class LinqTests
 
         Assert.False(await returnsFalse);
 
-        var sourceTrue = new Subject<bool>();
+        var sourceTrue = new PublishSubject<bool>();
         var returnsTrue = sourceTrue.ToValueTask();
 
         sourceTrue.OnNext(true);
@@ -52,7 +52,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Any_WithPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var greaterThanOne = source
             .Any(value => value > 1)
             .ToValueTask();
@@ -70,7 +70,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Any_WithoutPredicate()
     {
-        var sourceEmpty = new Subject<int>();
+        var sourceEmpty = new PublishSubject<int>();
         var returnsFalse = sourceEmpty
             .Any()
             .ToValueTask();
@@ -79,7 +79,7 @@ public class LinqTests
 
         Assert.False(await returnsFalse);
 
-        var sourceNonEmpty = new Subject<int>();
+        var sourceNonEmpty = new PublishSubject<int>();
         var returnsTrue = sourceNonEmpty
             .Any()
             .ToValueTask();
@@ -92,7 +92,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Contains_WithComparer()
     {
-        var source = new Subject<string>();
+        var source = new PublishSubject<string>();
         var containsTwo = source
             .Contains("two", StringComparer.OrdinalIgnoreCase)
             .ToValueTask();
@@ -110,7 +110,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Contains_WithoutComparer()
     {
-        var source = new Subject<string>();
+        var source = new PublishSubject<string>();
         var containsTwo = source
             .Contains("Two")
             .ToValueTask();
@@ -128,7 +128,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Count_WithPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var lessThanTwo = source
             .Count(value => value < 2)
             .ToValueTask();
@@ -147,7 +147,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Count_WithoutPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var count = source
             .ToValueTask();
 
@@ -161,7 +161,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Distinct()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var values = source
             .Distinct()
             .ToArray()
@@ -178,7 +178,7 @@ public class LinqTests
     [Fact]
     public async ValueTask First_WithPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .First(value => value > 1)
             .ToValueTask();
@@ -192,7 +192,7 @@ public class LinqTests
     [Fact]
     public async ValueTask First_WithoutPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .First()
             .ToValueTask();
@@ -206,7 +206,7 @@ public class LinqTests
     [Fact]
     public async ValueTask FirstOrDefault_WithPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .FirstOrDefault(value => value > 1)
             .ToValueTask();
@@ -220,7 +220,7 @@ public class LinqTests
     [Fact]
     public async ValueTask FirstOrDefault_WithoutPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .FirstOrDefault()
             .ToValueTask();
@@ -234,7 +234,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Last_WithPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .Last(value => value < 2)
             .ToValueTask();
@@ -249,7 +249,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Last_WithoutPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .Last()
             .ToValueTask();
@@ -264,7 +264,7 @@ public class LinqTests
     [Fact]
     public async ValueTask LastOrDefault_WithPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .LastOrDefault(value => value < 2)
             .ToValueTask();
@@ -279,7 +279,7 @@ public class LinqTests
     [Fact]
     public async ValueTask LastOrDefault_WithoutPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .LastOrDefault()
             .ToValueTask();
@@ -294,7 +294,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Max()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .Max()
             .ToValueTask();
@@ -309,7 +309,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Min()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .Min()
             .ToValueTask();
@@ -324,7 +324,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Select()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var values = source
             .Select(value => value * 10)
             .ToArray()
@@ -339,7 +339,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Single_WithPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .Single(value => value > 1)
             .ToValueTask();
@@ -354,7 +354,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Single_WithoutPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .Single()
             .ToValueTask();
@@ -368,7 +368,7 @@ public class LinqTests
     [Fact]
     public async ValueTask SingleOrDefault_WithPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .SingleOrDefault(value => value > 1)
             .ToValueTask();
@@ -383,7 +383,7 @@ public class LinqTests
     [Fact]
     public async ValueTask SingleOrDefault_WithoutPredicate()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .SingleOrDefault()
             .ToValueTask();
@@ -397,7 +397,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Skip()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var values = source
             .Skip(2)
             .ToArray()
@@ -414,7 +414,7 @@ public class LinqTests
     [Fact]
     public async ValueTask SkipWhile()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var values = source
             .SkipWhile(value => value < 2)
             .ToArray()
@@ -430,7 +430,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Take()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var values = source
             .Take(2)
             .ToArray()
@@ -446,7 +446,7 @@ public class LinqTests
     [Fact]
     public async ValueTask TakeWhile()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var values = source
             .TakeWhile(value => value < 2)
             .ToArray()
@@ -464,19 +464,19 @@ public class LinqTests
     public async ValueTask Then()
     {
         var container = new Container<int>();
-        var values = container.Subject.Changed
+        var values = container.PublishSubject.Changed
             .Then(value => value)
             .ToArray()
             .ToValueTask();
 
-        var source = container.Subject.Get();
+        var source = container.PublishSubject.Get();
 
         source.OnNext(1);
         source.OnNext(2);
 
-        var sourceNew = new Subject<int>();
+        var sourceNew = new PublishSubject<int>();
 
-        container.Subject.Set(sourceNew);
+        container.PublishSubject.Set(sourceNew);
         sourceNew.OnNext(10);
         sourceNew.OnNext(20);
 
@@ -489,7 +489,7 @@ public class LinqTests
     [Fact]
     public async ValueTask ToArray()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .ToArray()
             .ToValueTask();
@@ -506,7 +506,7 @@ public class LinqTests
     [Fact]
     public async ValueTask ToDictionary()
     {
-        var source = new Subject<(string text, int number)>();
+        var source = new PublishSubject<(string text, int number)>();
         var taskWithoutComparer = source
             .ToDictionary(value => value.text, value => value.number * 3)
             .ToValueTask();
@@ -535,7 +535,7 @@ public class LinqTests
     [Fact]
     public async ValueTask ToList()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var value = source
             .ToList()
             .ToValueTask();
@@ -550,7 +550,7 @@ public class LinqTests
     [Fact]
     public async ValueTask ToObservable()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var observable = source
             .Select(value => value)
             .ToObservable();
@@ -568,7 +568,7 @@ public class LinqTests
     [Fact]
     public async ValueTask Where()
     {
-        var source = new Subject<int>();
+        var source = new PublishSubject<int>();
         var values = source
             .Where(value => value > 2)
             .ToArray()
@@ -584,9 +584,9 @@ public class LinqTests
 
     private sealed class Container<T> : ObservableObject
     {
-        private Subject<T> _source;
+        private PublishSubject<T> _source;
 
-        public Container() => _source = new Subject<T>();
-        public Property<Subject<T>> Subject => Property(ref _source);
+        public Container() => _source = new PublishSubject<T>();
+        public Property<PublishSubject<T>> PublishSubject => Property(ref _source);
     }
 }

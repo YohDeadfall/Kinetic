@@ -81,8 +81,8 @@ public class SetterBenchmarks : ObjectBenchmarks
 
 public abstract class LinqBenchmarks
 {
-    private Subject<int> _kinetic = new();
-    private Subject<int> _reactive = new();
+    private PublishSubject<int> _kinetic = new();
+    private PublishSubject<int> _reactive = new();
 
     protected abstract ObserverBuilder<int> SetupKinetic(ObserverBuilder<int> source);
     protected abstract IObservable<int> SetupReactive(IObservable<int> source);

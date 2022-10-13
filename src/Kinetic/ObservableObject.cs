@@ -11,7 +11,7 @@ public abstract class ObservableObject
     private uint _suppressions;
     private uint _version;
 
-    private PropertyObservable<T>? GetObservable<T>(IntPtr offset)
+    private protected PropertyObservable? GetObservable(IntPtr offset)
     {
         for (var observable = _observables;
             observable is not null;
@@ -19,24 +19,42 @@ public abstract class ObservableObject
         {
             if (observable.Offset == offset)
             {
-                Debug.Assert(observable is PropertyObservable<T>);
-                return Unsafe.As<PropertyObservable<T>>(observable);
+                return observable;
             }
         }
 
         return null;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private PropertyObservable<T>? GetObservableFor<T>(IntPtr offset)
+    {
+        var observable = GetObservable(offset);
+
+        Debug.Assert(
+            observable is null ||
+            observable is PropertyObservable<T>);
+
+        return Unsafe.As<PropertyObservable<T>>(observable);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void Set<T>(ReadOnlyProperty<T> property, T value) =>
         property.Owner.Set(property.Offset, value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected Property<T> Property<T>(ref T field)
     {
-        var offset = Unsafe.ByteOffset(
+        var offset = GetOffsetOf(ref field);
+        return new Property<T>(this, offset);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private protected IntPtr GetOffsetOf<T>(ref T field)
+    {
+        return Unsafe.ByteOffset(
             ref GetReference(),
             ref Unsafe.As<T, IntPtr>(ref field));
-        return new Property<T>(this, offset);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -51,6 +69,7 @@ public abstract class ObservableObject
         return ref Unsafe.As<IntPtr, T>(ref valueRef);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal T Get<T>(IntPtr offset) =>
         GetReference<T>(offset);
 
@@ -63,7 +82,7 @@ public abstract class ObservableObject
 
         GetReference<T>(offset) = value;
 
-        var observable = GetObservable<T>(offset);
+        var observable = GetObservableFor<T>(offset);
         if (observable is not null)
         {
             if (_suppressions > 0)
@@ -80,7 +99,7 @@ public abstract class ObservableObject
 
     internal IObservable<T> Changed<T>(IntPtr offset)
     {
-        var observable = GetObservable<T>(offset);
+        var observable = GetObservableFor<T>(offset);
         if (observable is null)
         {
             observable = new PropertyObservable<T>(
@@ -128,46 +147,6 @@ public abstract class ObservableObject
             }
         }
     }
-
-    private abstract class PropertyObservable
-    {
-        internal readonly ObservableObject Owner;
-        internal readonly PropertyObservable? Next;
-        internal readonly IntPtr Offset;
-
-        internal uint Version;
-
-        protected PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next) =>
-            (Owner, Offset, Next) = (owner, offset, next);
-
-        public abstract void Changed();
-    }
-
-    private sealed class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>
-    {
-        private ObservableSubscriptions<T> _subscriptions;
-
-        public PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next)
-            : base(owner, offset, next) { }
-
-        public override void Changed() =>
-            Changed(Owner.Get<T>(Offset));
-
-        public void Changed(T value) =>
-            _subscriptions.OnNext(value);
-
-        public IDisposable Subscribe(IObserver<T> observer)
-        {
-            observer.OnNext(Owner.Get<T>(Offset));
-            return _subscriptions.Subscribe(this, observer);
-        }
-
-        public void Subscribe(ObservableSubscription<T> subscription) =>
-            _subscriptions.Subscribe(this, subscription);
-
-        public void Unsubscribe(ObservableSubscription<T> subscription) =>
-            _subscriptions.Unsubscribe(subscription);
-    }
 }
 
 public readonly struct Property<T>
@@ -205,4 +184,44 @@ public readonly struct ReadOnlyProperty<T>
 
     public static implicit operator T(ReadOnlyProperty<T> property) =>
         property.Get();
+}
+
+internal abstract class PropertyObservable
+{
+    internal readonly ObservableObject Owner;
+    internal readonly PropertyObservable? Next;
+    internal readonly IntPtr Offset;
+
+    internal uint Version;
+
+    protected PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next) =>
+        (Owner, Offset, Next) = (owner, offset, next);
+
+    public abstract void Changed();
+}
+
+internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>
+{
+    private ObservableSubscriptions<T> _subscriptions;
+
+    public PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next)
+        : base(owner, offset, next) { }
+
+    public override void Changed() =>
+        Changed(Owner.Get<T>(Offset));
+
+    public void Changed(T value) =>
+        _subscriptions.OnNext(value);
+
+    public IDisposable Subscribe(IObserver<T> observer)
+    {
+        observer.OnNext(Owner.Get<T>(Offset));
+        return _subscriptions.Subscribe(this, observer);
+    }
+
+    public void Subscribe(ObservableSubscription<T> subscription) =>
+        _subscriptions.Subscribe(this, subscription);
+
+    public void Unsubscribe(ObservableSubscription<T> subscription) =>
+        _subscriptions.Unsubscribe(subscription);
 }

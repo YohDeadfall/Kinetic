@@ -4,7 +4,7 @@ using Xunit;
 
 namespace Kinetic.Tests;
 
-public class KineticObjectTests
+public class ObservableObjectTests
 {
     [Fact]
     public void PropertyAccessors()

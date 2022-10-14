@@ -3,14 +3,14 @@ using Xunit;
 
 namespace Kinetic.Collections.Tests;
 
-public class CollectionChangeTests
+public class ListChangeTests
 {
     [Fact]
     public void Insert()
     {
-        var change = CollectionChange.Insert(1, "one");
+        var change = ListChange.Insert(1, "one");
 
-        Assert.Equal(CollectionChangeAction.Insert, change.Action);
+        Assert.Equal(ListChangeAction.Insert, change.Action);
         Assert.Equal("one", change.NewItem);
         Assert.Equal(1, change.NewIndex);
         Assert.Throws<InvalidOperationException>(() => change.OldItem);
@@ -20,9 +20,9 @@ public class CollectionChangeTests
     [Fact]
     public void Remove()
     {
-        var change = CollectionChange.Remove(1, "one");
+        var change = ListChange.Remove(1, "one");
 
-        Assert.Equal(CollectionChangeAction.Remove, change.Action);
+        Assert.Equal(ListChangeAction.Remove, change.Action);
         Assert.Throws<InvalidOperationException>(() => change.NewItem);
         Assert.Throws<InvalidOperationException>(() => change.NewIndex);
         Assert.Equal("one", change.OldItem);
@@ -32,9 +32,9 @@ public class CollectionChangeTests
     [Fact]
     public void Replace()
     {
-        var change = CollectionChange.Replace(1, "one", "two");
+        var change = ListChange.Replace(1, "one", "two");
 
-        Assert.Equal(CollectionChangeAction.Replace, change.Action);
+        Assert.Equal(ListChangeAction.Replace, change.Action);
         Assert.Equal("two", change.NewItem);
         Assert.Equal(1, change.NewIndex);
         Assert.Equal("one", change.OldItem);
@@ -44,9 +44,9 @@ public class CollectionChangeTests
     [Fact]
     public void Move()
     {
-        var change = CollectionChange.Move(1, 2, "one");
+        var change = ListChange.Move(1, 2, "one");
 
-        Assert.Equal(CollectionChangeAction.Move, change.Action);
+        Assert.Equal(ListChangeAction.Move, change.Action);
         Assert.Equal("one", change.NewItem);
         Assert.Equal(2, change.NewIndex);
         Assert.Equal("one", change.OldItem);
@@ -56,10 +56,10 @@ public class CollectionChangeTests
     [Fact]
     public void Reset()
     {
-        var change = CollectionChange.Reset<string>();
+        var change = ListChange.Reset<string>();
 
         Assert.Equal(default, change);
-        Assert.Equal(CollectionChangeAction.Reset, change.Action);
+        Assert.Equal(ListChangeAction.Reset, change.Action);
         Assert.Throws<InvalidOperationException>(() => change.NewItem);
         Assert.Throws<InvalidOperationException>(() => change.NewIndex);
         Assert.Throws<InvalidOperationException>(() => change.OldItem);

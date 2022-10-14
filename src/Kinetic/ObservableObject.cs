@@ -11,6 +11,8 @@ public abstract class ObservableObject
     private uint _suppressions;
     private uint _version;
 
+    protected bool NotificationsEnabled => _suppressions == 0;
+
     private protected PropertyObservable? GetObservable(IntPtr offset)
     {
         for (var observable = _observables;
@@ -36,6 +38,33 @@ public abstract class ObservableObject
             observable is PropertyObservable<T>);
 
         return Unsafe.As<PropertyObservable<T>>(observable);
+    }
+
+    private protected PropertyObservable EnsureObservable(IntPtr offset, Func<ObservableObject, IntPtr, PropertyObservable?, PropertyObservable> factory)
+    {
+        var observable = GetObservable(offset);
+        if (observable is null)
+        {
+            observable = factory(this, offset, _observables);
+
+            _observables = observable;
+        }
+
+        return observable;
+    }
+
+    internal IObservable<T> EnsureObservableFor<T>(IntPtr offset)
+    {
+        var observable = GetObservableFor<T>(offset);
+        if (observable is null)
+        {
+            observable = new PropertyObservable<T>(
+                this, offset, next: _observables);
+
+            _observables = observable;
+        }
+
+        return observable;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -97,20 +126,6 @@ public abstract class ObservableObject
         }
     }
 
-    internal IObservable<T> Changed<T>(IntPtr offset)
-    {
-        var observable = GetObservableFor<T>(offset);
-        if (observable is null)
-        {
-            observable = new PropertyObservable<T>(
-                this, offset, next: _observables);
-
-            _observables = observable;
-        }
-
-        return observable;
-    }
-
     public SuppressNotificationsScope SuppressNotifications() =>
         new SuppressNotificationsScope(this);
 
@@ -161,7 +176,7 @@ public readonly struct Property<T>
 
     public void Set(T value) => Owner.Set(Offset, value);
 
-    public IObservable<T> Changed => Owner.Changed<T>(Offset);
+    public IObservable<T> Changed => Owner.EnsureObservableFor<T>(Offset);
 
     public static implicit operator T(Property<T> property) =>
         property.Get();
@@ -180,7 +195,7 @@ public readonly struct ReadOnlyProperty<T>
 
     public T Get() => Owner.Get<T>(Offset);
 
-    public IObservable<T> Changed => Owner.Changed<T>(Offset);
+    public IObservable<T> Changed => Owner.EnsureObservableFor<T>(Offset);
 
     public static implicit operator T(ReadOnlyProperty<T> property) =>
         property.Get();

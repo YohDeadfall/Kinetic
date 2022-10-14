@@ -32,12 +32,12 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
     bool ICollection<T>.IsReadOnly => false;
 
     int IReadOnlyCollection<T>.Count => _count;
-    
+
     public T this[int index]
     {
         get
         {
-            if ((uint)index >= (uint)_count)
+            if ((uint) index >= (uint) _count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
@@ -46,7 +46,7 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         }
         set
         {
-            if ((uint)index >= (uint)_count)
+            if ((uint) index >= (uint) _count)
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
@@ -54,8 +54,8 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
             var previous = _items[index];
 
             _items[index] = value;
-            _version +=1;
-            
+            _version += 1;
+
             if (NotificationsEnabled)
             {
                 GetChangeObservable()?.Replaced(index, previous, value);
@@ -67,14 +67,14 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
     {
         var index = _count;
 
-        if ((uint)index == (uint)_items.Length)
+        if ((uint) index == (uint) _items.Length)
         {
             Grow(index + 1);
         }
 
         _count = index + 1;
         _items[index] = item;
-        _version+=1;
+        _version += 1;
 
         if (NotificationsEnabled)
         {
@@ -82,15 +82,16 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
             GetChangeObservable()?.Inserted(index, item);
         }
     }
+
     public void Clear()
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
-                Array.Clear(_items, 0, _count);
+            Array.Clear(_items, 0, _count);
         }
-        
+
         _count = 0;
-        _version+=1;
+        _version += 1;
 
         if (NotificationsEnabled)
         {
@@ -131,31 +132,31 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
             _items = Array.Empty<T>();
         }
     }
-        
+
     public Enumerator GetEnumerator() =>
         new Enumerator(this);
 
-    IEnumerator<T> IEnumerable<T>.GetEnumerator()=>
+    IEnumerator<T> IEnumerable<T>.GetEnumerator() =>
         GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator()=>
+    IEnumerator IEnumerable.GetEnumerator() =>
         GetEnumerator();
 
-    public int IndexOf(T item)=>
+    public int IndexOf(T item) =>
         Array.IndexOf(_items, item, 0, _count);
 
-    public int IndexOf(T item, int index)=>
-        index >_count ? throw new ArgumentOutOfRangeException(nameof(index)):
+    public int IndexOf(T item, int index) =>
+        index > _count ? throw new ArgumentOutOfRangeException(nameof(index)) :
         Array.IndexOf(_items, item, index, _count - index);
-    
+
     public int IndexOf(T item, int index, int count) =>
-        index >_count            ? throw new ArgumentOutOfRangeException(nameof(index)):
-        index > _count - count || count < 0 ? throw new ArgumentOutOfRangeException(nameof(count)):
+        index > _count ? throw new ArgumentOutOfRangeException(nameof(index)) :
+        index > _count - count || count < 0 ? throw new ArgumentOutOfRangeException(nameof(count)) :
         Array.IndexOf(_items, item, index, count);
 
     public void Insert(int index, T item)
     {
-        if ((uint)index > (uint)_count)
+        if ((uint) index > (uint) _count)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
         }
@@ -171,13 +172,13 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         }
 
         _items[index] = item;
-        _count+=1;
-        _version+=1;
+        _count += 1;
+        _version += 1;
 
         if (NotificationsEnabled)
         {
-        GetCountObservable()?.Changed(_count);
-        GetChangeObservable()?.Removed(index, item);
+            GetCountObservable()?.Changed(_count);
+            GetChangeObservable()?.Removed(index, item);
         }
     }
 
@@ -196,7 +197,7 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
 
     public void RemoveAt(int index)
     {
-        var item = (uint)index >= (uint)_count
+        var item = (uint) index >= (uint) _count
             ? throw new ArgumentOutOfRangeException(nameof(index))
             : _items[index];
 
@@ -212,7 +213,7 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
                 destinationIndex: index,
                 length: _count - index);
         }
-        
+
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
             _items[_count] = default!;
@@ -225,11 +226,11 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         }
     }
 
-    public IDisposable Subscribe(IObserver<ListChange<T>> observer)=>
+    public IDisposable Subscribe(IObserver<ListChange<T>> observer) =>
         EnsureChangeObservable().Subscribe(observer);
-    
-    private ListChangeObservable<T> EnsureChangeObservable()=>
-    Unsafe.As<ListChangeObservable<T>>(EnsureObservable(GetOffsetOf(ref _items), static (self, offset, next) => new ListChangeObservable<T>(self, offset, next)));
+
+    private ListChangeObservable<T> EnsureChangeObservable() =>
+        Unsafe.As<ListChangeObservable<T>>(EnsureObservable(GetOffsetOf(ref _items), static (self, offset, next) => new ListChangeObservable<T>(self, offset, next)));
 
     private ListChangeObservable<T>? GetChangeObservable() =>
         Unsafe.As<ListChangeObservable<T>?>(GetObservable(GetOffsetOf(ref _items)));
@@ -260,7 +261,7 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         {
             var items = _items;
 
-            if (_version == items._version && ((uint)_index < (uint)items._count))
+            if (_version == items._version && ((uint) _index < (uint) items._count))
             {
                 _current = items._items[_index];
                 _index++;
@@ -287,7 +288,7 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
 
         object? IEnumerator.Current =>
             _index == 0 || _index == _items._count + 1
-                ?throw new InvalidOperationException()
+                ? throw new InvalidOperationException()
                 : Current;
 
         void IEnumerator.Reset()

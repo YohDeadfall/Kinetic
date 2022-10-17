@@ -168,7 +168,12 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
 
         if (index < _count)
         {
-            Array.Copy(_items, index, _items, index + 1, _count - index);
+            Array.Copy(
+                sourceArray: _items,
+                sourceIndex: index,
+                destinationArray: _items,
+                destinationIndex: index + 1,
+                length: _count - index);
         }
 
         _items[index] = item;
@@ -223,6 +228,44 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         {
             GetCountObservable()?.Changed(_count);
             GetChangeObservable()?.Removed(index, item);
+        }
+    }
+
+    public void Move(int oldIndex, int newIndex)
+    {
+        if ((uint) oldIndex >= (uint) _count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(oldIndex));
+        }
+
+        if ((uint) newIndex >= (uint) _count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(newIndex));
+        }
+
+        var item = _items[oldIndex];
+
+        Array.Copy(
+            sourceArray: _items,
+            sourceIndex: oldIndex + 1,
+            destinationArray: _items,
+            destinationIndex: oldIndex,
+            length: _count - oldIndex);
+
+        Array.Copy(
+            sourceArray: _items,
+            sourceIndex: newIndex,
+            destinationArray: _items,
+            destinationIndex: newIndex + 1,
+            length: _count - newIndex);
+
+        _items[newIndex] = item;
+        _version += 1;
+
+        if (NotificationsEnabled)
+        {
+            GetCountObservable()?.Changed(_count);
+            GetChangeObservable()?.Moved(oldIndex, newIndex, item);
         }
     }
 
@@ -333,10 +376,10 @@ public enum ListChangeAction
 
 public readonly struct ListChange<T> : IEquatable<ListChange<T>>
 {
-    private readonly T _oldItem;
-    private readonly T _newItem;
     private readonly int _oldIndex;
     private readonly int _newIndex;
+    private readonly T _oldItem;
+    private readonly T _newItem;
 
     internal ListChange(
         T oldItem = default!,
@@ -346,8 +389,8 @@ public readonly struct ListChange<T> : IEquatable<ListChange<T>>
     {
         _oldItem = oldItem;
         _newItem = newItem;
-        _oldIndex = -oldIndex;
-        _newIndex = -newIndex;
+        _oldIndex = ~oldIndex;
+        _newIndex = ~newIndex;
     }
 
     public ListChangeAction Action
@@ -366,8 +409,8 @@ public readonly struct ListChange<T> : IEquatable<ListChange<T>>
     public T OldItem => _oldIndex < 0 ? _oldItem : throw new InvalidOperationException();
     public T NewItem => _newIndex < 0 ? _newItem : throw new InvalidOperationException();
 
-    public int OldIndex => _oldIndex < 0 ? -_oldIndex : throw new InvalidOperationException();
-    public int NewIndex => _newIndex < 0 ? -_newIndex : throw new InvalidOperationException();
+    public int OldIndex => _oldIndex < 0 ? ~_oldIndex : throw new InvalidOperationException();
+    public int NewIndex => _newIndex < 0 ? ~_newIndex : throw new InvalidOperationException();
 
     public override int GetHashCode() => HashCode.Combine(_oldIndex, _newIndex, _oldItem, _newItem);
 

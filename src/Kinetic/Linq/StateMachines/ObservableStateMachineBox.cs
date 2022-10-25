@@ -44,40 +44,25 @@ internal sealed class ObservableStateMachineBox<TResult, TSource, TStateMachine>
         where TStateMachinePart : struct, IObserverStateMachine<T>
     {
         return observable.Subscribe(
-            state: (self: this, offset: GetStateMachineOffset(stateMachine)),
+            state: (self: this, offset: Observer.GetStateMachineOffset(_stateMachine, stateMachine)),
             onNext: static (state, value) =>
             {
-                state.self
-                    .GetStateMachine<TStateMachinePart>(state.offset)
+                Observer
+                    .GetStateMachine<TStateMachine, TStateMachinePart>(state.self._stateMachine, state.offset)
                     .OnNext(value);
             },
             onError: static (state, error) =>
             {
-                state.self
-                    .GetStateMachine<TStateMachinePart>(state.offset)
+                Observer
+                    .GetStateMachine<TStateMachine, TStateMachinePart>(state.self._stateMachine, state.offset)
                     .OnError(error);
             },
             onCompleted: static (state) =>
             {
-                state.self
-                    .GetStateMachine<TStateMachinePart>(state.offset)
+                Observer
+                    .GetStateMachine<TStateMachine, TStateMachinePart>(state.self._stateMachine, state.offset)
                     .OnCompleted();
             });
-    }
-
-    private ref TStateMachinePart GetStateMachine<TStateMachinePart>(IntPtr offset)
-    {
-        ref var stateMachine = ref Unsafe.As<TStateMachine, IntPtr>(ref _stateMachine);
-        ref var stateMachinePart = ref Unsafe.As<IntPtr, TStateMachinePart>(
-            ref Unsafe.AddByteOffset(ref stateMachine, offset));
-        return ref stateMachinePart!;
-    }
-
-    private IntPtr GetStateMachineOffset<TStateMachinePart>(in TStateMachinePart stateMachine)
-    {
-        return Unsafe.ByteOffset(
-            ref Unsafe.As<TStateMachine, IntPtr>(ref _stateMachine),
-            ref Unsafe.As<TStateMachinePart, IntPtr>(ref Unsafe.AsRef(stateMachine)));
     }
 
     public void Dispose() => _stateMachine.Dispose();

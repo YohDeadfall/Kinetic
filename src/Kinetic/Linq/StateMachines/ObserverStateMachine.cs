@@ -145,6 +145,25 @@ internal interface IObserverBuilderFactoryStep<TObserver>
     TObserver Observer { get; }
 }
 
+internal sealed class Observer
+{
+    internal static ref TStateMachinePart GetStateMachine<TStateMachine, TStateMachinePart>(in TStateMachine stateMachine, IntPtr offset)
+    {
+        ref var stateMachineAddr = ref Unsafe.As<TStateMachine, IntPtr>(
+            ref Unsafe.AsRef(stateMachine));
+        ref var stateMachinePart = ref Unsafe.As<IntPtr, TStateMachinePart>(
+            ref Unsafe.AddByteOffset(ref stateMachineAddr, offset));
+        return ref stateMachinePart!;
+    }
+
+    internal static IntPtr GetStateMachineOffset<TStateMachinePart, TStateMachine>(in TStateMachine stateMachine, in TStateMachinePart stateMachinePart)
+    {
+        return Unsafe.ByteOffset(
+            ref Unsafe.As<TStateMachine, IntPtr>(ref Unsafe.AsRef(stateMachine)),
+            ref Unsafe.As<TStateMachinePart, IntPtr>(ref Unsafe.AsRef(stateMachinePart)));
+    }
+}
+
 internal struct ObserverStateMachine<TStateMachine, T> : IObserverStateMachine<T>
     where TStateMachine : struct, IObserverStateMachine<T>
 {

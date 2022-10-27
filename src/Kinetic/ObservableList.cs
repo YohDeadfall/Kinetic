@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 namespace Kinetic;
 
 [DebuggerDisplay("Count = {Count}")]
-public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyList<T>
+public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyList<T>
 {
     private const int DefaultCapacity = 4;
 
@@ -15,10 +15,10 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
     private int _count;
     private int _version;
 
-    public ObservableList() =>
+    protected ReadOnlyObservableList() =>
         _items = Array.Empty<T>();
 
-    public ObservableList(int capacity) =>
+    protected ReadOnlyObservableList(int capacity) =>
         _items = capacity < 0
         ? throw new ArgumentOutOfRangeException(nameof(capacity))
         : capacity > 0 ? new T[capacity] : Array.Empty<T>();
@@ -27,11 +27,9 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
 
     public ReadOnlyProperty<int> Count => Property(ref _count);
 
-    int ICollection<T>.Count => _count;
+    int IReadOnlyCollection<T>.Count => ItemCount;
 
-    bool ICollection<T>.IsReadOnly => false;
-
-    int IReadOnlyCollection<T>.Count => _count;
+    protected int ItemCount => _count;
 
     public T this[int index]
     {
@@ -44,26 +42,9 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
 
             return _items[index];
         }
-        set
-        {
-            if ((uint) index >= (uint) _count)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-
-            var previous = _items[index];
-
-            _items[index] = value;
-            _version += 1;
-
-            if (NotificationsEnabled)
-            {
-                GetChangeObservable()?.Replaced(index, previous, value);
-            }
-        }
     }
 
-    public void Add(T item)
+    protected void AddItem(T item)
     {
         var index = _count;
 
@@ -83,7 +64,7 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         }
     }
 
-    public void Clear()
+    protected void ClearItems()
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
         {
@@ -154,7 +135,7 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         index > _count - count || count < 0 ? throw new ArgumentOutOfRangeException(nameof(count)) :
         Array.IndexOf(_items, item, index, count);
 
-    public void Insert(int index, T item)
+    protected void InsertItem(int index, T item)
     {
         if ((uint) index > (uint) _count)
         {
@@ -187,12 +168,12 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         }
     }
 
-    public bool Remove(T item)
+    protected bool RemoveItem(T item)
     {
         var index = IndexOf(item);
         if (index != -1)
         {
-            RemoveAt(index);
+            RemoveItemAt(index);
 
             return true;
         }
@@ -200,7 +181,7 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         return false;
     }
 
-    public void RemoveAt(int index)
+    protected void RemoveItemAt(int index)
     {
         var item = (uint) index >= (uint) _count
             ? throw new ArgumentOutOfRangeException(nameof(index))
@@ -231,7 +212,25 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
         }
     }
 
-    public void Move(int oldIndex, int newIndex)
+    protected void ReplaceItem(int index, T item)
+    {
+        if ((uint) index >= (uint) _count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        var previous = _items[index];
+
+        _items[index] = item;
+        _version += 1;
+
+        if (NotificationsEnabled)
+        {
+            GetChangeObservable()?.Replaced(index, previous, item);
+        }
+    }
+
+    protected void MoveItem(int oldIndex, int newIndex)
     {
         if ((uint) oldIndex >= (uint) _count)
         {
@@ -283,12 +282,12 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
 
     public struct Enumerator : IEnumerator<T>
     {
-        private readonly ObservableList<T> _items;
+        private readonly ReadOnlyObservableList<T> _items;
         private int _index;
         private readonly int _version;
         private T? _current;
 
-        internal Enumerator(ObservableList<T> items)
+        internal Enumerator(ReadOnlyObservableList<T> items)
         {
             _items = items;
             _index = 0;
@@ -345,6 +344,41 @@ public sealed class ObservableList<T> : ObservableObject, IList<T>, IReadOnlyLis
             _current = default;
         }
     }
+}
+
+public sealed class ObservableList<T> : ReadOnlyObservableList<T>, IList<T>
+{
+    public ObservableList() : base() { }
+
+    public ObservableList(int capacity) : base(capacity) { }
+
+    int ICollection<T>.Count => ItemCount;
+
+    bool ICollection<T>.IsReadOnly => false;
+
+    public new T this[int index]
+    {
+        get => base[index];
+        set => ReplaceItem(index, value);
+    }
+
+    public void Add(T item) =>
+        AddItem(item);
+
+    public void Clear() =>
+        ClearItems();
+
+    public void Insert(int index, T item) =>
+        InsertItem(index, item);
+
+    public bool Remove(T item) =>
+        RemoveItem(item);
+
+    public void RemoveAt(int index) =>
+        RemoveItemAt(index);
+
+    public void Move(int oldIndex, int newIndex) =>
+        MoveItem(oldIndex, newIndex);
 }
 
 public static class ListChange

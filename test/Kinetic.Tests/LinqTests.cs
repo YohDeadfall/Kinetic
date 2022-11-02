@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Kinetic.Subjects;
 using Xunit;
@@ -487,6 +488,51 @@ public class LinqTests
     }
 
     [Fact]
+    public async ValueTask Throttle()
+    {
+        var delay = TimeSpan.FromMilliseconds(1);
+        var context = SynchronizationContext.Current;
+
+        try
+        {
+            SynchronizationContext.SetSynchronizationContext(
+                new WithoutSynchronizationContext());
+
+            await ThrottleCore(false).ConfigureAwait(false);
+
+            SynchronizationContext.SetSynchronizationContext(
+                new WithSynchronizationContext { Delay = delay });
+
+            await ThrottleCore(true).ConfigureAwait(false);
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(context);
+        }
+
+        async ValueTask ThrottleCore(bool continueOnCapturedContext)
+        {
+            var source = new PublishSubject<int>();
+            var values = source
+                .Throttle(delay, continueOnCapturedContext)
+                .ToArray()
+                .ToValueTask();
+
+            source.OnNext(1);
+            source.OnNext(2);
+
+            // To avoid a race between Task.Delay
+            // and Throttle double the delay here.
+            await Task.Delay(delay * 2).ConfigureAwait(false);
+
+            source.OnNext(10);
+            source.OnNext(20);
+
+            Assert.Equal(new[] { 2, 20 }, await values.ConfigureAwait(false));
+        }
+    }
+
+    [Fact]
     public async ValueTask ToArray()
     {
         var source = new PublishSubject<int>();
@@ -588,5 +634,26 @@ public class LinqTests
 
         public Container() => _source = new PublishSubject<T>();
         public Property<PublishSubject<T>> PublishSubject => Property(ref _source);
+    }
+
+    private sealed class WithSynchronizationContext : SynchronizationContext
+    {
+        public TimeSpan Delay { get; set; }
+
+        public override void Post(SendOrPostCallback d, object? state) =>
+            Task.Delay(Delay).ContinueWith(_ => d.Invoke(state));
+
+        public override void Send(SendOrPostCallback d, object? state) =>
+            throw new InvalidOperationException("Must not be used.");
+    }
+
+
+    private sealed class WithoutSynchronizationContext : SynchronizationContext
+    {
+        public override void Post(SendOrPostCallback d, object? state) =>
+            throw new InvalidOperationException("Must not be used.");
+
+        public override void Send(SendOrPostCallback d, object? state) =>
+            throw new InvalidOperationException("Must not be used.");
     }
 }

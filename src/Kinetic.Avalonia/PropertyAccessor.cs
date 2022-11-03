@@ -162,24 +162,4 @@ public sealed class PropertyAccessor : IPropertyAccessorPlugin
         protected override void UnsubscribeCore() =>
             _subscription?.Dispose();
     }
-
-    private static Func<WeakReference<object>, TProperty> CreatePropertyGetter<TOwner, TProperty>(PropertyInfo property)
-        where TProperty : struct
-    {
-        static TProperty Internal(WeakReference<object> reference, Func<TOwner, TProperty> getter) =>
-            reference.TryGetTarget(out var target) &&
-            target is TOwner owner
-            ? getter(owner)
-            : default;
-
-        Debug.Assert(property.DeclaringType == typeof(TOwner));
-        Debug.Assert(property.PropertyType == typeof(TProperty));
-        Debug.Assert(property.GetMethod is not null);
-
-        var getter = property.GetMethod
-            .MakeGenericMethod(property.DeclaringType, property.PropertyType)
-            .CreateDelegate<Func<TOwner, TProperty>>();
-
-        return reference => Internal(reference, getter);
-    }
 }

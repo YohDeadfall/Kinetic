@@ -65,7 +65,7 @@ using Avalonia.Data.Core;
 using Kinetic.Data;
 
 // Adds the accessor for Kinetic properties before the CLR property accessor  
-ExpressionObserver.PropertyAccessors.Insert(2, new PropertyAccessor());
+ExpressionObserver.PropertyAccessors.Insert(2, new KineticPropertyAccessor());
 ```
 
 > This approach is incompatible with compiled bindings since XAMLIL has no idea about Kinetic properties and treats them as usual properties. Ability to create compiled bindings in XAML will come in one of next releases, but it's already available in code behind using `OneWay` and `TwoWay` methods of `Binding` type in `Kinetic.Data`.

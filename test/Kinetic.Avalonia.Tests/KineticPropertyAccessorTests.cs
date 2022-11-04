@@ -1,14 +1,16 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Presenters;
 using Avalonia.Data.Core;
+using Avalonia.Logging;
 using Xunit;
 
 namespace Kinetic.Data.Tests;
 
-public class PropertyAccessorTests
+public class KineticPropertyAccessorTests
 {
-    static PropertyAccessorTests() =>
-        ExpressionObserver.PropertyAccessors.Insert(2, new PropertyAccessor());
+    static KineticPropertyAccessorTests() =>
+        ExpressionObserver.PropertyAccessors.Insert(2, new KineticPropertyAccessor());
 
     [Fact]
     public void BindingToProperty()
@@ -48,13 +50,34 @@ public class PropertyAccessorTests
         Assert.Equal("bar", source.TextReadOnly);
     }
 
+    [Fact]
+    public void BindingToList()
+    {
+        var source = new Source();
+        var target = new ItemsPresenter { DataContext = source };
+        var binding = new Avalonia.Data.Binding { Path = "Items" };
+
+        target.ApplyTemplate();
+        target.Bind(ItemsRepeater.ItemsProperty, binding);
+
+        Assert.Equal(source.Items, target.Items);
+
+        source.Items.Add("foo");
+        source.Items.Add("bar");
+
+        Assert.Equal("foo", ((ContentPresenter) target.Panel.Children[0]).Content);
+        Assert.Equal("bar", ((ContentPresenter) target.Panel.Children[1]).Content);
+    }
+
     private sealed class Source : ObservableObject
     {
-        private string _text = string.Empty;
-        private string _textReadOnly = string.Empty;
+        private string? _text;
+        private string? _textReadOnly;
 
-        public Property<string> Text => Property(ref _text);
-        public ReadOnlyProperty<string> TextReadOnly => Property(ref _textReadOnly);
+        public Property<string?> Text => Property(ref _text);
+        public ReadOnlyProperty<string?> TextReadOnly => Property(ref _textReadOnly);
+
+        public ObservableList<string> Items { get; } = new();
 
         public void SetTextReadOnly(string value) => Set(TextReadOnly, value);
     }

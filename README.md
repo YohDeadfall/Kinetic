@@ -56,7 +56,7 @@ The project provides a subset of LINQ extensions, which are contained by `Kineti
 
 ## Integration with UI
 
-Since all observable properties should be defined as `Property<T>` or `ReadOnlyProperty<T>`, there's a limitation on usage of Kinetic. It's supported only by Avalonia at the moment thanfully to the extensible binding system, but a general solution to support any XAML framework will come later.
+Since all observable properties should be defined as `Property<T>` or `ReadOnlyProperty<T>`, there's a limitation of Kinetic usage. It's supported only by Avalonia at the moment thanfully to the extensible binding system, but a general solution to support any XAML framework will come later.
 
 To make Avalonia recognize Kinetic properties, the `Kinetic.Avalonia` package should be added and one line of code at startup as well:
 

@@ -83,7 +83,7 @@ public static partial class Observable
             _valueSelector = valueSelector;
         }
 
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
         public void Dispose() => _continuation.Dispose();
 
         public void OnNext(TSource value)

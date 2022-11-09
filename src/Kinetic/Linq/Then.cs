@@ -30,7 +30,7 @@ public static partial class Observable
     {
         private TContinuation _continuation;
         private readonly Func<TSource, IObservable<TResult>> _selector;
-        private IObserverStateMachineBox? _box;
+        private ObserverStateMachineBox? _box;
         private IDisposable? _subscription;
 
         public ThenStateMachine(TContinuation continuation, Func<TSource, IObservable<TResult>> selector)
@@ -42,7 +42,7 @@ public static partial class Observable
             _subscription = null;
         }
 
-        public void Initialize(IObserverStateMachineBox box)
+        public void Initialize(ObserverStateMachineBox box)
         {
             _box = box;
             _continuation.Initialize(box);

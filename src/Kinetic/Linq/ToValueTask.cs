@@ -8,102 +8,81 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ValueTask<TResult> ToValueTask<TResult>(this IObservable<TResult> source) =>
+    public static ValueTask<T> ToValueTask<T>(this IObservable<T> source) =>
         source.ToBuilder().ToValueTask();
 
-    public static ValueTask<TResult> ToValueTask<TResult>(this in ObserverBuilder<TResult> source)
+    public static ValueTask<T> ToValueTask<T>(this in ObserverBuilder<T> source)
     {
-        var taskSource = source.Build<ValueTaskSourceStateMachine<TResult>, ValueTaskSourceFactory<TResult>, ValueTaskSource<TResult>>(
+        var taskSource = source.First().Build<ValueTaskSource<T>.StateMachine, ValueTaskSource<T>.BoxFactory, ValueTaskSource<T>.IBoxExternal>(
             continuation: new(),
             factory: new());
 
-        return new ValueTask<TResult>(taskSource, taskSource.Token);
+        return new ValueTask<T>(taskSource, taskSource.Token);
     }
+}
 
-    private struct ValueTaskSourceStateMachine<TResult> : IObserverStateMachine<TResult>
+internal static class ValueTaskSource<TResult>
+{
+    internal interface IBoxExternal : IValueTaskSource<TResult>
     {
-        private ValueTaskSource<TResult> _taskSource;
-
-        public void Initialize(IObserverStateMachineBox box) => _taskSource = (ValueTaskSource<TResult>) box;
-        public void Dispose() { }
-
-        public void OnNext(TResult value) => _taskSource.OnNext(value);
-        public void OnError(Exception error) => _taskSource.OnError(error);
-        public void OnCompleted() { }
+        short Token { get; }
     }
 
-    private abstract class ValueTaskSource<TResult> : IValueTaskSource<TResult>
+    private interface IBox : IBoxExternal
+    {
+        ref ManualResetValueTaskSourceCore<TResult> Core { get; }
+    }
+
+    private sealed class Box<T, TStateMachine> : ObserverStateMachineBox<T, TStateMachine>, IBox
+        where TStateMachine : struct, IObserverStateMachine<T>
     {
         private ManualResetValueTaskSourceCore<TResult> _core;
 
+        public ref ManualResetValueTaskSourceCore<TResult> Core => ref _core;
+
         public short Token => _core.Version;
+
+        public Box(in TStateMachine stateMachine) :
+            base(stateMachine)
+        { }
 
         public ValueTaskSourceStatus GetStatus(short token) => _core.GetStatus(token);
         public TResult GetResult(short token) => _core.GetResult(token);
 
         public void OnCompleted(Action<object?> continuation, object? state, short token, ValueTaskSourceOnCompletedFlags flags) =>
             _core.OnCompleted(continuation, state, token, flags);
-
-        public void OnNext(TResult value) => _core.SetResult(value);
-        public void OnError(Exception error) => _core.SetException(error);
     }
 
-    private sealed class ValueTaskSource<TResult, TSource, TStateMachine> : ValueTaskSource<TResult>, IObserver<TSource>, IObserverStateMachineBox, IDisposable
-        where TStateMachine : struct, IObserverStateMachine<TSource>
+    internal readonly struct BoxFactory : IObserverFactory<IBoxExternal>
     {
-        private TStateMachine _stateMachine;
-
-        public ValueTaskSource(in TStateMachine stateMachine)
-        {
-            try
-            {
-                _stateMachine = stateMachine;
-                _stateMachine.Initialize(this);
-            }
-            catch
-            {
-                _stateMachine.Dispose();
-                throw;
-            }
-        }
-
-        public IDisposable Subscribe<T, TStateMachinePart>(IObservable<T> observable, in TStateMachinePart stateMachine)
-            where TStateMachinePart : struct, IObserverStateMachine<T>
-        {
-            return observable.Subscribe(
-                state: (self: this, offset: Observer.GetStateMachineOffset(_stateMachine, stateMachine)),
-                onNext: static (state, value) =>
-                {
-                    Observer
-                        .GetStateMachine<TStateMachine, TStateMachinePart>(state.self._stateMachine, state.offset)
-                        .OnNext(value);
-                },
-                onError: static (state, error) =>
-                {
-                    Observer
-                        .GetStateMachine<TStateMachine, TStateMachinePart>(state.self._stateMachine, state.offset)
-                        .OnError(error);
-                },
-                onCompleted: static (state) =>
-                {
-                    Observer
-                        .GetStateMachine<TStateMachine, TStateMachinePart>(state.self._stateMachine, state.offset)
-                        .OnCompleted();
-                });
-        }
-
-        public void Dispose() => _stateMachine.Dispose();
-        void IObserver<TSource>.OnNext(TSource value) => _stateMachine.OnNext(value);
-        void IObserver<TSource>.OnError(Exception error) => _stateMachine.OnError(error);
-        void IObserver<TSource>.OnCompleted() => _stateMachine.OnCompleted();
+        public IBoxExternal Create<T, TStateMachine>(in TStateMachine stateMachine)
+            where TStateMachine : struct, IObserverStateMachine<T> =>
+            new Box<T, TStateMachine>(stateMachine);
     }
 
-    private struct ValueTaskSourceFactory<TResult> : IObserverFactory<ValueTaskSource<TResult>>
+    internal struct StateMachine : IObserverStateMachine<TResult>
     {
-        public ValueTaskSource<TResult> Create<TSource, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
+        private IntPtr _core;
+
+        public void Dispose() { }
+
+        public void Initialize(ObserverStateMachineBox box)
         {
-            return new ValueTaskSource<TResult, TSource, TStateMachine>(stateMachine);
+            var boxTyped = (IBox) box;
+
+            _core = Unsafe.ByteOffset(
+                ref Unsafe.As<StateMachine, IntPtr>(ref this),
+                ref Unsafe.As<ManualResetValueTaskSourceCore<TResult>, IntPtr>(ref boxTyped.Core));
         }
+
+        public void OnCompleted() { }
+        public void OnError(Exception error) => GetCore(ref this).SetException(error);
+        public void OnNext(TResult value) => GetCore(ref this).SetResult(value);
+
+        private static ref ManualResetValueTaskSourceCore<TResult> GetCore(ref StateMachine self) =>
+            ref Unsafe.As<IntPtr, ManualResetValueTaskSourceCore<TResult>>(
+                ref Unsafe.AddByteOffset(
+                    ref Unsafe.As<StateMachine, IntPtr>(ref self),
+                    self._core));
     }
 }

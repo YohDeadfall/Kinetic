@@ -43,7 +43,7 @@ public static partial class Observable
             _publisher = new ThrottleStateMachinePublisher<TSource>(delay, continueOnCapturedContext);
         }
 
-        public void Initialize(IObserverStateMachineBox box)
+        public void Initialize(ObserverStateMachineBox box)
         {
             _continuation.Initialize(box);
         }

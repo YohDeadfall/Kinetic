@@ -34,7 +34,7 @@ public static partial class Observable
             _length = 0;
         }
 
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
         public void Dispose() => _continuation.Dispose();
 
         private void IncreareResultLength()

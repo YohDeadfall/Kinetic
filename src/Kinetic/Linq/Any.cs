@@ -32,7 +32,7 @@ public static partial class Observable
         private TContinuation _continuation;
 
         public AnyStateMachine(in TContinuation continuation) => _continuation = continuation;
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
         public void Dispose() => _continuation.Dispose();
 
         public void OnNext(TSource value)

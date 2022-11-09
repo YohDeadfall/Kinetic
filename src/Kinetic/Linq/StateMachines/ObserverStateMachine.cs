@@ -2,30 +2,120 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Kinetic.Linq.StateMachines;
 
-public interface IObserverStateMachine<TSource> : IObserver<TSource>, IDisposable
+public interface IObserverStateMachine<T> : IObserver<T>, IDisposable
 {
-    void Initialize(IObserverStateMachineBox box);
+    void Initialize(ObserverStateMachineBox box);
 }
 
-public interface IObserverStateMachineFactory<TSource, TResult>
+public interface IObserverStateMachineFactory<T, TResult>
 {
-    void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+    void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
         where TContinuation : struct, IObserverStateMachine<TResult>;
 }
 
-public interface IObserverStateMachineBox : IDisposable
+public abstract class ObserverStateMachineBox
 {
-    IDisposable Subscribe<TSource, TStateMachine>(IObservable<TSource> observable, in TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<TSource>;
+    private protected abstract ReadOnlySpan<byte> StateMachineData { get; }
+
+    private protected ObserverStateMachineBox() { }
+
+    public IDisposable Subscribe<T, TStateMachine>(IObservable<T> observable, in TStateMachine stateMachine)
+        where TStateMachine : struct, IObserverStateMachine<T>
+    {
+        var machineHost = StateMachineData;
+        var machinePart = MemoryMarshal.CreateSpan(
+            ref Unsafe.As<TStateMachine, byte>(ref Unsafe.AsRef(stateMachine)),
+            length: Unsafe.SizeOf<TStateMachine>());
+
+        var offset = (nint) Unsafe.ByteOffset(
+            ref MemoryMarshal.GetReference(machineHost),
+            ref MemoryMarshal.GetReference(machinePart));
+
+        return offset >= 0 && offset + machinePart.Length <= machineHost.Length
+            ? observable.Subscribe(new Observer<T, TStateMachine>(this, offset))
+            : throw new ArgumentException("The provided state machine doesn't belong to the current box.", nameof(stateMachine));
+    }
+
+    private sealed class Observer<T, TStateMachine> : IObserver<T>
+        where TStateMachine : struct, IObserverStateMachine<T>
+    {
+        private readonly ObserverStateMachineBox _box;
+        private readonly IntPtr _stateMachineOffset;
+
+        public Observer(ObserverStateMachineBox box, IntPtr stateMachineOffset)
+        {
+            _box = box;
+            _stateMachineOffset = stateMachineOffset;
+        }
+
+        public void OnCompleted() => GetStateMachine().OnCompleted();
+        public void OnError(Exception error) => GetStateMachine().OnError(error);
+        public void OnNext(T value) => GetStateMachine().OnNext(value);
+
+        private ref TStateMachine GetStateMachine()
+        {
+            ref var machineHost = ref MemoryMarshal.GetReference(_box.StateMachineData);
+            ref var machinePart = ref Unsafe.AddByteOffset(ref machineHost, _stateMachineOffset);
+
+            return ref Unsafe.As<byte, TStateMachine>(ref machinePart);
+        }
+    }
+}
+
+public class ObserverStateMachineBox<T, TStateMachine> : ObserverStateMachineBox, IObserver<T>
+    where TStateMachine : struct, IObserverStateMachine<T>
+{
+    private TStateMachine _stateMachine;
+
+    private protected sealed override ReadOnlySpan<byte> StateMachineData =>
+        MemoryMarshal.CreateSpan(
+            ref Unsafe.As<TStateMachine, byte>(ref _stateMachine),
+            length: Unsafe.SizeOf<TStateMachine>());
+
+    protected ref TStateMachine StateMachine => ref _stateMachine;
+
+    public ObserverStateMachineBox(in TStateMachine stateMachine)
+    {
+        _stateMachine = stateMachine;
+        _stateMachine.Initialize(this);
+    }
+
+    public virtual void OnCompleted()
+    {
+        try
+        {
+            _stateMachine.OnCompleted();
+        }
+        finally
+        {
+            _stateMachine.Dispose();
+        }
+    }
+
+    public virtual void OnError(Exception error)
+    {
+        try
+        {
+            _stateMachine.OnError(error);
+        }
+        finally
+        {
+            _stateMachine.Dispose();
+        }
+    }
+
+    public virtual void OnNext(T value) =>
+        _stateMachine.OnNext(value);
 }
 
 public interface IObserverFactory<TObserver>
 {
-    TObserver Create<TSource, TStateMachine>(in TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<TSource>;
+    TObserver Create<T, TStateMachine>(in TStateMachine stateMachine)
+        where TStateMachine : struct, IObserverStateMachine<T>;
 }
 
 public ref struct ObserverStateMachine<TResult>
@@ -44,34 +134,34 @@ public ref struct ObserverStateMachine<TResult>
 
 public static class ObserverBuilder
 {
-    public static ObserverBuilder<TSource> ToBuilder<TSource>(this IObservable<TSource> source) =>
-        ObserverBuilder<TSource>.Create(source);
+    public static ObserverBuilder<T> ToBuilder<T>(this IObservable<T> source) =>
+        ObserverBuilder<T>.Create(source);
 }
 
-public ref struct ObserverBuilder<TSource>
+public ref struct ObserverBuilder<T>
 {
-    private ObserverBuilderStep<TSource> _outer;
+    private ObserverBuilderStep<T> _outer;
     private ObserverBuilderStep _inner;
 
-    public static ObserverBuilder<TSource> Create(IObservable<TSource> source)
+    public static ObserverBuilder<T> Create(IObservable<T> source)
     {
-        var step = new ObserverBuilderStateMachineStep<TSource, TSource, ObserverStateMachineFactory<TSource>> { StateMachine = new(source) };
-        var builder = new ObserverBuilder<TSource> { _outer = step, _inner = step };
+        var step = new ObserverBuilderStateMachineStep<T, T, StateMachineFactory> { StateMachine = new(source) };
+        var builder = new ObserverBuilder<T> { _outer = step, _inner = step };
 
         return builder;
     }
 
     public ObserverBuilder<TResult> ContinueWith<TStateMachine, TResult>(in TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachineFactory<TSource, TResult>
+        where TStateMachine : struct, IObserverStateMachineFactory<T, TResult>
     {
-        var step = new ObserverBuilderStateMachineStep<TSource, TResult, TStateMachine> { StateMachine = stateMachine, Next = _outer };
+        var step = new ObserverBuilderStateMachineStep<T, TResult, TStateMachine> { StateMachine = stateMachine, Next = _outer };
         var builder = new ObserverBuilder<TResult> { _outer = step, _inner = _inner ?? step };
 
         return builder;
     }
 
     public TObserver Build<TContinuation, TFactory, TObserver>(in TContinuation continuation, in TFactory factory)
-        where TContinuation : struct, IObserverStateMachine<TSource>
+        where TContinuation : struct, IObserverStateMachine<T>
         where TFactory : struct, IObserverFactory<TObserver>
     {
         var stateMachine = (IObserverBuilderStateMachineStep) _inner;
@@ -80,6 +170,51 @@ public ref struct ObserverBuilder<TSource>
         _outer.ContinueWith(continuation);
 
         return observer.Observer;
+    }
+
+    private struct StateMachine<TContinuation> : IObserverStateMachine<T>
+        where TContinuation : struct, IObserverStateMachine<T>
+    {
+        private TContinuation _continuation;
+        private IObservable<T>? _observable;
+        private IDisposable? _subscription;
+
+        public StateMachine(in TContinuation continuation, IObservable<T> observable)
+        {
+            _continuation = continuation;
+            _observable = observable;
+            _subscription = null;
+        }
+
+        public void Dispose()
+        {
+            _subscription?.Dispose();
+            _subscription = null;
+            _observable = null;
+        }
+
+        public void Initialize(ObserverStateMachineBox box)
+        {
+            _continuation.Initialize(box);
+            _subscription = _observable?.Subscribe(
+                (IObserver<T>) box);
+        }
+
+        public void OnCompleted() => _continuation.OnCompleted();
+        public void OnError(Exception error) => _continuation.OnError(error);
+        public void OnNext(T value) => _continuation.OnNext(value);
+    }
+
+    private readonly struct StateMachineFactory : IObserverStateMachineFactory<T, T>
+    {
+        private readonly IObservable<T> _observable;
+
+        public StateMachineFactory(IObservable<T> observable) =>
+            _observable = observable;
+
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
+            where TContinuation : struct, IObserverStateMachine<T> =>
+            source.ContinueWith(new StateMachine<TContinuation>(continuation, _observable));
     }
 }
 
@@ -97,21 +232,21 @@ internal abstract class ObserverBuilderStep<TResult> : ObserverBuilderStep
         new(builder);
 }
 
-internal sealed class ObserverBuilderStateMachineStep<TSource, TResult, TStateMachine> : ObserverBuilderStep<TResult>, IObserverBuilderStateMachineStep
-    where TStateMachine : struct, IObserverStateMachineFactory<TSource, TResult>
+internal sealed class ObserverBuilderStateMachineStep<T, TResult, TStateMachine> : ObserverBuilderStep<TResult>, IObserverBuilderStateMachineStep
+    where TStateMachine : struct, IObserverStateMachineFactory<T, TResult>
 {
     public TStateMachine StateMachine;
 
     public override void ContinueWith<TContinuation>(in TContinuation continuation)
     {
-        Debug.Assert(Next is ObserverBuilderStep<TSource>);
-        StateMachine.Create(continuation, Unsafe.As<ObserverBuilderStep<TSource>>(Next));
+        Debug.Assert(Next is ObserverBuilderStep<T>);
+        StateMachine.Create(continuation, Unsafe.As<ObserverBuilderStep<T>>(Next));
     }
 
     public IObserverBuilderFactoryStep<TObserver> UseFactory<TFactory, TObserver>(in TFactory factory)
         where TFactory : struct, IObserverFactory<TObserver>
     {
-        var result = new ObserverBuilderFactoryStep<TSource, TFactory, TObserver> { Factory = factory };
+        var result = new ObserverBuilderFactoryStep<T, TFactory, TObserver> { Factory = factory };
 
         Debug.Assert(Next is null);
         Next = result;
@@ -120,7 +255,7 @@ internal sealed class ObserverBuilderStateMachineStep<TSource, TResult, TStateMa
     }
 }
 
-internal sealed class ObserverBuilderFactoryStep<TSource, TFactory, TObserver> : ObserverBuilderStep<TSource>, IObserverBuilderFactoryStep<TObserver>
+internal sealed class ObserverBuilderFactoryStep<T, TFactory, TObserver> : ObserverBuilderStep<T>, IObserverBuilderFactoryStep<TObserver>
     where TFactory : struct, IObserverFactory<TObserver>
 {
     [AllowNull]
@@ -130,7 +265,7 @@ internal sealed class ObserverBuilderFactoryStep<TSource, TFactory, TObserver> :
     public override void ContinueWith<TContinuation>(in TContinuation continuation)
     {
         Debug.Assert(Next is null);
-        Observer = Factory.Create<TSource, TContinuation>(continuation);
+        Observer = Factory.Create<T, TContinuation>(continuation);
     }
 }
 
@@ -143,98 +278,4 @@ internal interface IObserverBuilderStateMachineStep
 internal interface IObserverBuilderFactoryStep<TObserver>
 {
     TObserver Observer { get; }
-}
-
-internal sealed class Observer
-{
-    internal static ref TStateMachinePart GetStateMachine<TStateMachine, TStateMachinePart>(in TStateMachine stateMachine, IntPtr offset)
-    {
-        ref var stateMachineAddr = ref Unsafe.As<TStateMachine, IntPtr>(
-            ref Unsafe.AsRef(stateMachine));
-        ref var stateMachinePart = ref Unsafe.As<IntPtr, TStateMachinePart>(
-            ref Unsafe.AddByteOffset(ref stateMachineAddr, offset));
-        return ref stateMachinePart!;
-    }
-
-    internal static IntPtr GetStateMachineOffset<TStateMachinePart, TStateMachine>(in TStateMachine stateMachine, in TStateMachinePart stateMachinePart)
-    {
-        return Unsafe.ByteOffset(
-            ref Unsafe.As<TStateMachine, IntPtr>(ref Unsafe.AsRef(stateMachine)),
-            ref Unsafe.As<TStateMachinePart, IntPtr>(ref Unsafe.AsRef(stateMachinePart)));
-    }
-}
-
-internal struct ObserverStateMachine<TStateMachine, T> : IObserverStateMachine<T>
-    where TStateMachine : struct, IObserverStateMachine<T>
-{
-    private TStateMachine _stateMachine;
-    private IObservable<T>? _observable;
-    private IDisposable? _subscription;
-
-    public ObserverStateMachine(in TStateMachine stateMachine, IObservable<T> observable)
-    {
-        _stateMachine = stateMachine;
-        _observable = observable;
-        _subscription = null;
-    }
-
-    public void Initialize(IObserverStateMachineBox box)
-    {
-        _stateMachine.Initialize(box);
-        _subscription = _observable!.Subscribe((IObserver<T>) box);
-
-        if (_observable is null)
-        {
-            _subscription.Dispose();
-            _subscription = null;
-        }
-    }
-
-    public void Dispose()
-    {
-        _subscription?.Dispose();
-        _subscription = null;
-        _observable = null;
-
-        _stateMachine.Dispose();
-    }
-
-    public void OnNext(T value)
-    {
-        _stateMachine.OnNext(value);
-    }
-
-    public void OnError(Exception error)
-    {
-        _subscription?.Dispose();
-        _subscription = null;
-        _observable = null;
-
-        _stateMachine.OnError(error);
-        _stateMachine.Dispose();
-    }
-
-    public void OnCompleted()
-    {
-        _subscription?.Dispose();
-        _subscription = null;
-        _observable = null;
-
-        _stateMachine.OnCompleted();
-        _stateMachine.Dispose();
-    }
-}
-
-internal struct ObserverStateMachineFactory<T> : IObserverStateMachineFactory<T, T>
-{
-    private readonly IObservable<T> _observable;
-
-    public ObserverStateMachineFactory(IObservable<T> observable) =>
-        _observable = observable;
-
-    public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-        where TContinuation : struct, IObserverStateMachine<T>
-    {
-        source.ContinueWith(new ObserverStateMachine<TContinuation, T>(continuation, _observable));
-    }
 }

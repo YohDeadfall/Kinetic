@@ -36,7 +36,7 @@ public static partial class Observable
             _predicate = predicate;
         }
 
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
         public void Dispose() => _continuation.Dispose();
 
         public void OnNext(TSource value)

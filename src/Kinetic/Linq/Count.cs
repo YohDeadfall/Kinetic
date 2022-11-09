@@ -38,7 +38,7 @@ public static partial class Observable
             _count = 0;
         }
 
-        public void Initialize(IObserverStateMachineBox box) => _continuation.Initialize(box);
+        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
         public void Dispose() => _continuation.Dispose();
 
         public void OnNext(TSource value) => _count += 1;

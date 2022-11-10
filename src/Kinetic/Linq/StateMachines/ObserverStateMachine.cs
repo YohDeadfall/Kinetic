@@ -151,7 +151,7 @@ public ref struct ObserverBuilder<T>
         return builder;
     }
 
-    public ObserverBuilder<TResult> ContinueWith<TStateMachine, TResult>(in TStateMachine stateMachine)
+    public ObserverBuilder<TResult> ContinueWith<TStateMachine, TResult>(scoped in TStateMachine stateMachine)
         where TStateMachine : struct, IObserverStateMachineFactory<T, TResult>
     {
         var step = new ObserverBuilderStateMachineStep<T, TResult, TStateMachine> { StateMachine = stateMachine, Next = _outer };
@@ -160,7 +160,7 @@ public ref struct ObserverBuilder<T>
         return builder;
     }
 
-    public TObserver Build<TContinuation, TFactory, TObserver>(in TContinuation continuation, in TFactory factory)
+    public TObserver Build<TContinuation, TFactory, TObserver>(scoped in TContinuation continuation, in TFactory factory)
         where TContinuation : struct, IObserverStateMachine<T>
         where TFactory : struct, IObserverFactory<TObserver>
     {

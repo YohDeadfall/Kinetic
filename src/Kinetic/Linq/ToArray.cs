@@ -5,7 +5,7 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TResult[]> ToArray<TResult>(this in ObserverBuilder<TResult> source) =>
+    public static ObserverBuilder<TResult[]> ToArray<TResult>(this ObserverBuilder<TResult> source) =>
         source.ContinueWith<ToArrayStateMachineFactory<TResult>, TResult[]>(default);
 
     public static ObserverBuilder<TResult[]> ToArray<TResult>(this IObservable<TResult> source) =>

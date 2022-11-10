@@ -6,10 +6,10 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TSource?> DefaultIfEmpty<TSource>(this in ObserverBuilder<TSource> source) =>
+    public static ObserverBuilder<TSource?> DefaultIfEmpty<TSource>(this ObserverBuilder<TSource> source) =>
         source.DefaultIfEmpty(default);
 
-    public static ObserverBuilder<TSource?> DefaultIfEmpty<TSource>(this in ObserverBuilder<TSource> source, TSource? defaultValue) =>
+    public static ObserverBuilder<TSource?> DefaultIfEmpty<TSource>(this ObserverBuilder<TSource> source, TSource? defaultValue) =>
         source.ContinueWith<DefaultIfEmptyStateMachineFactory<TSource>, TSource?>(new(defaultValue));
 
     public static ObserverBuilder<TSource?> DefaultIfEmpty<TSource>(this IObservable<TSource> source) =>

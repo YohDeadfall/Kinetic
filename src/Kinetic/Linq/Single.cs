@@ -7,10 +7,10 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TSource> Single<TSource>(this in ObserverBuilder<TSource> source) =>
+    public static ObserverBuilder<TSource> Single<TSource>(this ObserverBuilder<TSource> source) =>
         source.ContinueWith<SingleStateMachineFactory<TSource>, TSource>(default);
 
-    public static ObserverBuilder<TSource> Single<TSource>(this in ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
+    public static ObserverBuilder<TSource> Single<TSource>(this ObserverBuilder<TSource> source, Func<TSource, bool> predicate) =>
         source.Where(predicate).Single();
 
     public static ObserverBuilder<TSource> Single<TSource>(this IObservable<TSource> source) =>

@@ -11,7 +11,7 @@ public static partial class Observable
     public static ValueTask<T> ToValueTask<T>(this IObservable<T> source) =>
         source.ToBuilder().ToValueTask();
 
-    public static ValueTask<T> ToValueTask<T>(this in ObserverBuilder<T> source)
+    public static ValueTask<T> ToValueTask<T>(this ObserverBuilder<T> source)
     {
         var taskSource = source.First().Build<ValueTaskSource<T>.StateMachine, ValueTaskSource<T>.BoxFactory, ValueTaskSource<T>.IBoxExternal>(
             continuation: new(),

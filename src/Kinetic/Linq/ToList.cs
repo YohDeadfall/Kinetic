@@ -6,7 +6,7 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<List<TSource>> ToList<TSource>(this in ObserverBuilder<TSource> source) =>
+    public static ObserverBuilder<List<TSource>> ToList<TSource>(this ObserverBuilder<TSource> source) =>
         source.ContinueWith<ToListStateMachineFactory<TSource>, List<TSource>>(default);
 
     public static ObserverBuilder<List<TSource>> ToList<TSource>(this IObservable<TSource> source) =>

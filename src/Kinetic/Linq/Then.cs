@@ -6,7 +6,7 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TResult> Then<TSource, TResult>(this in ObserverBuilder<TSource> source, Func<TSource, IObservable<TResult>> selector) =>
+    public static ObserverBuilder<TResult> Then<TSource, TResult>(this ObserverBuilder<TSource> source, Func<TSource, IObservable<TResult>> selector) =>
         source.ContinueWith<ThenStateMachineFactory<TSource, TResult>, TResult>(new(selector));
 
     public static ObserverBuilder<TResult> Then<TSource, TResult>(this IObservable<TSource> source, Func<TSource, IObservable<TResult>> selector) =>

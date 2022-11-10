@@ -17,16 +17,16 @@ public static partial class Observable
     public static ObserverBuilder<TSource> Do<TSource>(this IObservable<TSource> source, Action<TSource> onNext, Action<Exception> onError, Action onCompleted) =>
         source.ToBuilder().Do(onNext, onError, onCompleted);
 
-    public static ObserverBuilder<TSource> Do<TSource>(this in ObserverBuilder<TSource> source, Action<TSource> onNext) =>
+    public static ObserverBuilder<TSource> Do<TSource>(this ObserverBuilder<TSource> source, Action<TSource> onNext) =>
         source.ContinueWith<DoStateMachineFactory<TSource>, TSource>(new(onNext, onError: null, onCompleted: null));
 
-    public static ObserverBuilder<TSource> Do<TSource>(this in ObserverBuilder<TSource> source, Action<TSource> onNext, Action<Exception> onError) =>
+    public static ObserverBuilder<TSource> Do<TSource>(this ObserverBuilder<TSource> source, Action<TSource> onNext, Action<Exception> onError) =>
         source.ContinueWith<DoStateMachineFactory<TSource>, TSource>(new(onNext, onError, onCompleted: null));
 
-    public static ObserverBuilder<TSource> Do<TSource>(this in ObserverBuilder<TSource> source, Action<TSource> onNext, Action onCompleted) =>
+    public static ObserverBuilder<TSource> Do<TSource>(this ObserverBuilder<TSource> source, Action<TSource> onNext, Action onCompleted) =>
         source.ContinueWith<DoStateMachineFactory<TSource>, TSource>(new(onNext, onError: null, onCompleted));
 
-    public static ObserverBuilder<TSource> Do<TSource>(this in ObserverBuilder<TSource> source, Action<TSource> onNext, Action<Exception> onError, Action onCompleted) =>
+    public static ObserverBuilder<TSource> Do<TSource>(this ObserverBuilder<TSource> source, Action<TSource> onNext, Action<Exception> onError, Action onCompleted) =>
         source.ContinueWith<DoStateMachineFactory<TSource>, TSource>(new(onNext, onError, onCompleted));
 
     private struct DoStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>

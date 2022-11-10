@@ -18,22 +18,22 @@ public static partial class Observable
     public static IDisposable Subscribe<T>(this IObservable<T> source, Action<T> onNext, Action<Exception> onError, Action onCompleted) =>
         source.ToBuilder().Subscribe(onNext, onError, onCompleted);
 
-    public static IDisposable Subscribe<T>(this in ObserverBuilder<T> source, Action<T> onNext) =>
+    public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext) =>
         source.Build<Subscribe<T>.StateMachine, Subscribe<T>.BoxFactory, IDisposable>(
             continuation: new(onNext, onError: null, onCompleted: null),
             factory: new());
 
-    public static IDisposable Subscribe<T>(this in ObserverBuilder<T> source, Action<T> onNext, Action<Exception> onError) =>
+    public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext, Action<Exception> onError) =>
         source.Build<Subscribe<T>.StateMachine, Subscribe<T>.BoxFactory, IDisposable>(
             continuation: new(onNext, onError, onCompleted: null),
             factory: new());
 
-    public static IDisposable Subscribe<T>(this in ObserverBuilder<T> source, Action<T> onNext, Action onCompleted) =>
+    public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext, Action onCompleted) =>
         source.Build<Subscribe<T>.StateMachine, Subscribe<T>.BoxFactory, IDisposable>(
             continuation: new(onNext, onError: null, onCompleted),
             factory: new());
 
-    public static IDisposable Subscribe<T>(this in ObserverBuilder<T> source, Action<T> onNext, Action<Exception> onError, Action onCompleted) =>
+    public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext, Action<Exception> onError, Action onCompleted) =>
         source.Build<Subscribe<T>.StateMachine, Subscribe<T>.BoxFactory, IDisposable>(
             continuation: new(onNext, onError, onCompleted),
             factory: new());

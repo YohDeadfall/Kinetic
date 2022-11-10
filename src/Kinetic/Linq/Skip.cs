@@ -5,7 +5,7 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TSource> Skip<TSource>(this in ObserverBuilder<TSource> source, int count) =>
+    public static ObserverBuilder<TSource> Skip<TSource>(this ObserverBuilder<TSource> source, int count) =>
         source.ContinueWith<SkipStateMachineFactory<TSource>, TSource>(new(count));
 
     public static ObserverBuilder<TSource> Skip<TSource>(this IObservable<TSource> source, int count) =>

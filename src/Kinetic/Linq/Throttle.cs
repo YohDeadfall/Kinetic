@@ -7,7 +7,7 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TSource> Throttle<TSource>(this in ObserverBuilder<TSource> source, TimeSpan delay, bool continueOnCapturedContext = true) =>
+    public static ObserverBuilder<TSource> Throttle<TSource>(this ObserverBuilder<TSource> source, TimeSpan delay, bool continueOnCapturedContext = true) =>
         source.ContinueWith<ThrottleStateMachineFactory<TSource>, TSource>(new(delay, continueOnCapturedContext));
 
     public static ObserverBuilder<TSource> Throttle<TSource>(this IObservable<TSource> source, TimeSpan delay, bool continueOnCapturedContext = true) =>

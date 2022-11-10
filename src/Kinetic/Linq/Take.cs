@@ -5,7 +5,7 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TSource> Take<TSource>(this in ObserverBuilder<TSource> source, int count) =>
+    public static ObserverBuilder<TSource> Take<TSource>(this ObserverBuilder<TSource> source, int count) =>
         source.ContinueWith<TakeStateMachineFactory<TSource>, TSource>(new(count));
 
     public static ObserverBuilder<TSource> Take<TSource>(this IObservable<TSource> source, int count) =>

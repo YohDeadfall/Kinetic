@@ -8,22 +8,22 @@ namespace Kinetic.Data;
 
 public static class KineticBindingPath
 {
-    public static ObserverBuilder<Property<TResult>?> Property<TSource, TResult>(this in ObserverBuilder<TSource> source, Func<TSource, Property<TResult>?> selector) =>
+    public static ObserverBuilder<Property<TResult>?> Property<TSource, TResult>(this ObserverBuilder<TSource> source, Func<TSource, Property<TResult>?> selector) =>
         source.Select(selector);
 
-    public static ObserverBuilder<Property<TResult>?> Property<TSource, TResult>(this in ObserverBuilder<Property<TSource>?> source, Func<TSource?, Property<TResult>?> selector) =>
+    public static ObserverBuilder<Property<TResult>?> Property<TSource, TResult>(this ObserverBuilder<Property<TSource>?> source, Func<TSource?, Property<TResult>?> selector) =>
         source.ContinueWith<PropertyStateMachineFactory<TSource>, TSource?>(default).Property(selector);
 
-    public static ObserverBuilder<Property<TResult>?> Property<TSource, TResult>(this in ObserverBuilder<ReadOnlyProperty<TSource>?> source, Func<TSource?, Property<TResult>?> selector) =>
+    public static ObserverBuilder<Property<TResult>?> Property<TSource, TResult>(this ObserverBuilder<ReadOnlyProperty<TSource>?> source, Func<TSource?, Property<TResult>?> selector) =>
         source.ContinueWith<PropertyStateMachineFactory<TSource>, TSource?>(default).Property(selector);
 
-    public static ObserverBuilder<ReadOnlyProperty<TResult>?> Property<TSource, TResult>(this in ObserverBuilder<TSource> source, Func<TSource, ReadOnlyProperty<TResult>?> selector) =>
+    public static ObserverBuilder<ReadOnlyProperty<TResult>?> Property<TSource, TResult>(this ObserverBuilder<TSource> source, Func<TSource, ReadOnlyProperty<TResult>?> selector) =>
         source.Select(selector);
 
-    public static ObserverBuilder<ReadOnlyProperty<TResult>?> Property<TSource, TResult>(this in ObserverBuilder<Property<TSource>?> source, Func<TSource?, ReadOnlyProperty<TResult>?> selector) =>
+    public static ObserverBuilder<ReadOnlyProperty<TResult>?> Property<TSource, TResult>(this ObserverBuilder<Property<TSource>?> source, Func<TSource?, ReadOnlyProperty<TResult>?> selector) =>
         source.ContinueWith<PropertyStateMachineFactory<TSource>, TSource?>(default).Property(selector);
 
-    public static ObserverBuilder<ReadOnlyProperty<TResult>?> Property<TSource, TResult>(this in ObserverBuilder<ReadOnlyProperty<TSource>?> source, Func<TSource?, ReadOnlyProperty<TResult>?> selector) =>
+    public static ObserverBuilder<ReadOnlyProperty<TResult>?> Property<TSource, TResult>(this ObserverBuilder<ReadOnlyProperty<TSource>?> source, Func<TSource?, ReadOnlyProperty<TResult>?> selector) =>
         source.ContinueWith<PropertyStateMachineFactory<TSource>, TSource?>(default).Property(selector);
 
     private struct PropertyStateMachineFactory<TSource>

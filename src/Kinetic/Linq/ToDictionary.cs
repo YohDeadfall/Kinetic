@@ -7,7 +7,7 @@ namespace Kinetic.Linq;
 public static partial class Observable
 {
     public static ObserverBuilder<Dictionary<TKey, TSource>> ToDictionary<TSource, TKey>(
-        this in ObserverBuilder<TSource> source,
+        this ObserverBuilder<TSource> source,
         Func<TSource, TKey> keySelector,
         IEqualityComparer<TKey>? comparer = null)
         where TKey : notnull
@@ -16,7 +16,7 @@ public static partial class Observable
     }
 
     public static ObserverBuilder<Dictionary<TKey, TValue>> ToDictionary<TSource, TKey, TValue>(
-        this in ObserverBuilder<TSource> source,
+        this ObserverBuilder<TSource> source,
         Func<TSource, TKey> keySelector,
         Func<TSource, TValue> valueSelector,
         IEqualityComparer<TKey>? comparer = null)

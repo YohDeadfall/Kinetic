@@ -103,7 +103,12 @@ public abstract class KineticBinding : IBinding
         public IObserver<object?>? Observer => _observer;
 
         public Box(in TStateMachine stateMachine, IAvaloniaObject target) :
-            base(stateMachine) => _target = target;
+            base(stateMachine)
+        {
+            _target = target;
+
+            StateMachine.Initialize(this);
+        }
 
         public IDisposable Subscribe(IObserver<object?> observer)
         {

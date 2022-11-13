@@ -43,8 +43,7 @@ internal static class ValueTaskSource<TResult>
         public short Token => _core.Version;
 
         public Box(in TStateMachine stateMachine) :
-            base(stateMachine)
-        { }
+            base(stateMachine) => StateMachine.Initialize(this);
 
         public ValueTaskSourceStatus GetStatus(short token) => _core.GetStatus(token);
         public TResult GetResult(short token) => _core.GetResult(token);

@@ -46,8 +46,7 @@ internal static class Subscribe<TResult>
     {
 
         public Box(in TStateMachine stateMachine) :
-            base(stateMachine)
-        { }
+            base(stateMachine) => StateMachine.Initialize(this);
 
         public void Dispose() =>
             StateMachine.Dispose();

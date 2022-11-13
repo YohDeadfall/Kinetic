@@ -66,7 +66,7 @@ public abstract class ObserverStateMachineBox
     }
 }
 
-public class ObserverStateMachineBox<T, TStateMachine> : ObserverStateMachineBox, IObserver<T>
+public abstract class ObserverStateMachineBox<T, TStateMachine> : ObserverStateMachineBox, IObserver<T>
     where TStateMachine : struct, IObserverStateMachine<T>
 {
     private TStateMachine _stateMachine;
@@ -78,13 +78,10 @@ public class ObserverStateMachineBox<T, TStateMachine> : ObserverStateMachineBox
 
     protected ref TStateMachine StateMachine => ref _stateMachine;
 
-    public ObserverStateMachineBox(in TStateMachine stateMachine)
-    {
+    protected ObserverStateMachineBox(in TStateMachine stateMachine) =>
         _stateMachine = stateMachine;
-        _stateMachine.Initialize(this);
-    }
 
-    public virtual void OnCompleted()
+    public void OnCompleted()
     {
         try
         {
@@ -96,7 +93,7 @@ public class ObserverStateMachineBox<T, TStateMachine> : ObserverStateMachineBox
         }
     }
 
-    public virtual void OnError(Exception error)
+    public void OnError(Exception error)
     {
         try
         {
@@ -108,7 +105,7 @@ public class ObserverStateMachineBox<T, TStateMachine> : ObserverStateMachineBox
         }
     }
 
-    public virtual void OnNext(T value)
+    public void OnNext(T value)
     {
         try
         {
@@ -117,7 +114,7 @@ public class ObserverStateMachineBox<T, TStateMachine> : ObserverStateMachineBox
         catch
         {
             _stateMachine.Dispose();
-            
+
             throw;
         }
     }

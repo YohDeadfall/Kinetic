@@ -27,8 +27,7 @@ internal static class Observable<TResult>
         public ref ObservableSubscriptions<TResult> Subscriptions => ref _subscriptions;
 
         public Box(in TStateMachine stateMachine) :
-            base(stateMachine)
-        { }
+            base(stateMachine) => StateMachine.Initialize(this);
 
         public IDisposable Subscribe(IObserver<TResult> observer) =>
             _subscriptions.Subscribe(this, observer);

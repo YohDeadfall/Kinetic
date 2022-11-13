@@ -30,6 +30,12 @@ public abstract class ObserverStateMachineBox
     public IDisposable Subscribe<T, TStateMachine>(IObservable<T> observable, in TStateMachine stateMachine)
         where TStateMachine : struct, IObserverStateMachine<T>
     {
+        return Subscribe(observable.ToBuilder(), stateMachine);
+    }
+
+    public IDisposable Subscribe<T, TStateMachine>(ObserverBuilder<T> builder, in TStateMachine stateMachine)
+        where TStateMachine : struct, IObserverStateMachine<T>
+    {
         var machineHost = StateMachineData;
         var machinePart = MemoryMarshal.CreateSpan(
             ref Unsafe.As<TStateMachine, byte>(ref Unsafe.AsRef(stateMachine)),
@@ -39,23 +45,27 @@ public abstract class ObserverStateMachineBox
             ref MemoryMarshal.GetReference(machineHost),
             ref MemoryMarshal.GetReference(machinePart));
 
-        return offset >= 0 && offset + machinePart.Length <= machineHost.Length
-            ? observable.Subscribe(new Observer<T, TStateMachine>(this, offset))
-            : throw new ArgumentException("The provided state machine doesn't belong to the current box.", nameof(stateMachine));
+        if (offset < 0 && offset + machinePart.Length > machineHost.Length)
+            throw new ArgumentException("The provided state machine doesn't belong to the current box.", nameof(stateMachine));
+
+        return builder.Build<SubscribeStateMachine<T, TStateMachine>, SubscribeBoxFactory, IDisposable>(
+                new(this, offset), new());
     }
 
-    private sealed class Observer<T, TStateMachine> : IObserver<T>
+    private readonly struct SubscribeStateMachine<T, TStateMachine> : IObserverStateMachine<T>
         where TStateMachine : struct, IObserverStateMachine<T>
     {
         private readonly ObserverStateMachineBox _box;
         private readonly IntPtr _stateMachineOffset;
 
-        public Observer(ObserverStateMachineBox box, IntPtr stateMachineOffset)
+        public SubscribeStateMachine(ObserverStateMachineBox box, IntPtr stateMachineOffset)
         {
             _box = box;
             _stateMachineOffset = stateMachineOffset;
         }
 
+        public void Dispose() { }
+        public void Initialize(ObserverStateMachineBox box) { }
         public void OnCompleted() => GetStateMachine().OnCompleted();
         public void OnError(Exception error) => GetStateMachine().OnError(error);
         public void OnNext(T value) => GetStateMachine().OnNext(value);
@@ -67,6 +77,22 @@ public abstract class ObserverStateMachineBox
 
             return ref Unsafe.As<byte, TStateMachine>(ref machinePart);
         }
+    }
+
+    private readonly struct SubscribeBoxFactory : IObserverFactory<IDisposable>
+    {
+        public IDisposable Create<T, TStateMachine>(in TStateMachine stateMachine)
+            where TStateMachine : struct, IObserverStateMachine<T> =>
+            new SubscribeBox<T, TStateMachine>(stateMachine);
+    }
+
+    private sealed class SubscribeBox<T, TStateMachine> : ObserverStateMachineBox<T, TStateMachine>, IDisposable
+        where TStateMachine : struct, IObserverStateMachine<T>
+    {
+        public SubscribeBox(in TStateMachine stateMachine) :
+            base(stateMachine) => StateMachine.Initialize(this);
+
+        public void Dispose() => StateMachine.Dispose();
     }
 }
 

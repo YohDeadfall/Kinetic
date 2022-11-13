@@ -5,6 +5,8 @@ using System.Runtime.CompilerServices;
 
 namespace Kinetic.Linq.StateMachines;
 
+public delegate ObserverBuilder<TResult> ObserverBuilderFactory<T, TResult>(T value);
+
 public static class ObserverBuilder
 {
     public static ObserverBuilder<T> ToBuilder<T>(this IObservable<T> source) =>

@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -37,6 +36,10 @@ public static partial class Observable
         source.Build<Subscribe<T>.StateMachine, Subscribe<T>.BoxFactory, IDisposable>(
             continuation: new(onNext, onError, onCompleted),
             factory: new());
+
+    public static IDisposable Subscribe<T, TStateMachine>(this ObserverBuilder<T> source, in TStateMachine stateMachine, ObserverStateMachineBox box)
+        where TStateMachine : struct, IObserverStateMachine<T> =>
+        box.Subscribe(source, stateMachine);
 }
 
 internal static class Subscribe<TResult>
@@ -44,7 +47,6 @@ internal static class Subscribe<TResult>
     private sealed class Box<T, TStateMachine> : ObserverStateMachineBox<T, TStateMachine>, IDisposable
         where TStateMachine : struct, IObserverStateMachine<T>
     {
-
         public Box(in TStateMachine stateMachine) :
             base(stateMachine) => StateMachine.Initialize(this);
 

@@ -108,8 +108,19 @@ public class ObserverStateMachineBox<T, TStateMachine> : ObserverStateMachineBox
         }
     }
 
-    public virtual void OnNext(T value) =>
-        _stateMachine.OnNext(value);
+    public virtual void OnNext(T value)
+    {
+        try
+        {
+            _stateMachine.OnNext(value);
+        }
+        catch
+        {
+            _stateMachine.Dispose();
+            
+            throw;
+        }
+    }
 }
 
 public interface IObserverFactory<TObserver>

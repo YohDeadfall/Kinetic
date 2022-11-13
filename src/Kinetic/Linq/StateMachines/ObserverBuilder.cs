@@ -70,7 +70,7 @@ public ref struct ObserverBuilder<T>
         {
             _continuation.Initialize(box);
             _subscription = _observable?.Subscribe(
-                (IObserver<T>) box);
+                (ObserverStateMachineBox<T, StateMachine<TContinuation>>) box);
         }
 
         public void OnCompleted() => _continuation.OnCompleted();

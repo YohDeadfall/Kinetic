@@ -196,7 +196,7 @@ internal sealed class TaskCommand<TExecute, TEnabled, TState, TParameter>
                     .Invoke(state, parameter)
                     .ContinueWith(state: this, continuationAction: static (task, state) =>
                     {
-                        var command = Unsafe.As<TaskCommand<TExecute, TEnabled, TState, TParameter>>(state);
+                        var command = Unsafe.As<TaskCommand<TExecute, TEnabled, TState, TParameter>>(state!);
                         var awaiter = task.GetAwaiter();
                         try
                         {
@@ -249,7 +249,7 @@ internal sealed class TaskCommand<TExecute, TEnabled, TState, TParameter, TResul
                     .Invoke(state, parameter)
                     .ContinueWith(state: this, continuationAction: static (task, state) =>
                     {
-                        var command = Unsafe.As<TaskCommand<TExecute, TEnabled, TState, TParameter, TResult>>(state);
+                        var command = Unsafe.As<TaskCommand<TExecute, TEnabled, TState, TParameter, TResult>>(state!);
                         var awaiter = task.GetAwaiter();
                         try
                         {

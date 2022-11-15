@@ -37,7 +37,7 @@ public static partial class Observable
         private TContinuation _continuation;
         private ThrottleStateMachinePublisher<TSource> _publisher;
 
-        public ThrottleStateMachine(TContinuation continuation, TimeSpan delay, bool continueOnCapturedContext)
+        public ThrottleStateMachine(in TContinuation continuation, TimeSpan delay, bool continueOnCapturedContext)
         {
             _continuation = continuation;
             _publisher = new ThrottleStateMachinePublisher<TSource>(delay, continueOnCapturedContext);
@@ -64,7 +64,7 @@ public static partial class Observable
     {
         private static readonly SendOrPostCallback s_contextCallback = state =>
         {
-            var self = Unsafe.As<ThrottleStateMachinePublisher<TSource>>(state);
+            var self = Unsafe.As<ThrottleStateMachinePublisher<TSource>>(state!);
             try
             {
                 self._observer?.OnNext(self._value);
@@ -81,7 +81,7 @@ public static partial class Observable
 
         private static readonly TimerCallback s_timerCallback = state =>
         {
-            var self = Unsafe.As<ThrottleStateMachinePublisher<TSource>>(state);
+            var self = Unsafe.As<ThrottleStateMachinePublisher<TSource>>(state!);
             if (self._observer is { } observer)
             {
                 var unlock = Monitor.TryEnter(self);

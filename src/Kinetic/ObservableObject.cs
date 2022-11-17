@@ -53,7 +53,7 @@ public abstract class ObservableObject
         return observable;
     }
 
-    internal IObservable<T> EnsureObservableFor<T>(IntPtr offset)
+    internal PropertyObservable<T> EnsureObservableFor<T>(IntPtr offset)
     {
         var observable = GetObservableFor<T>(offset);
         if (observable is null)
@@ -219,8 +219,9 @@ internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInt
 {
     private ObservableSubscriptions<T> _subscriptions;
 
-    public PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next)
-        : base(owner, offset, next) { }
+    public PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next) :
+        base(owner, offset, next)
+    { }
 
     public override void Changed() =>
         Changed(Owner.Get<T>(Offset));

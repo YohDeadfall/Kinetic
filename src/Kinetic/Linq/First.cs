@@ -31,26 +31,43 @@ public static partial class Observable
         where TContinuation : struct, IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;
+        private bool _notCompleted;
 
-        public FirstStateMachine(TContinuation continuation) => _continuation = continuation;
+        public FirstStateMachine(TContinuation continuation)
+        {
+            _continuation = continuation;
+            _notCompleted = true;
+        }
 
         public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
         public void Dispose() => _continuation.Dispose();
 
         public void OnNext(TSource value)
         {
-            _continuation.OnNext(value);
-            _continuation.OnCompleted();
+            if (_notCompleted)
+            {
+                _notCompleted = false;
+                _continuation.OnNext(value);
+                _continuation.OnCompleted();
+            }
         }
 
         public void OnError(Exception error)
         {
-            _continuation.OnError(error);
+            if (_notCompleted)
+            {
+                _notCompleted = false;
+                _continuation.OnError(error);
+            }
         }
 
         public void OnCompleted()
         {
-            _continuation.OnError(new InvalidOperationException());
+            if (_notCompleted)
+            {
+                _notCompleted = false;
+                _continuation.OnError(new InvalidOperationException());
+            }
         }
     }
 }

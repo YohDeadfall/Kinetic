@@ -1,8 +1,8 @@
 using System;
-using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
+using Kinetic.Linq;
 using Xunit;
 
 namespace Kinetic.Tests;
@@ -16,7 +16,7 @@ public class CommandTests
         var command = Command.Create(
             execute: () => { executions += 1; });
         var result = command
-            .FirstOrDefaultAsync()
+            .FirstOrDefault()
             .GetAwaiter();
 
         command.Execute();
@@ -38,7 +38,7 @@ public class CommandTests
                 executions += 1;
             });
         var result = command
-            .FirstOrDefaultAsync()
+            .FirstOrDefault()
             .GetAwaiter();
 
         command.Execute(42);
@@ -58,7 +58,7 @@ public class CommandTests
             execute: s => { Assert.True(s); },
             canExecute: s => { state.CanExecute.Set(false); return s; });
         var result = command
-            .FirstOrDefaultAsync()
+            .FirstOrDefault()
             .GetAwaiter();
 
         state.CanExecute.Set(true);
@@ -79,7 +79,8 @@ public class CommandTests
                 executions += 1;
             });
         var result = command
-            .FirstOrDefaultAsync();
+            .FirstOrDefault()
+            .ToValueTask();
 
         command.Execute();
 
@@ -100,7 +101,8 @@ public class CommandTests
                 executions += 1;
             });
         var result = command
-            .FirstOrDefaultAsync();
+            .FirstOrDefault()
+            .ToValueTask();
 
         command.Execute(42);
 
@@ -118,7 +120,8 @@ public class CommandTests
             execute: async s => { await Task.Yield(); Assert.True(s); },
             canExecute: s => { state.CanExecute.Set(false); return s; });
         var result = command
-            .FirstOrDefaultAsync();
+            .FirstOrDefault()
+            .ToValueTask();
 
         state.CanExecute.Set(true);
         command.Execute();
@@ -133,7 +136,7 @@ public class CommandTests
         var command = Command.Create(
             execute: () => executions += 1);
         var result = command
-            .FirstOrDefaultAsync()
+            .FirstOrDefault()
             .GetAwaiter();
 
         command.Execute();
@@ -155,7 +158,7 @@ public class CommandTests
                 return executions += 1;
             });
         var result = command
-            .FirstOrDefaultAsync()
+            .FirstOrDefault()
             .GetAwaiter();
 
         command.Execute(42);
@@ -175,7 +178,7 @@ public class CommandTests
             execute: s => { Assert.True(s); return s; },
             canExecute: s => { state.CanExecute.Set(false); return s; });
         var result = command
-            .FirstOrDefaultAsync()
+            .FirstOrDefault()
             .GetAwaiter();
 
         state.CanExecute.Set(true);
@@ -196,7 +199,8 @@ public class CommandTests
                 return executions += 1;
             });
         var result = command
-            .FirstOrDefaultAsync();
+            .FirstOrDefault()
+            .ToValueTask();
 
         command.Execute();
 
@@ -217,7 +221,8 @@ public class CommandTests
                 return executions += 1;
             });
         var result = command
-            .FirstOrDefaultAsync();
+            .FirstOrDefault()
+            .ToValueTask();
 
         command.Execute(42);
 
@@ -235,7 +240,8 @@ public class CommandTests
             execute: async s => { await Task.Yield(); Assert.True(s); return s; },
             canExecute: s => { state.CanExecute.Set(false); return s; });
         var result = command
-            .FirstOrDefaultAsync();
+            .FirstOrDefault()
+            .ToValueTask();
 
         state.CanExecute.Set(true);
         command.Execute();
@@ -289,8 +295,6 @@ public class CommandTests
             execute: async s => { await semaphore.WaitAsync(); executions += 1; },
             canExecute: s => { validations += 1; return s; },
             awaitCompletion);
-        var result = command
-            .FirstOrDefaultAsync();
 
         Assert.False(command.CanExecute());
         Assert.Equal(1, validations);
@@ -300,6 +304,10 @@ public class CommandTests
 
         state.CanExecute.Set(true);
         semaphore.Wait(0);
+
+        var result = command
+            .FirstOrDefault()
+            .ToValueTask();
 
         Assert.False(command.CanExecute());
         Assert.Equal(2, validations);
@@ -362,8 +370,6 @@ public class CommandTests
             execute: async s => { await semaphore.WaitAsync(); return executions += 1; },
             canExecute: s => { validations += 1; return s; },
             awaitCompletion);
-        var result = command
-            .FirstOrDefaultAsync();
 
         Assert.False(command.CanExecute());
         Assert.Equal(1, validations);
@@ -373,6 +379,10 @@ public class CommandTests
 
         state.CanExecute.Set(true);
         semaphore.Wait(0);
+
+        var result = command
+            .FirstOrDefault()
+            .ToValueTask();
 
         Assert.False(command.CanExecute());
         Assert.Equal(2, validations);

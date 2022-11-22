@@ -33,6 +33,19 @@ public class ListChangeTests
         Assert.Equal(index, change.OldIndex);
     }
 
+    [Fact]
+    public void RemoveAll()
+    {
+        var change = ListChange.RemoveAll<string>();
+
+        Assert.Equal(default, change);
+        Assert.Equal(ListChangeAction.RemoveAll, change.Action);
+        Assert.Throws<InvalidOperationException>(() => change.NewItem);
+        Assert.Throws<InvalidOperationException>(() => change.NewIndex);
+        Assert.Throws<InvalidOperationException>(() => change.OldItem);
+        Assert.Throws<InvalidOperationException>(() => change.OldIndex);
+    }
+
     [Theory]
     [InlineData(0, "zero", "one")]
     [InlineData(1, "one", "two")]
@@ -59,18 +72,5 @@ public class ListChangeTests
         Assert.Equal(newIndex, change.NewIndex);
         Assert.Equal(item, change.OldItem);
         Assert.Equal(oldIndex, change.OldIndex);
-    }
-
-    [Fact]
-    public void Reset()
-    {
-        var change = ListChange.Reset<string>();
-
-        Assert.Equal(default, change);
-        Assert.Equal(ListChangeAction.Reset, change.Action);
-        Assert.Throws<InvalidOperationException>(() => change.NewItem);
-        Assert.Throws<InvalidOperationException>(() => change.NewIndex);
-        Assert.Throws<InvalidOperationException>(() => change.OldItem);
-        Assert.Throws<InvalidOperationException>(() => change.OldIndex);
     }
 }

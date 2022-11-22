@@ -249,6 +249,8 @@ public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
         private readonly ReadOnlyObservableList<T> _list;
         private readonly IDisposable _subscription;
 
+        private int _count;
+
         public ListProxy(ReadOnlyObservableList<T> list)
         {
             _list = list;
@@ -257,7 +259,7 @@ public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
 
         public override IEnumerable Source => _list;
 
-        public ReadOnlyProperty<int> Count => _list.Count;
+        public int Count => _count;
 
         public object? this[int index]
         {
@@ -268,8 +270,6 @@ public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
         bool IList.IsFixedSize => false;
 
         bool IList.IsReadOnly => true;
-
-        int ICollection.Count => _list.Count;
 
         bool ICollection.IsSynchronized => false;
 
@@ -295,7 +295,7 @@ public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
             }
             else
             {
-                for (var current = list.Count - 1; current >= 0; current -= 1)
+                for (var current = _count - 1; current >= 0; current -= 1)
                 {
                     array.SetValue(list[current], index + current);
                 }
@@ -323,20 +323,33 @@ public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
         public void OnError(Exception error) { }
         public void OnNext(ListChange<T> value)
         {
+            switch (value.Action)
+            {
+                case ListChangeAction.RemoveAll:
+                    _count = 0;
+                    break;
+                case ListChangeAction.Remove:
+                    _count -= 1;
+                    break;
+                case ListChangeAction.Insert:
+                    _count += 1;
+                    break;
+            }
+
             CollectionChanged?.Invoke(
                 sender: this,
                 e: value.Action switch
                 {
-                    ListChangeAction.Reset => new NotifyCollectionChangedEventArgs(
+                    ListChangeAction.RemoveAll => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Reset),
-                    ListChangeAction.Insert => new NotifyCollectionChangedEventArgs(
-                        NotifyCollectionChangedAction.Add,
-                        value.NewItem,
-                        value.NewIndex),
                     ListChangeAction.Remove => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Remove,
                         value.OldItem,
                         value.OldIndex),
+                    ListChangeAction.Insert => new NotifyCollectionChangedEventArgs(
+                        NotifyCollectionChangedAction.Add,
+                        value.NewItem,
+                        value.NewIndex),
                     ListChangeAction.Replace => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Replace,
                         value.NewItem,

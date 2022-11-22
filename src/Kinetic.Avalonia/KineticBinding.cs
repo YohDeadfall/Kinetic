@@ -345,6 +345,8 @@ public abstract class KineticBinding : IBinding
         private readonly ReadOnlyObservableList<TElement> _source;
         private readonly IDisposable _sourceChanged;
 
+        private int _count;
+
         public ListProxy(ReadOnlyObservableList<TElement> source)
         {
             _source = source;
@@ -365,7 +367,7 @@ public abstract class KineticBinding : IBinding
 
         public bool IsReadOnly => true;
 
-        public int Count => _source.Count;
+        public int Count => _count;
 
         public bool IsSynchronized => false;
 
@@ -432,21 +434,35 @@ public abstract class KineticBinding : IBinding
 
         public void OnError(Exception error) { }
 
-        public void OnNext(ListChange<TElement> value) =>
+        public void OnNext(ListChange<TElement> value)
+        {
+            switch (value.Action)
+            {
+                case ListChangeAction.RemoveAll:
+                    _count = 0;
+                    break;
+                case ListChangeAction.Remove:
+                    _count -= 1;
+                    break;
+                case ListChangeAction.Insert:
+                    _count += 1;
+                    break;
+            }
+
             CollectionChanged?.Invoke(
                 this,
                 value.Action switch
                 {
-                    ListChangeAction.Reset => new NotifyCollectionChangedEventArgs(
+                    ListChangeAction.RemoveAll => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Reset),
-                    ListChangeAction.Insert => new NotifyCollectionChangedEventArgs(
-                        NotifyCollectionChangedAction.Add,
-                        value.NewItem,
-                        value.NewIndex),
                     ListChangeAction.Remove => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Remove,
                         value.OldItem,
                         value.OldIndex),
+                    ListChangeAction.Insert => new NotifyCollectionChangedEventArgs(
+                        NotifyCollectionChangedAction.Add,
+                        value.NewItem,
+                        value.NewIndex),
                     ListChangeAction.Replace => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Replace,
                         value.NewItem,
@@ -459,6 +475,7 @@ public abstract class KineticBinding : IBinding
                         value.OldIndex),
                     _ => throw new NotSupportedException()
                 });
+        }
     }
 }
 

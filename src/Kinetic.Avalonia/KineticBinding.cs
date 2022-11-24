@@ -2,13 +2,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Data;
-using Kinetic.Linq;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Data;

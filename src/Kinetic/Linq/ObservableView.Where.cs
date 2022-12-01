@@ -10,7 +10,7 @@ public static partial class ObservableView
         source.ContinueWith<WhereStateMachineFactory<T>, ListChange<T>>(new(predicate));
 
     public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, ObserverBuilderFactory<T, bool> predicate) =>
-        source.Changed.ToBuilder().ContinueWith<WhereStateMachineFactory<T>, ListChange<T>>(new(predicate));
+        source.Changed.ToBuilder().Where(predicate);
 
     private struct WhereStateMachine<T, TContinuation> :
         IObserverStateMachine<ListChange<T>>,

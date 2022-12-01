@@ -164,7 +164,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         if (NotificationsEnabled)
         {
             GetCountObservable()?.Changed(_count);
-            GetChangeObservable()?.Removed(index, item);
+            GetChangeObservable()?.Inserted(index, item);
         }
     }
 
@@ -183,9 +183,10 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
 
     protected void RemoveItemAt(int index)
     {
-        var item = (uint) index >= (uint) _count
-            ? throw new ArgumentOutOfRangeException(nameof(index))
-            : _items[index];
+        if ((uint) index >= (uint) _count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
 
         _count -= 1;
         _version += 1;
@@ -208,7 +209,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         if (NotificationsEnabled)
         {
             GetCountObservable()?.Changed(_count);
-            GetChangeObservable()?.Removed(index, item);
+            GetChangeObservable()?.Removed(index);
         }
     }
 
@@ -219,14 +220,12 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
-        var previous = _items[index];
-
         _items[index] = item;
         _version += 1;
 
         if (NotificationsEnabled)
         {
-            GetChangeObservable()?.Replaced(index, previous, item);
+            GetChangeObservable()?.Replaced(index, item);
         }
     }
 
@@ -386,17 +385,17 @@ public static class ListChange
     public static ListChange<T> RemoveAll<T>() =>
         default;
 
-    public static ListChange<T> Remove<T>(int index, T item) =>
-        new(oldItem: item, oldIndex: index);
+    public static ListChange<T> Remove<T>(int index) =>
+        new(oldIndex: index);
 
     public static ListChange<T> Insert<T>(int index, T item) =>
-        new(newItem: item, newIndex: index);
+        new(newIndex: index, newItem: item);
 
-    public static ListChange<T> Replace<T>(int index, T oldItem, T newItem) =>
-        new(oldItem, newItem, index, index);
+    public static ListChange<T> Replace<T>(int index, T item) =>
+        new(oldIndex: index, newIndex: index, item);
 
     public static ListChange<T> Move<T>(int oldIndex, int newIndex, T item) =>
-        new(item, item, oldIndex, newIndex);
+        new(oldIndex, newIndex, item);
 }
 
 public enum ListChangeAction
@@ -412,19 +411,16 @@ public readonly struct ListChange<T> : IEquatable<ListChange<T>>
 {
     private readonly int _oldIndex;
     private readonly int _newIndex;
-    private readonly T _oldItem;
     private readonly T _newItem;
 
     internal ListChange(
-        T oldItem = default!,
-        T newItem = default!,
         int oldIndex = -1,
-        int newIndex = -1)
+        int newIndex = -1,
+        T newItem = default!)
     {
-        _oldItem = oldItem;
-        _newItem = newItem;
         _oldIndex = ~oldIndex;
         _newIndex = ~newIndex;
+        _newItem = newItem;
     }
 
     public ListChangeAction Action
@@ -440,18 +436,16 @@ public readonly struct ListChange<T> : IEquatable<ListChange<T>>
         }
     }
 
-    public T OldItem => _oldIndex < 0 ? _oldItem : throw new InvalidOperationException();
     public T NewItem => _newIndex < 0 ? _newItem : throw new InvalidOperationException();
 
     public int OldIndex => _oldIndex < 0 ? ~_oldIndex : throw new InvalidOperationException();
     public int NewIndex => _newIndex < 0 ? ~_newIndex : throw new InvalidOperationException();
 
-    public override int GetHashCode() => HashCode.Combine(_oldIndex, _newIndex, _oldItem, _newItem);
+    public override int GetHashCode() => HashCode.Combine(_oldIndex, _newIndex, _newItem);
 
     public bool Equals(ListChange<T> other) =>
         _oldIndex == other._oldIndex &&
         _newIndex == other._newIndex &&
-        EqualityComparer<T>.Default.Equals(_oldItem, other._oldItem) &&
         EqualityComparer<T>.Default.Equals(_newItem, other._newItem);
 }
 
@@ -475,14 +469,14 @@ internal sealed class ListChangeObservable<T> : PropertyObservable, IObservableI
     public void RemovedAll() =>
         _subscriptions.OnNext(ListChange.RemoveAll<T>());
 
-    public void Removed(int index, T item) =>
-        _subscriptions.OnNext(ListChange.Remove(index, item));
+    public void Removed(int index) =>
+        _subscriptions.OnNext(ListChange.Remove<T>(index));
 
     public void Inserted(int index, T item) =>
         _subscriptions.OnNext(ListChange.Insert(index, item));
 
-    public void Replaced(int index, T oldItem, T newItem) =>
-        _subscriptions.OnNext(ListChange.Replace(index, oldItem, newItem));
+    public void Replaced(int index, T item) =>
+        _subscriptions.OnNext(ListChange.Replace(index, item));
 
     public void Moved(int oldIndex, int newIndex, T item) =>
         _subscriptions.OnNext(ListChange.Move(oldIndex, newIndex, item));

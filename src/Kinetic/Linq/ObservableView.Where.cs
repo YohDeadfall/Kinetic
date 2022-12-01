@@ -67,9 +67,8 @@ public static partial class ObservableView
                         if (item.Present)
                         {
                             _continuation.OnNext(
-                                ListChange.Remove(
-                                    index: CountBefore(index),
-                                    item.Item));
+                                ListChange.Remove<T>(
+                                    index: CountBefore(index)));
                         }
 
                         break;
@@ -116,15 +115,13 @@ public static partial class ObservableView
                                 _continuation.OnNext(
                                     ListChange.Replace(
                                         index: CountBefore(index),
-                                        oldItem.Item,
                                         newItem.Item));
                             }
                             else
                             {
                                 _continuation.OnNext(
-                                    ListChange.Remove(
-                                        index: CountBefore(index),
-                                        oldItem.Item));
+                                    ListChange.Remove<T>(
+                                        index: CountBefore(index)));
                             }
                         }
                         else
@@ -180,7 +177,7 @@ public static partial class ObservableView
 
             _continuation.OnNext(value.Present
                 ? ListChange.Insert(index, value.Item)
-                : ListChange.Remove(index, value.Item));
+                : ListChange.Remove<T>(index));
         }
 
         private int CountBefore(int index)

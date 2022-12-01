@@ -6,8 +6,8 @@ namespace Kinetic.Collections.Tests;
 public class ListChangeTests
 {
     [Theory]
-    [InlineData(0, "zero")]
-    [InlineData(1, "one")]
+    [InlineData(0, "one")]
+    [InlineData(1, "two")]
     public void Insert(int index, string item)
     {
         var change = ListChange.Insert(index, item);
@@ -15,21 +15,19 @@ public class ListChangeTests
         Assert.Equal(ListChangeAction.Insert, change.Action);
         Assert.Equal(item, change.NewItem);
         Assert.Equal(index, change.NewIndex);
-        Assert.Throws<InvalidOperationException>(() => change.OldItem);
         Assert.Throws<InvalidOperationException>(() => change.OldIndex);
     }
 
     [Theory]
-    [InlineData(0, "zero")]
-    [InlineData(1, "one")]
-    public void Remove(int index, string item)
+    [InlineData(0)]
+    [InlineData(1)]
+    public void Remove(int index)
     {
-        var change = ListChange.Remove(index, item);
+        var change = ListChange.Remove<string>(index);
 
         Assert.Equal(ListChangeAction.Remove, change.Action);
         Assert.Throws<InvalidOperationException>(() => change.NewItem);
         Assert.Throws<InvalidOperationException>(() => change.NewIndex);
-        Assert.Equal(item, change.OldItem);
         Assert.Equal(index, change.OldIndex);
     }
 
@@ -42,27 +40,25 @@ public class ListChangeTests
         Assert.Equal(ListChangeAction.RemoveAll, change.Action);
         Assert.Throws<InvalidOperationException>(() => change.NewItem);
         Assert.Throws<InvalidOperationException>(() => change.NewIndex);
-        Assert.Throws<InvalidOperationException>(() => change.OldItem);
         Assert.Throws<InvalidOperationException>(() => change.OldIndex);
     }
 
     [Theory]
-    [InlineData(0, "zero", "one")]
-    [InlineData(1, "one", "two")]
-    public void Replace(int index, string oldItem, string newItem)
+    [InlineData(0, "one")]
+    [InlineData(1, "two")]
+    public void Replace(int index, string item)
     {
-        var change = ListChange.Replace(index, oldItem, newItem);
+        var change = ListChange.Replace(index, item);
 
         Assert.Equal(ListChangeAction.Replace, change.Action);
-        Assert.Equal(newItem, change.NewItem);
+        Assert.Equal(item, change.NewItem);
         Assert.Equal(index, change.NewIndex);
-        Assert.Equal(oldItem, change.OldItem);
         Assert.Equal(index, change.OldIndex);
     }
 
     [Theory]
-    [InlineData(0, 1, "zero")]
-    [InlineData(1, 2, "one")]
+    [InlineData(0, 1, "one")]
+    [InlineData(1, 2, "two")]
     public void Move(int oldIndex, int newIndex, string item)
     {
         var change = ListChange.Move(oldIndex, newIndex, item);
@@ -70,7 +66,6 @@ public class ListChangeTests
         Assert.Equal(ListChangeAction.Move, change.Action);
         Assert.Equal(item, change.NewItem);
         Assert.Equal(newIndex, change.NewIndex);
-        Assert.Equal(item, change.OldItem);
         Assert.Equal(oldIndex, change.OldIndex);
     }
 }

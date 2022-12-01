@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Kinetic.Linq;
@@ -80,7 +79,7 @@ public class ObservableListTests
         actual[4] = 8;
 
         Assert.Equal(new int[] { 7, 3, 0, 2, 8 }, actual);
-        Assert.Equal(new[] { ListChange.Replace(2, 5, 0) }, actualChanges);
+        Assert.Equal(new[] { ListChange.Replace(2, 0) }, actualChanges);
     }
 
     [Fact]
@@ -106,7 +105,7 @@ public class ObservableListTests
         actual.Remove(3);
 
         Assert.Equal(new int[] { 1, 5, 4 }, actual);
-        Assert.Equal(new[] { ListChange.Remove(1, 3) }, actualChanges);
+        Assert.Equal(new[] { ListChange.Remove<int>(1) }, actualChanges);
     }
 
     [Fact]
@@ -130,6 +129,6 @@ public class ObservableListTests
         actual.RemoveAt(0);
 
         Assert.Equal(new int[] { 3, 5, 4 }, actual);
-        Assert.Equal(new[] { ListChange.Remove(3, 2) }, actualChanges);
+        Assert.Equal(new[] { ListChange.Remove<int>(3) }, actualChanges);
     }
 }

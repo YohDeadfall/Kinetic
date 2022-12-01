@@ -344,7 +344,7 @@ public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
                         NotifyCollectionChangedAction.Reset),
                     ListChangeAction.Remove => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Remove,
-                        value.OldItem,
+                        changedItem: null,
                         value.OldIndex),
                     ListChangeAction.Insert => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Add,
@@ -353,7 +353,7 @@ public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
                     ListChangeAction.Replace => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Replace,
                         value.NewItem,
-                        value.OldItem,
+                        oldItem: null,
                         value.OldIndex),
                     ListChangeAction.Move => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Move,

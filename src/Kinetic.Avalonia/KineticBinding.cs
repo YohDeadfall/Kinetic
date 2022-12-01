@@ -455,7 +455,7 @@ public abstract class KineticBinding : IBinding
                         NotifyCollectionChangedAction.Reset),
                     ListChangeAction.Remove => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Remove,
-                        value.OldItem,
+                        changedItem: null,
                         value.OldIndex),
                     ListChangeAction.Insert => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Add,
@@ -464,7 +464,7 @@ public abstract class KineticBinding : IBinding
                     ListChangeAction.Replace => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Replace,
                         value.NewItem,
-                        value.OldItem,
+                        oldItem: null,
                         value.OldIndex),
                     ListChangeAction.Move => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Move,

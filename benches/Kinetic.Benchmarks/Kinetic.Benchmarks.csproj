@@ -8,7 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Kinetic\Kinetic.csproj" />
     <PackageReference Include="BenchmarkDotNet" Version="0.13.4" />
-    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.3"/>
+    <PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.4"/>
     <PackageReference Include="ReactiveUI" Version="18.4.20" />
   </ItemGroup>
 </Project>

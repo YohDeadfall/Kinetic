@@ -34,8 +34,11 @@ public static partial class ObservableView
                 item.Dispose();
         }
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(ObserverStateMachineBox box)
+        {
             _box = box;
+            _continuation.Initialize(box);
+        }
 
         public void OnCompleted() =>
             _continuation.OnCompleted();

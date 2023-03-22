@@ -49,7 +49,7 @@ public abstract class ObserverStateMachineBox
             throw new ArgumentException("The provided state machine doesn't belong to the current box.", nameof(stateMachine));
 
         return builder.Build<SubscribeStateMachine<T, TStateMachine>, SubscribeBoxFactory, IDisposable>(
-                new(this, offset), new());
+            new(this, offset), new());
     }
 
     private readonly struct SubscribeStateMachine<T, TStateMachine> : IObserverStateMachine<T>

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -11,7 +13,25 @@ public static partial class ObservableView
     public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ObserverBuilder<ListChange<T>> source, Func<T, TKey> keySelector, IComparer<TKey>? keyComparer = null) =>
         source.ContinueWith<OrderByCore<T, TKey>.StateMachineFactory, ListChange<T>>(new(keySelector, keyComparer));
 
+    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ObserverBuilder<ListChange<T>> source, ObserverBuilderFactory<T, TKey> keySelector, IComparer<TKey>? keyComparer = null) =>
+        source.ContinueWith<OrderByCore<T, TKey>.StateMachineFactory, ListChange<T>>(new(keySelector, keyComparer));
+
+    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ObserverBuilder<ListChange<T>> source, Func<T, Property<TKey>> keySelector, IComparer<TKey>? keyComparer = null) =>
+        source.OrderBy(item => keySelector(item).Changed.ToBuilder(), keyComparer);
+
+    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ObserverBuilder<ListChange<T>> source, Func<T, ReadOnlyProperty<TKey>> keySelector, IComparer<TKey>? keyComparer = null) =>
+        source.OrderBy(item => keySelector(item).Changed.ToBuilder(), keyComparer);
+
     public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ReadOnlyObservableList<T> source, Func<T, TKey> keySelector, IComparer<TKey>? keyComparer = null) =>
+        source.Changed.ToBuilder().OrderBy(keySelector, keyComparer);
+
+    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ReadOnlyObservableList<T> source, ObserverBuilderFactory<T, TKey> keySelector, IComparer<TKey>? keyComparer = null) =>
+        source.Changed.ToBuilder().OrderBy(keySelector, keyComparer);
+
+    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ReadOnlyObservableList<T> source, Func<T, Property<TKey>> keySelector, IComparer<TKey>? keyComparer = null) =>
+        source.Changed.ToBuilder().OrderBy(keySelector, keyComparer);
+
+    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ReadOnlyObservableList<T> source, Func<T, ReadOnlyProperty<TKey>> keySelector, IComparer<TKey>? keyComparer = null) =>
         source.Changed.ToBuilder().OrderBy(keySelector, keyComparer);
 
     private static class OrderByCore<T, TKey>
@@ -41,7 +61,7 @@ public static partial class ObservableView
         private interface IKeySelector<TItem>
             where TItem : IItem<TItem>
         {
-            public (TItem, IDisposable?) CreateItem<TStateMachine>(T value, in TStateMachine stateMachine)
+            public (TItem, IDisposable?) CreateItem<TStateMachine>(int index, T value, in TStateMachine stateMachine)
                 where TStateMachine : struct, IStateMachine<TItem>;
         }
 
@@ -175,35 +195,61 @@ public static partial class ObservableView
                             foreach (var item in _items)
                                 item.Dispose();
 
+                            _indexes.Clear();
                             _items.Clear();
+
                             _continuation.OnNext(value);
 
                             break;
                         }
-                    case ListChangeAction.Remove:
+                    case ListChangeAction.Remove
+                    when value.OldIndex is var originalIndex:
                         {
-                            var index = _indexes[value.OldIndex];
+                            var index = _indexes[originalIndex];
                             var item = _items[index];
 
                             item.Dispose();
 
-                            _indexes.RemoveAt(value.OldIndex);
+                            _indexes.RemoveAt(originalIndex);
                             _items.RemoveAt(index);
+
+                            var indexes = CollectionsMarshal.AsSpan(_indexes);
+                            foreach (ref var current in indexes)
+                            {
+                                if (current > index)
+                                    current -= 1;
+
+                                var offset = Unsafe.ByteOffset(ref indexes[0], ref current).ToInt32() / Unsafe.SizeOf<int>();
+                                if (offset > originalIndex)
+                                    _items[current].OriginalIndex = offset;
+                            }
 
                             _continuation.OnNext(
                                 ListChange.Remove<T>(index));
 
                             break;
                         }
-                    case ListChangeAction.Insert:
+                    case ListChangeAction.Insert
+                    when value.NewIndex is var originalIndex:
                         {
-                            var (item, subscription) = _keySelector.CreateItem(value.NewItem, this);
+                            var (item, subscription) = _keySelector.CreateItem(originalIndex, value.NewItem, this);
                             var index = _items.BinarySearch(item, _keyComparer.ItemComparer);
 
                             if (index < 0)
                                 index = ~index;
 
-                            _indexes.Insert(value.NewIndex, index);
+                            var indexes = CollectionsMarshal.AsSpan(_indexes);
+                            foreach (ref var current in indexes)
+                            {
+                                if (current >= index)
+                                    current += 1;
+
+                                var offset = Unsafe.ByteOffset(ref indexes[0], ref current).ToInt32() / Unsafe.SizeOf<int>();
+                                if (offset > originalIndex)
+                                    _items[current].OriginalIndex = offset;
+                            }
+
+                            _indexes.Insert(originalIndex, index);
                             _items.Insert(index, item);
 
                             _continuation.OnNext(
@@ -212,14 +258,15 @@ public static partial class ObservableView
                             item.Initialize(subscription);
                             break;
                         }
-                    case ListChangeAction.Replace:
+                    case ListChangeAction.Replace
+                    when value.NewIndex is var originalIndex:
                         {
-                            var oldIndex = _indexes[value.OldIndex];
+                            var oldIndex = _indexes[originalIndex];
                             var oldItem = _items[oldIndex];
 
                             oldItem.Dispose();
 
-                            var (newItem, subscription) = _keySelector.CreateItem(value.NewItem, this);
+                            var (newItem, subscription) = _keySelector.CreateItem(originalIndex, value.NewItem, this);
                             var newIndex = _items.BinarySearch(newItem, _keyComparer.ItemComparer);
 
                             if (newIndex < 0)
@@ -228,13 +275,11 @@ public static partial class ObservableView
                             if (oldIndex == newIndex)
                             {
                                 _items[oldIndex] = newItem;
-
                                 _continuation.OnNext(ListChange.Replace(oldIndex, value.NewItem));
                             }
                             else
                             {
-                                if (newIndex > oldIndex)
-                                    newIndex -= 1;
+                                newIndex = UpdateIndexes(oldIndex, newIndex);
 
                                 _indexes[value.OldIndex] = newIndex;
 
@@ -278,6 +323,8 @@ public static partial class ObservableView
 
                 if (oldIndex != newIndex)
                 {
+                    newIndex = UpdateIndexes(oldIndex, newIndex);
+
                     _items.RemoveAt(oldIndex);
                     _items.Insert(newIndex, item);
 
@@ -302,6 +349,31 @@ public static partial class ObservableView
                         _indexes[item.OriginalIndex] = newIndex;
                         _continuation.OnNext(ListChange.Move(oldIndex, newIndex, item.Value));
                     }
+                }
+            }
+
+            private int UpdateIndexes(int oldIndex, int newIndex)
+            {
+                var indexes = CollectionsMarshal.AsSpan(_indexes);
+                if (newIndex > oldIndex)
+                {
+                    foreach (ref var current in indexes)
+                    {
+                        if (current > oldIndex && current < newIndex)
+                            current -= 1;
+                    }
+
+                    return newIndex - 1;
+                }
+                else
+                {
+                    foreach (ref var current in indexes)
+                    {
+                        if (current > newIndex && current < oldIndex)
+                            current += 1;
+                    }
+
+                    return newIndex;
                 }
             }
         }
@@ -430,12 +502,13 @@ public static partial class ObservableView
             public StaticKeySelector(Func<T, TKey> keySelector) =>
                 _keySelector = keySelector;
 
-            public (TItem, IDisposable?) CreateItem<TStateMachine>(T value, in TStateMachine stateMachinen)
+            public (TItem, IDisposable?) CreateItem<TStateMachine>(int index, T value, in TStateMachine stateMachinen)
                 where TStateMachine : struct, IStateMachine<TItem>
             {
                 var key = _keySelector(value);
                 var item = TItem.Create(key, value);
 
+                item.OriginalIndex = index;
                 return (item, null);
             }
         }
@@ -447,7 +520,7 @@ public static partial class ObservableView
             public DynamicKeySelector(ObserverBuilderFactory<T, TKey> keySelector) =>
                 _keySelector = keySelector;
 
-            public (DynamicItem, IDisposable?) CreateItem<TStateMachine>(T value, in TStateMachine stateMachine)
+            public (DynamicItem, IDisposable?) CreateItem<TStateMachine>(int index, T value, in TStateMachine stateMachine)
                 where TStateMachine : struct, IStateMachine<DynamicItem>
             {
                 var item = DynamicItem.Create(default, value);
@@ -456,6 +529,7 @@ public static partial class ObservableView
                     .ContinueWith<DynamicItem.StateMachineFactory, ValueTuple<DynamicItem>>(new DynamicItem.StateMachineFactory(item))
                     .Subscribe(stateMachine, stateMachine.Box);
 
+                item.OriginalIndex = index;
                 return (item, subscription);
             }
         }

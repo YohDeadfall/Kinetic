@@ -248,14 +248,14 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
             sourceIndex: oldIndex + 1,
             destinationArray: _items,
             destinationIndex: oldIndex,
-            length: _count - oldIndex);
+            length: _count - oldIndex - 1);
 
         Array.Copy(
             sourceArray: _items,
             sourceIndex: newIndex,
             destinationArray: _items,
             destinationIndex: newIndex + 1,
-            length: _count - newIndex);
+            length: _count - newIndex - 1);
 
         _items[newIndex] = item;
         _version += 1;

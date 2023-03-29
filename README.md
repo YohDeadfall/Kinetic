@@ -30,6 +30,22 @@ private sealed class Some : Object
 }
 ```
 
+### Collections
+
+Instead of the standard `ObservableCollection<T>` and other custom types implementing `INotifyCollectionChanged` Kinetic has two built-in collections, `ObservableList<T>` and `ReadOnlyObservableList<T>` which use the same notification model as the rest of the framework. Both of them expose an `IObservable<ListChange<T>>` through  the `Changed` property.
+
+In contradiction to .NET and DynamicData, there are no multiple element changes to avoid memory allocations on notifications and code complexity for views. Therefore, each `ListChange<T>` can represent one of the following actions:
+
+* `RemoveAll`
+* `Remove`
+* `Insert`
+* `Replace`
+* `Move`
+
+Other than that Kinetic collections looks pretty similar to what the .NET ecosystem has.
+
+For possible scenarios of making views using LINQ operators please refer to tests. Currently only `Where` and `OrderBy` are supported, but more options and operators should come to Kinetic.
+
 ### Commands
 
 Kinetic provides an implementation of the `ICommand` interface which produces a result on completion by implementing `IObservable<T>` too. Any command can have a state object passed to it on creation or received from the provided observable object.
@@ -59,6 +75,8 @@ The project provides a subset of LINQ extensions, which are contained by `Kineti
 Since all observable properties should be defined as `Property<T>` or `ReadOnlyProperty<T>`, there's a limitation of Kinetic usage. It's supported only by Avalonia at the moment thanfully to the extensible binding system, but a general solution to support any XAML framework will come later.
 
 To make Avalonia recognize Kinetic properties, the `Kinetic.Avalonia` package should be added and one line of code at startup as well:
+
+Collection bindings automaticlly produce a proxy which translates `ListChange<T>` to `INotifyCollectionChanged` events.
 
 ```csharp
 using Avalonia.Data.Core;

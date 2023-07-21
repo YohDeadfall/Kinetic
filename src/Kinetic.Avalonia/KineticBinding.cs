@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Data;
@@ -18,47 +17,50 @@ public abstract class KineticBinding : IBinding
     private const string TwoWayCollectionBindingsNotSupported = "Two way collection bindings are not supported.";
 
     public abstract InstancedBinding Initiate(
-        IAvaloniaObject target,
+        AvaloniaObject target,
         AvaloniaProperty? targetProperty,
         object? anchor = null,
         bool enableDataValidation = false);
 
-    private protected static InstancedBinding InitiateOneWay<T>(IAvaloniaObject target, BindingExpressionFactory<Property<T>?> expression) =>
+    private protected static InstancedBinding InitiateOneWay<T>(AvaloniaObject target, BindingExpressionFactory<Property<T>?> expression) =>
         InstancedBinding.OneWay(
             expression
                 .Invoke(default)
                 .ContinueWith<PropertyStateMachineFactory<T>, T?>(default)
-                .Build<PublishStateMachine<T?>, BoxFactory<T?>, ISubject<object?>>(continuation: new(), factory: new(target)));
+                .Build<PublishStateMachine<T?>, BoxFactory<T?>, IBox>(continuation: new(), factory: new(target)));
 
-    private protected static InstancedBinding InitiateOneWay<T>(IAvaloniaObject target, BindingExpressionFactory<ReadOnlyProperty<T>?> expression) =>
+    private protected static InstancedBinding InitiateOneWay<T>(AvaloniaObject target, BindingExpressionFactory<ReadOnlyProperty<T>?> expression) =>
         InstancedBinding.OneWay(
             expression
                 .Invoke(default)
                 .ContinueWith<PropertyStateMachineFactory<T>, T?>(default)
-                .Build<PublishStateMachine<T?>, BoxFactory<T?>, ISubject<object?>>(continuation: new(), factory: new(target)));
+                .Build<PublishStateMachine<T?>, BoxFactory<T?>, IBox>(continuation: new(), factory: new(target)));
 
-    private protected static InstancedBinding InitiateOneWay<T>(IAvaloniaObject target, BindingExpressionFactory<Property<ObservableList<T>?>?> expression) =>
+    private protected static InstancedBinding InitiateOneWay<T>(AvaloniaObject target, BindingExpressionFactory<Property<ObservableList<T>?>?> expression) =>
         InstancedBinding.OneWay(
             expression
                 .Invoke(default)
                 .ContinueWith<PropertyStateMachineFactory<ObservableList<T>?>, ObservableList<T>?>(default)
                 .ContinueWith<ListStateMachineFactory<T>, ListProxy<T>?>(default)
-                .Build<PublishStateMachine<ListProxy<T>?>, BoxFactory<ObservableList<T>?>, ISubject<object?>>(continuation: new(), factory: new(target)));
+                .Build<PublishStateMachine<ListProxy<T>?>, BoxFactory<ObservableList<T>?>, IBox>(continuation: new(), factory: new(target)));
 
-    private protected static InstancedBinding InitiateOneWay<T>(IAvaloniaObject target, BindingExpressionFactory<ReadOnlyProperty<ObservableList<T>?>?> expression) =>
+    private protected static InstancedBinding InitiateOneWay<T>(AvaloniaObject target, BindingExpressionFactory<ReadOnlyProperty<ObservableList<T>?>?> expression) =>
         InstancedBinding.OneWay(
             expression
                 .Invoke(default)
                 .ContinueWith<PropertyStateMachineFactory<ObservableList<T>?>, ObservableList<T>?>(default)
                 .ContinueWith<ListStateMachineFactory<T>, ListProxy<T>?>(default)
-                .Build<PublishStateMachine<ListProxy<T>?>, BoxFactory<ObservableList<T>?>, ISubject<object?>>(continuation: new(), factory: new(target)));
+                .Build<PublishStateMachine<ListProxy<T>?>, BoxFactory<ObservableList<T>?>, IBox>(continuation: new(), factory: new(target)));
 
-    private protected static InstancedBinding InitiateTwoWay<T>(IAvaloniaObject target, BindingExpressionFactory<Property<T>?> expression) =>
-        InstancedBinding.TwoWay(
-            expression
-                .Invoke(default)
-                .ContinueWith<PropertyStateMachineFactory<T>, T?>(default)
-                .Build<PublishStateMachine<T?>, BoxFactory<T?>, ISubject<object?>>(continuation: new(), factory: new(target)));
+    private protected static InstancedBinding InitiateTwoWay<T>(AvaloniaObject target, BindingExpressionFactory<Property<T>?> expression)
+    {
+        var stateMachineBox = expression
+            .Invoke(default)
+            .ContinueWith<PropertyStateMachineFactory<T>, T?>(default)
+            .Build<PublishStateMachine<T?>, BoxFactory<T?>, IBox>(continuation: new(), factory: new(target));
+
+        return InstancedBinding.TwoWay(stateMachineBox, stateMachineBox);
+    }
 
     public static KineticBinding OneWay<T>(BindingExpressionFactory<Property<T>?> expression) =>
         new KineticOneWayBinding<T>(expression);
@@ -79,28 +81,28 @@ public abstract class KineticBinding : IBinding
     public static KineticBinding TwoWay<T>(BindingExpressionFactory<Property<ObservableList<T>>?> expression) =>
         throw new NotSupportedException(TwoWayCollectionBindingsNotSupported);
 
-    private interface IBox : IDisposable
+    internal interface IBox : IDisposable, IObservable<object?>, IObserver<object?>
     {
         IObserver<object?>? Observer { get; }
     }
 
-    private interface IBox<TProperty> : IBox
+    internal interface IBox<TProperty> : IBox
     {
         Property<TProperty>? Property { get; set; }
     }
 
-    private sealed class Box<TContext, TProperty, TStateMachine> : ObserverStateMachineBox<TContext, TStateMachine>, ISubject<object?>, IBox<TProperty>
+    private sealed class Box<TContext, TProperty, TStateMachine> : ObserverStateMachineBox<TContext, TStateMachine>, IBox<TProperty>
         where TStateMachine : struct, IObserverStateMachine<TContext>
     {
         private EventHandler<AvaloniaPropertyChangedEventArgs>? _targetChanged;
 
         private IObserver<object?>? _observer;
-        private IAvaloniaObject? _target;
+        private AvaloniaObject? _target;
 
         public Property<TProperty>? Property { get; set; }
         public IObserver<object?>? Observer => _observer;
 
-        public Box(in TStateMachine stateMachine, IAvaloniaObject target) :
+        public Box(in TStateMachine stateMachine, AvaloniaObject target) :
             base(stateMachine)
         {
             _target = target;
@@ -155,14 +157,14 @@ public abstract class KineticBinding : IBinding
         void IObserver<object?>.OnNext(object? value) => Property?.Set((TProperty) value!);
     }
 
-    internal readonly struct BoxFactory<TProperty> : IObserverFactory<ISubject<object?>>
+    internal readonly struct BoxFactory<TProperty> : IObserverFactory<IBox>
     {
-        public readonly IAvaloniaObject _target;
+        public readonly AvaloniaObject _target;
 
-        public BoxFactory(IAvaloniaObject target) =>
+        public BoxFactory(AvaloniaObject target) =>
             _target = target;
 
-        public ISubject<object?> Create<T, TStateMachine>(in TStateMachine stateMachine)
+        public IBox Create<T, TStateMachine>(in TStateMachine stateMachine)
             where TStateMachine : struct, IObserverStateMachine<T> =>
             new Box<T, TProperty, TStateMachine>(stateMachine, _target);
     }
@@ -494,7 +496,7 @@ internal sealed class KineticOneWayBinding<T> : KineticBinding
         _expression = expression;
 
     public override InstancedBinding Initiate(
-        IAvaloniaObject target,
+        AvaloniaObject target,
         AvaloniaProperty? targetProperty,
         object? anchor = null,
         bool enableDataValidation = false)
@@ -521,7 +523,7 @@ internal sealed class KineticTwoWayBinding<T> : KineticBinding
         _expression = expression;
 
     public override InstancedBinding Initiate(
-        IAvaloniaObject target,
+        AvaloniaObject target,
         AvaloniaProperty? targetProperty,
         object? anchor = null,
         bool enableDataValidation = false)

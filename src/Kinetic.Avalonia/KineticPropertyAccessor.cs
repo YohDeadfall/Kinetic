@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Reflection;
 using Avalonia.Data;
-using Avalonia.Data.Core;
 using Avalonia.Data.Core.Plugins;
 
 namespace Kinetic.Data;
@@ -68,7 +67,7 @@ public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
 
     private IPropertyAccessorPlugin? GetAccessorPlugin(object obj, string propertyName)
     {
-        foreach (var accessor in ExpressionObserver.PropertyAccessors)
+        foreach (var accessor in BindingPlugins.PropertyAccessors)
         {
             if (accessor is not KineticPropertyAccessor &&
                 accessor.Match(obj, propertyName))

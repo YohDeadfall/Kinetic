@@ -1,8 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
-using Avalonia.Data.Core;
-using Avalonia.Logging;
+using Avalonia.Data.Core.Plugins;
+using Avalonia.Headless.XUnit;
 using Xunit;
 
 namespace Kinetic.Data.Tests;
@@ -10,9 +10,9 @@ namespace Kinetic.Data.Tests;
 public class KineticPropertyAccessorTests
 {
     static KineticPropertyAccessorTests() =>
-        ExpressionObserver.PropertyAccessors.Insert(2, new KineticPropertyAccessor());
+        BindingPlugins.PropertyAccessors.Insert(2, new KineticPropertyAccessor());
 
-    [Fact]
+    [AvaloniaFact]
     public void BindingToProperty()
     {
         var source = new Source();
@@ -31,7 +31,7 @@ public class KineticPropertyAccessorTests
         Assert.Equal("baz", source.Text);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void BindingToReadOnlyProperty()
     {
         var source = new Source();
@@ -50,23 +50,24 @@ public class KineticPropertyAccessorTests
         Assert.Equal("bar", source.TextReadOnly);
     }
 
-    [Fact]
+    [AvaloniaFact]
     public void BindingToList()
     {
         var source = new Source();
-        var target = new ItemsPresenter { DataContext = source };
+        var target = new ItemsControl { DataContext = source };
+        var window = new Window { Content = target };
         var binding = new Avalonia.Data.Binding { Path = "Items" };
 
-        target.ApplyTemplate();
-        target.Bind(ItemsRepeater.ItemsProperty, binding);
+        window.Show(); ;
+        target.Bind(ItemsControl.ItemsSourceProperty, binding);
 
-        Assert.Equal(source.Items, target.Items);
+        Assert.Equal(source.Items, target.ItemsSource);
 
         source.Items.Add("foo");
         source.Items.Add("bar");
 
-        Assert.Equal("foo", ((ContentPresenter) target.Panel.Children[0]).Content);
-        Assert.Equal("bar", ((ContentPresenter) target.Panel.Children[1]).Content);
+        Assert.Equal("foo", ((ContentPresenter?) target.ContainerFromIndex(0))?.Content);
+        Assert.Equal("bar", ((ContentPresenter?) target.ContainerFromIndex(1))?.Content);
     }
 
     private sealed class Source : ObservableObject

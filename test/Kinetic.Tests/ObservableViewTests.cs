@@ -155,6 +155,42 @@ public class ObservableViewTests
         Assert.Equal(new[] { itemC, itemD, itemB, itemA }, view);
     }
 
+    [Fact]
+    public void Select()
+    {
+        var list = new ObservableList<Item>();
+        var view = list.Select(item => item.Name.Get()).ToView();
+
+        var itemA = new Item(0, "A");
+        var itemB = new Item(1, "B");
+        var itemC = new Item(2, "C");
+        var itemD = new Item(3, "D");
+
+        list.Add(itemA);
+        list.Add(itemC);
+        list.Add(itemD);
+        list.Add(itemB);
+
+        Assert.Equal(new[] { "A", "C", "D", "B" }, view);
+
+        list.Remove(itemA);
+        list.Remove(itemB);
+
+        Assert.Equal(new[] { "C", "D" }, view);
+
+        list[1] = itemB;
+
+        Assert.Equal(new[] { "C", "B" }, view);
+
+        list.Move(1, 0);
+
+        Assert.Equal(new[] { "B", "C" }, view);
+
+        list.Clear();
+
+        Assert.Empty(view);
+    }
+
     private sealed class Item : ObservableObject
     {
         private int _number;

@@ -32,6 +32,8 @@ public static partial class ObservableView
         {
             foreach (var item in _items)
                 item.Dispose();
+
+            _continuation.Dispose();
         }
 
         public void Initialize(ObserverStateMachineBox box)

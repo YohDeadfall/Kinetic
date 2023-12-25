@@ -62,7 +62,7 @@ public static partial class Observable
             {
                 _subscription?.Dispose();
                 _subscription = _selector(value) is { } observable
-                    ? _box.Subscribe(observable, _continuation)
+                    ? _box.Subscribe(observable, ref _continuation)
                     : null;
             }
             catch (Exception error)

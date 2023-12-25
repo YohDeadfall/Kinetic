@@ -83,7 +83,7 @@ public static partial class ObservableView
                         var item = new WhereStateMachineItem<T>(value.NewItem, value.NewIndex);
                         var subscription = _predicate(item.Item)
                             .ContinueWith<WherePredicateStateMachineFactory<T>, WhereStateMachineItem<T>>(new(item))
-                            .Subscribe(this, _box!);
+                            .Subscribe(ref this, _box!);
 
                         _items.Insert(item.Index, item);
                         item.Initialize(subscription);
@@ -108,7 +108,7 @@ public static partial class ObservableView
                         var newItem = new WhereStateMachineItem<T>(value.NewItem, value.NewIndex);
                         var newSubscription = _predicate(newItem.Item)
                             .ContinueWith<WherePredicateStateMachineFactory<T>, WhereStateMachineItem<T>>(new(newItem))
-                            .Subscribe(this, _box!);
+                            .Subscribe(ref this, _box!);
 
                         _items[index] = newItem;
                         newItem.Initialize(newSubscription);

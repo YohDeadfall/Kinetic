@@ -240,7 +240,7 @@ public abstract class KineticBinding : IBinding
                 {
                     _subscription = Unsafe
                         .As<ObserverStateMachineBox>(_box!)
-                        .Subscribe(property.Changed, this);
+                        .Subscribe(property.Changed, ref this);
                 }
                 else
                 {

@@ -105,7 +105,7 @@ public static partial class ObservableView
                         var item = new ObservableViewItem<TResult>(index);
                         var subscription = _selector(value.NewItem)
                             .ContinueWith<SelectorStateMachineFactory<TResult>, ObservableViewItem<TResult>>(new(item))
-                            .Subscribe(this, _box!);
+                            .Subscribe(ref this, _box!);
 
                         _items.Insert(item.Index, item);
                         item.Initialize(subscription);
@@ -130,7 +130,7 @@ public static partial class ObservableView
                         var newItem = new ObservableViewItem<TResult>(value.NewIndex);
                         var newSubscription = _selector(value.NewItem)
                             .ContinueWith<SelectorStateMachineFactory<TResult>, ObservableViewItem<TResult>>(new(newItem))
-                            .Subscribe(this, _box!);
+                            .Subscribe(ref this, _box!);
 
                         _items[index] = newItem;
                         newItem.Initialize(newSubscription);

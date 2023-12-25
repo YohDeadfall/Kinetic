@@ -27,8 +27,8 @@ public readonly struct ObserverStateMachineReference<T, TStateMachine>
     private readonly ObserverStateMachineBox _box;
     private readonly IntPtr _stateMachineOffset;
 
-    public ObserverStateMachineReference(ObserverStateMachineBox box, in TStateMachine stateMachine) =>
-        _stateMachineOffset = (_box = box).OffsetTo<T, TStateMachine>(stateMachine);
+    public ObserverStateMachineReference(ObserverStateMachineBox box, ref TStateMachine stateMachine) =>
+        _stateMachineOffset = (_box = box).OffsetTo<T, TStateMachine>(ref stateMachine);
 
     public ref TStateMachine Target =>
         ref _box.ReferenceTo<T, TStateMachine>(_stateMachineOffset);
@@ -40,12 +40,12 @@ public abstract class ObserverStateMachineBox
 
     private protected ObserverStateMachineBox() { }
 
-    internal IntPtr OffsetTo<T, TStateMachine>(in TStateMachine stateMachine)
+    internal IntPtr OffsetTo<T, TStateMachine>(ref TStateMachine stateMachine)
         where TStateMachine : struct, IObserverStateMachine<T>
     {
         var machineHost = StateMachineData;
         var machinePart = MemoryMarshal.CreateSpan(
-            ref Unsafe.As<TStateMachine, byte>(ref Unsafe.AsRef(stateMachine)),
+            ref Unsafe.As<TStateMachine, byte>(ref stateMachine),
             length: Unsafe.SizeOf<TStateMachine>());
 
         var offset = (nint) Unsafe.ByteOffset(
@@ -66,17 +66,17 @@ public abstract class ObserverStateMachineBox
         return ref Unsafe.As<byte, TStateMachine>(ref machinePart);
     }
 
-    public IDisposable Subscribe<T, TStateMachine>(IObservable<T> observable, in TStateMachine stateMachine)
+    public IDisposable Subscribe<T, TStateMachine>(IObservable<T> observable, ref TStateMachine stateMachine)
         where TStateMachine : struct, IObserverStateMachine<T>
     {
-        return Subscribe(observable.ToBuilder(), stateMachine);
+        return Subscribe(observable.ToBuilder(), ref stateMachine);
     }
 
-    public IDisposable Subscribe<T, TStateMachine>(ObserverBuilder<T> builder, in TStateMachine stateMachine)
+    public IDisposable Subscribe<T, TStateMachine>(ObserverBuilder<T> builder, ref TStateMachine stateMachine)
         where TStateMachine : struct, IObserverStateMachine<T>
     {
         return builder.Build<SubscribeStateMachine<T, TStateMachine>, SubscribeBoxFactory, IDisposable>(
-            new(new ObserverStateMachineReference<T, TStateMachine>(this, stateMachine)), new());
+            new(new ObserverStateMachineReference<T, TStateMachine>(this, ref stateMachine)), new());
     }
 
     private readonly struct SubscribeStateMachine<T, TStateMachine> : IObserverStateMachine<T>
@@ -110,17 +110,17 @@ public abstract class ObserverStateMachineBox
         public void Dispose() => StateMachine.Dispose();
     }
 
-    public ObserverBuilder<T> Observe<T, TStateMachine>(IObservable<T> observable, in TStateMachine stateMachine)
+    public ObserverBuilder<T> Observe<T, TStateMachine>(IObservable<T> observable, ref TStateMachine stateMachine)
         where TStateMachine : struct, IObserverStateMachine<T>
     {
-        return Observe(observable.ToBuilder(), stateMachine);
+        return Observe(observable.ToBuilder(), ref stateMachine);
     }
 
-    public ObserverBuilder<T> Observe<T, TStateMachine>(ObserverBuilder<T> builder, in TStateMachine stateMachine)
+    public ObserverBuilder<T> Observe<T, TStateMachine>(ObserverBuilder<T> builder, ref TStateMachine stateMachine)
         where TStateMachine : struct, IObserverStateMachine<T>
     {
         return builder.ContinueWith<ObserveStateMachineFactory<T, TStateMachine>, T>(
-            new(new(this, stateMachine)));
+            new(new(this, ref stateMachine)));
     }
 
     private readonly struct ObserveStateMachineFactory<T, TStateMachine> : IObserverStateMachineFactory<T, T>

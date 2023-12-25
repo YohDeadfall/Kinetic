@@ -61,7 +61,7 @@ public static partial class ObservableView
         private interface IKeySelector<TItem>
             where TItem : IItem<TItem>
         {
-            public (TItem, IDisposable?) CreateItem<TStateMachine>(int index, T value, in TStateMachine stateMachine)
+            public (TItem, IDisposable?) CreateItem<TStateMachine>(int index, T value, ref TStateMachine stateMachine)
                 where TStateMachine : struct, IStateMachine<TItem>;
         }
 
@@ -70,7 +70,7 @@ public static partial class ObservableView
         {
             public ItemComparer<TItem>? ItemComparer { get; }
 
-            public void Initialize<TStateMachine>(in TStateMachine stateMachine)
+            public void Initialize<TStateMachine>(ref TStateMachine stateMachine)
                 where TStateMachine : struct, IStateMachine<TItem>;
         }
 
@@ -168,7 +168,7 @@ public static partial class ObservableView
             public void Initialize(ObserverStateMachineBox box)
             {
                 _continuation.Initialize(Box = box);
-                _keyComparer.Initialize(this);
+                _keyComparer.Initialize(ref this);
             }
 
             public void Dispose()
@@ -232,7 +232,7 @@ public static partial class ObservableView
                     case ListChangeAction.Insert
                     when value.NewIndex is var originalIndex:
                         {
-                            var (item, subscription) = _keySelector.CreateItem(originalIndex, value.NewItem, this);
+                            var (item, subscription) = _keySelector.CreateItem(originalIndex, value.NewItem, ref this);
                             var index = _items.BinarySearch(item, _keyComparer.ItemComparer);
 
                             if (index < 0)
@@ -266,7 +266,7 @@ public static partial class ObservableView
 
                             oldItem.Dispose();
 
-                            var (newItem, subscription) = _keySelector.CreateItem(originalIndex, value.NewItem, this);
+                            var (newItem, subscription) = _keySelector.CreateItem(originalIndex, value.NewItem, ref this);
                             var newIndex = _items.BinarySearch(newItem, _keyComparer.ItemComparer);
 
                             if (newIndex < 0)
@@ -502,7 +502,7 @@ public static partial class ObservableView
             public StaticKeySelector(Func<T, TKey> keySelector) =>
                 _keySelector = keySelector;
 
-            public (TItem, IDisposable?) CreateItem<TStateMachine>(int index, T value, in TStateMachine stateMachinen)
+            public (TItem, IDisposable?) CreateItem<TStateMachine>(int index, T value, ref TStateMachine stateMachinen)
                 where TStateMachine : struct, IStateMachine<TItem>
             {
                 var key = _keySelector(value);
@@ -520,14 +520,14 @@ public static partial class ObservableView
             public DynamicKeySelector(ObserverBuilderFactory<T, TKey> keySelector) =>
                 _keySelector = keySelector;
 
-            public (DynamicItem, IDisposable?) CreateItem<TStateMachine>(int index, T value, in TStateMachine stateMachine)
+            public (DynamicItem, IDisposable?) CreateItem<TStateMachine>(int index, T value, ref TStateMachine stateMachine)
                 where TStateMachine : struct, IStateMachine<DynamicItem>
             {
                 var item = DynamicItem.Create(default, value);
                 var subscription = _keySelector
                     .Invoke(value)
                     .ContinueWith<DynamicItem.StateMachineFactory, ValueTuple<DynamicItem>>(new DynamicItem.StateMachineFactory(item))
-                    .Subscribe(stateMachine, stateMachine.Box);
+                    .Subscribe(ref stateMachine, stateMachine.Box);
 
                 item.OriginalIndex = index;
                 return (item, subscription);
@@ -542,7 +542,7 @@ public static partial class ObservableView
             public StaticKeyComparer(IComparer<TKey>? keyComparer) =>
                 ItemComparer = ItemComparer<TItem>.Create(keyComparer);
 
-            public void Initialize<TStateMachine>(in TStateMachine stateMachine)
+            public void Initialize<TStateMachine>(ref TStateMachine stateMachine)
                 where TStateMachine : struct, IStateMachine<TItem>
             { }
 
@@ -560,12 +560,12 @@ public static partial class ObservableView
             public DynamicKeyComparer(IObservable<IComparer<TKey>?> observable) =>
                 _observable = observable;
 
-            public void Initialize<TStateMachine>(in TStateMachine stateMachine)
+            public void Initialize<TStateMachine>(ref TStateMachine stateMachine)
                 where TStateMachine : struct, IStateMachine<TItem>
             {
                 Debug.Assert(_subscription is null);
 
-                _subscription = stateMachine.Box.Subscribe(_observable, stateMachine);
+                _subscription = stateMachine.Box.Subscribe(_observable, ref stateMachine);
             }
 
             public void Dispose() =>

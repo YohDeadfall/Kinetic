@@ -97,7 +97,7 @@ public static class KineticBindingPath
             if (value is { } property)
             {
                 _subscription = _box.Subscribe(
-                    property.Changed, this);
+                    property.Changed, ref this);
             }
             else
             {

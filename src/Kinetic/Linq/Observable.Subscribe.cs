@@ -37,9 +37,9 @@ public static partial class Observable
             continuation: new(onNext, onError, onCompleted),
             factory: new());
 
-    public static IDisposable Subscribe<T, TStateMachine>(this ObserverBuilder<T> source, in TStateMachine stateMachine, ObserverStateMachineBox box)
+    public static IDisposable Subscribe<T, TStateMachine>(this ObserverBuilder<T> source, ref TStateMachine stateMachine, ObserverStateMachineBox box)
         where TStateMachine : struct, IObserverStateMachine<T> =>
-        box.Subscribe(source, stateMachine);
+        box.Subscribe(source, ref stateMachine);
 }
 
 internal static class Subscribe<TResult>

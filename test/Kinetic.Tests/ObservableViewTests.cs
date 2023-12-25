@@ -191,6 +191,47 @@ public class ObservableViewTests
         Assert.Empty(view);
     }
 
+    [Fact]
+    public void SelectAsync()
+    {
+        var list = new ObservableList<Item>();
+        var view = list.SelectAsync(item => item.Name).ToView();
+
+        var itemA = new Item(0, "A");
+        var itemB = new Item(1, "B");
+        var itemC = new Item(2, "C");
+        var itemD = new Item(3, "D");
+
+        list.Add(itemA);
+        list.Add(itemC);
+        list.Add(itemD);
+        list.Add(itemB);
+
+        Assert.Equal(new[] { "A", "C", "D", "B" }, view);
+
+        itemA.Name.Set("X");
+        itemB.Name.Set("Y");
+        itemC.Name.Set("Z");
+        itemD.Name.Set("W");
+
+        list.Remove(itemA);
+        list.Remove(itemB);
+
+        Assert.Equal(new[] { "Z", "W" }, view);
+
+        list[1] = itemB;
+
+        Assert.Equal(new[] { "Z", "Y" }, view);
+
+        list.Move(1, 0);
+
+        Assert.Equal(new[] { "Y", "Z" }, view);
+
+        list.Clear();
+
+        Assert.Empty(view);
+    }
+
     private sealed class Item : ObservableObject
     {
         private int _number;

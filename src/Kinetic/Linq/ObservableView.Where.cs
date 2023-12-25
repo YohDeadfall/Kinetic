@@ -265,7 +265,8 @@ public static partial class ObservableView
         public void Dispose() =>
             _continuation.Dispose();
 
-        public void Initialize(ObserverStateMachineBox box) { }
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
 
         public void OnCompleted() =>
             _continuation.OnCompleted();

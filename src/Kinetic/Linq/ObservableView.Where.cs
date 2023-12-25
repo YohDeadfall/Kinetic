@@ -14,12 +14,12 @@ public static partial class ObservableView
 
     private struct WhereStateMachine<T, TContinuation> :
         IObserverStateMachine<ListChange<T>>,
-        IObserverStateMachine<WhereStateMachineItem<T>>
+        IObserverStateMachine<ObservableViewItem<T>>
         where TContinuation : struct, IObserverStateMachine<ListChange<T>>
     {
         private TContinuation _continuation;
         private ObserverBuilderFactory<T, bool> _predicate;
-        private List<WhereStateMachineItem<T>> _items = new();
+        private List<ObservableViewItem<T>> _items = new();
         private ObserverStateMachineBox? _box;
 
         public WhereStateMachine(in TContinuation continuation, ObserverBuilderFactory<T, bool> predicate)
@@ -80,9 +80,9 @@ public static partial class ObservableView
                     }
                 case ListChangeAction.Insert:
                     {
-                        var item = new WhereStateMachineItem<T>(value.NewItem, value.NewIndex);
+                        var item = new ObservableViewItem<T>(value.NewIndex) { Item = value.NewItem };
                         var subscription = _predicate(item.Item)
-                            .ContinueWith<WherePredicateStateMachineFactory<T>, WhereStateMachineItem<T>>(new(item))
+                            .ContinueWith<WherePredicateStateMachineFactory<T>, ObservableViewItem<T>>(new(item))
                             .Subscribe(ref this, _box!);
 
                         _items.Insert(item.Index, item);
@@ -105,9 +105,9 @@ public static partial class ObservableView
 
                         oldItem.Dispose();
 
-                        var newItem = new WhereStateMachineItem<T>(value.NewItem, value.NewIndex);
+                        var newItem = new ObservableViewItem<T>(value.NewIndex) { Item = value.NewItem };
                         var newSubscription = _predicate(newItem.Item)
-                            .ContinueWith<WherePredicateStateMachineFactory<T>, WhereStateMachineItem<T>>(new(newItem))
+                            .ContinueWith<WherePredicateStateMachineFactory<T>, ObservableViewItem<T>>(new(newItem))
                             .Subscribe(ref this, _box!);
 
                         _items[index] = newItem;
@@ -176,7 +176,7 @@ public static partial class ObservableView
             }
         }
 
-        public void OnNext(WhereStateMachineItem<T> value)
+        public void OnNext(ObservableViewItem<T> value)
         {
             var index = CountBefore(value.Index);
 
@@ -216,47 +216,25 @@ public static partial class ObservableView
             source.ContinueWith(new WhereStateMachine<T, TContinuation>(continuation, _predicate));
     }
 
-    private sealed class WhereStateMachineItem<T> : IDisposable
+    private readonly struct WherePredicateStateMachineFactory<T> : IObserverStateMachineFactory<bool, ObservableViewItem<T>>
     {
-        private IDisposable? _subscription;
+        private readonly ObservableViewItem<T> _item;
 
-        public T Item { get; }
-        public int Index { get; set; }
-        public bool Present { get; set; }
-        public bool Initialized => _subscription is not null;
-
-        public WhereStateMachineItem(T item, int index)
-        {
-            Item = item;
-            Index = index;
-        }
-
-        public void Dispose() =>
-            _subscription?.Dispose();
-
-        public void Initialize(IDisposable subscription) =>
-            _subscription = subscription;
-    }
-
-    private readonly struct WherePredicateStateMachineFactory<T> : IObserverStateMachineFactory<bool, WhereStateMachineItem<T>>
-    {
-        private readonly WhereStateMachineItem<T> _item;
-
-        public WherePredicateStateMachineFactory(WhereStateMachineItem<T> item) =>
+        public WherePredicateStateMachineFactory(ObservableViewItem<T> item) =>
             _item = item;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<bool> source)
-            where TContinuation : struct, IObserverStateMachine<WhereStateMachineItem<T>> =>
+            where TContinuation : struct, IObserverStateMachine<ObservableViewItem<T>> =>
             source.ContinueWith(new WherePredicateStateMachine<T, TContinuation>(continuation, _item));
     }
 
     private struct WherePredicateStateMachine<T, TContinuation> : IObserverStateMachine<bool>
-        where TContinuation : struct, IObserverStateMachine<WhereStateMachineItem<T>>
+        where TContinuation : struct, IObserverStateMachine<ObservableViewItem<T>>
     {
         private TContinuation _continuation;
-        private WhereStateMachineItem<T> _item;
+        private ObservableViewItem<T> _item;
 
-        public WherePredicateStateMachine(in TContinuation continuation, WhereStateMachineItem<T> item)
+        public WherePredicateStateMachine(in TContinuation continuation, ObservableViewItem<T> item)
         {
             _continuation = continuation;
             _item = item;

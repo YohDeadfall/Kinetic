@@ -240,14 +240,14 @@ public static partial class ObservableView
 
     private readonly struct WherePredicateStateMachineFactory<T> : IObserverStateMachineFactory<bool, WhereStateMachineItem<T>>
     {
-        private readonly WhereStateMachineItem<T> _items;
+        private readonly WhereStateMachineItem<T> _item;
 
         public WherePredicateStateMachineFactory(WhereStateMachineItem<T> item) =>
-            _items = item;
+            _item = item;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<bool> source)
             where TContinuation : struct, IObserverStateMachine<WhereStateMachineItem<T>> =>
-            source.ContinueWith(new WherePredicateStateMachine<T, TContinuation>(continuation, _items));
+            source.ContinueWith(new WherePredicateStateMachine<T, TContinuation>(continuation, _item));
     }
 
     private struct WherePredicateStateMachine<T, TContinuation> : IObserverStateMachine<bool>

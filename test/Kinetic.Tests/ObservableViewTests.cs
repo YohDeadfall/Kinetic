@@ -5,10 +5,10 @@ namespace Kinetic.Linq.Tests;
 public class ObservableViewTests
 {
     [Fact]
-    public void Where()
+    public void WhereAsync()
     {
         var list = new ObservableList<Item>();
-        var view = list.Where(item => item.Number.Changed.Select(static number => number % 2 == 0)).ToView();
+        var view = list.WhereAsync(item => item.Number.Changed.Select(static number => number % 2 == 0)).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");

@@ -30,7 +30,6 @@ public static partial class ObservableView
     public static ObserverBuilder<ListChange<TResult>> SelectAsync<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TResult>> selector) =>
         source.SelectAsync((item) => selector(item).ToBuilder());
 
-
     private struct SelectAsyncStateMachine<TSource, TResult, TContinuation> :
         IObserverStateMachine<ListChange<TSource>>,
         IObserverStateMachine<ObservableViewItem<TResult>>

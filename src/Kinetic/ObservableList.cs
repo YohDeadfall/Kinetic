@@ -270,11 +270,11 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     public IDisposable Subscribe(IObserver<ListChange<T>> observer) =>
         EnsureChangeObservable().Subscribe(observer);
 
-    private ListChangeObservable<T> EnsureChangeObservable() =>
-        Unsafe.As<ListChangeObservable<T>>(EnsureObservable(GetOffsetOf(ref _items), static (self, offset, next) => new ListChangeObservable<T>(self, offset, next)));
+    private ItemsObservable EnsureChangeObservable() =>
+        Unsafe.As<ItemsObservable>(EnsureObservable(GetOffsetOf(ref _items), static (self, offset, next) => new ItemsObservable(self, offset, next)));
 
-    private ListChangeObservable<T>? GetChangeObservable() =>
-        Unsafe.As<ListChangeObservable<T>?>(GetObservable(GetOffsetOf(ref _items)));
+    private ItemsObservable? GetChangeObservable() =>
+        Unsafe.As<ItemsObservable?>(GetObservable(GetOffsetOf(ref _items)));
 
     private PropertyObservable<int>? GetCountObservable() =>
         Unsafe.As<PropertyObservable<int>?>(GetObservable(GetOffsetOf(ref _count)));
@@ -343,6 +343,57 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
             _current = default;
         }
     }
+
+    private sealed class ItemsObservable : PropertyObservable, IObservableInternal<ListChange<T>>
+    {
+        private ObservableSubscriptions<ListChange<T>> _subscriptions;
+
+        public ItemsObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next)
+            : base(owner, offset, next) { }
+
+        public override void Changed()
+        {
+            _subscriptions.OnNext(ListChange.RemoveAll<T>());
+
+            var items = Unsafe.As<ReadOnlyObservableList<T>>(Owner);
+
+            for (int index = 0, count = items.Count; index < count; index += 1)
+                _subscriptions.OnNext(ListChange.Insert(index, items[index]));
+        }
+
+        public void RemovedAll() =>
+            _subscriptions.OnNext(ListChange.RemoveAll<T>());
+
+        public void Removed(int index) =>
+            _subscriptions.OnNext(ListChange.Remove<T>(index));
+
+        public void Inserted(int index, T item) =>
+            _subscriptions.OnNext(ListChange.Insert(index, item));
+
+        public void Replaced(int index, T item) =>
+            _subscriptions.OnNext(ListChange.Replace(index, item));
+
+        public void Moved(int oldIndex, int newIndex) =>
+            _subscriptions.OnNext(ListChange.Move<T>(oldIndex, newIndex));
+
+        public IDisposable Subscribe(IObserver<ListChange<T>> observer)
+        {
+            observer.OnNext(ListChange.RemoveAll<T>());
+
+            var items = Unsafe.As<ReadOnlyObservableList<T>>(Owner);
+
+            for (int index = 0, count = items.Count; index < count; index += 1)
+                observer.OnNext(ListChange.Insert(index, items[index]));
+
+            return _subscriptions.Subscribe(this, observer);
+        }
+
+        public void Subscribe(ObservableSubscription<ListChange<T>> subscription) =>
+            _subscriptions.Subscribe(this, subscription);
+
+        public void Unsubscribe(ObservableSubscription<ListChange<T>> subscription) =>
+            _subscriptions.Unsubscribe(subscription);
+    }
 }
 
 public sealed class ObservableList<T> : ReadOnlyObservableList<T>, IList<T>
@@ -378,124 +429,4 @@ public sealed class ObservableList<T> : ReadOnlyObservableList<T>, IList<T>
 
     public void Move(int oldIndex, int newIndex) =>
         MoveItem(oldIndex, newIndex);
-}
-
-public static class ListChange
-{
-    public static ListChange<T> RemoveAll<T>() =>
-        default;
-
-    public static ListChange<T> Remove<T>(int index) =>
-        new(oldIndex: index);
-
-    public static ListChange<T> Insert<T>(int index, T item) =>
-        new(newIndex: index, newItem: item);
-
-    public static ListChange<T> Replace<T>(int index, T item) =>
-        new(oldIndex: index, newIndex: index, item);
-
-    public static ListChange<T> Move<T>(int oldIndex, int newIndex) =>
-        new(oldIndex, newIndex);
-}
-
-public enum ListChangeAction
-{
-    RemoveAll = 0,
-    Remove = 1,
-    Insert = 2,
-    Replace = 3,
-    Move = 4,
-}
-
-public readonly struct ListChange<T> : IEquatable<ListChange<T>>
-{
-    private readonly int _oldIndex;
-    private readonly int _newIndex;
-    private readonly T _newItem;
-
-    internal ListChange(
-        int oldIndex = -1,
-        int newIndex = -1,
-        T newItem = default!)
-    {
-        _oldIndex = ~oldIndex;
-        _newIndex = ~newIndex;
-        _newItem = newItem;
-    }
-
-    public ListChangeAction Action
-    {
-        get
-        {
-            var action = (ListChangeAction) (
-                ((_oldIndex & 0x80000000) >> 31) |
-                ((_newIndex & 0x80000000) >> 30));
-
-            return ListChangeAction.Replace == action && _oldIndex != _newIndex
-                ? ListChangeAction.Move : action;
-        }
-    }
-
-    public T NewItem => (_oldIndex < 0) == (_oldIndex == _newIndex)  ? _newItem : throw new InvalidOperationException();
-
-    public int OldIndex => _oldIndex < 0 ? ~_oldIndex : throw new InvalidOperationException();
-    public int NewIndex => _newIndex < 0 ? ~_newIndex : throw new InvalidOperationException();
-
-    public override int GetHashCode() => HashCode.Combine(_oldIndex, _newIndex, _newItem);
-
-    public bool Equals(ListChange<T> other) =>
-        _oldIndex == other._oldIndex &&
-        _newIndex == other._newIndex &&
-        EqualityComparer<T>.Default.Equals(_newItem, other._newItem);
-}
-
-internal sealed class ListChangeObservable<T> : PropertyObservable, IObservableInternal<ListChange<T>>
-{
-    private ObservableSubscriptions<ListChange<T>> _subscriptions;
-
-    public ListChangeObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next)
-        : base(owner, offset, next) { }
-
-    public override void Changed()
-    {
-        _subscriptions.OnNext(ListChange.RemoveAll<T>());
-
-        var items = Unsafe.As<ReadOnlyObservableList<T>>(Owner);
-
-        for (int index = 0, count = items.Count; index < count; index += 1)
-            _subscriptions.OnNext(ListChange.Insert(index, items[index]));
-    }
-
-    public void RemovedAll() =>
-        _subscriptions.OnNext(ListChange.RemoveAll<T>());
-
-    public void Removed(int index) =>
-        _subscriptions.OnNext(ListChange.Remove<T>(index));
-
-    public void Inserted(int index, T item) =>
-        _subscriptions.OnNext(ListChange.Insert(index, item));
-
-    public void Replaced(int index, T item) =>
-        _subscriptions.OnNext(ListChange.Replace(index, item));
-
-    public void Moved(int oldIndex, int newIndex) =>
-        _subscriptions.OnNext(ListChange.Move<T>(oldIndex, newIndex));
-
-    public IDisposable Subscribe(IObserver<ListChange<T>> observer)
-    {
-        observer.OnNext(ListChange.RemoveAll<T>());
-
-        var items = Unsafe.As<ReadOnlyObservableList<T>>(Owner);
-
-        for (int index = 0, count = items.Count; index < count; index += 1)
-            observer.OnNext(ListChange.Insert(index, items[index]));
-
-        return _subscriptions.Subscribe(this, observer);
-    }
-
-    public void Subscribe(ObservableSubscription<ListChange<T>> subscription) =>
-        _subscriptions.Subscribe(this, subscription);
-
-    public void Unsubscribe(ObservableSubscription<ListChange<T>> subscription) =>
-        _subscriptions.Unsubscribe(subscription);
 }

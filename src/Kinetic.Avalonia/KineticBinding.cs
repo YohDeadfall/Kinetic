@@ -470,7 +470,7 @@ public abstract class KineticBinding : IBinding
                         value.OldIndex),
                     ListChangeAction.Move => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Move,
-                        value.NewItem,
+                        _source[value.NewIndex],
                         value.NewIndex,
                         value.OldIndex),
                     _ => throw new NotSupportedException()

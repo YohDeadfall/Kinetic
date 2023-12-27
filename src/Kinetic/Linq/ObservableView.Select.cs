@@ -96,7 +96,7 @@ public static partial class ObservableView
                         _items.Insert(newIndex, item);
 
                         _continuation.OnNext(
-                            ListChange.Move(oldIndex, newIndex, item));
+                            ListChange.Move<TResult>(oldIndex, newIndex));
 
                         break;
                     }

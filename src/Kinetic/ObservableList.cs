@@ -263,7 +263,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         if (NotificationsEnabled)
         {
             GetCountObservable()?.Changed(_count);
-            GetChangeObservable()?.Moved(oldIndex, newIndex, item);
+            GetChangeObservable()?.Moved(oldIndex, newIndex);
         }
     }
 
@@ -394,8 +394,8 @@ public static class ListChange
     public static ListChange<T> Replace<T>(int index, T item) =>
         new(oldIndex: index, newIndex: index, item);
 
-    public static ListChange<T> Move<T>(int oldIndex, int newIndex, T item) =>
-        new(oldIndex, newIndex, item);
+    public static ListChange<T> Move<T>(int oldIndex, int newIndex) =>
+        new(oldIndex, newIndex);
 }
 
 public enum ListChangeAction
@@ -436,7 +436,7 @@ public readonly struct ListChange<T> : IEquatable<ListChange<T>>
         }
     }
 
-    public T NewItem => _newIndex < 0 ? _newItem : throw new InvalidOperationException();
+    public T NewItem => (_oldIndex < 0) == (_oldIndex == _newIndex)  ? _newItem : throw new InvalidOperationException();
 
     public int OldIndex => _oldIndex < 0 ? ~_oldIndex : throw new InvalidOperationException();
     public int NewIndex => _newIndex < 0 ? ~_newIndex : throw new InvalidOperationException();
@@ -478,8 +478,8 @@ internal sealed class ListChangeObservable<T> : PropertyObservable, IObservableI
     public void Replaced(int index, T item) =>
         _subscriptions.OnNext(ListChange.Replace(index, item));
 
-    public void Moved(int oldIndex, int newIndex, T item) =>
-        _subscriptions.OnNext(ListChange.Move(oldIndex, newIndex, item));
+    public void Moved(int oldIndex, int newIndex) =>
+        _subscriptions.OnNext(ListChange.Move<T>(oldIndex, newIndex));
 
     public IDisposable Subscribe(IObserver<ListChange<T>> observer)
     {

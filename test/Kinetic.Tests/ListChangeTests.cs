@@ -57,14 +57,14 @@ public class ListChangeTests
     }
 
     [Theory]
-    [InlineData(0, 1, "one")]
-    [InlineData(1, 2, "two")]
-    public void Move(int oldIndex, int newIndex, string item)
+    [InlineData(0, 1)]
+    [InlineData(1, 2)]
+    public void Move(int oldIndex, int newIndex)
     {
-        var change = ListChange.Move(oldIndex, newIndex, item);
+        var change = ListChange.Move<string>(oldIndex, newIndex);
 
         Assert.Equal(ListChangeAction.Move, change.Action);
-        Assert.Equal(item, change.NewItem);
+        Assert.Throws<InvalidOperationException>(() => change.NewItem);
         Assert.Equal(newIndex, change.NewIndex);
         Assert.Equal(oldIndex, change.OldIndex);
     }

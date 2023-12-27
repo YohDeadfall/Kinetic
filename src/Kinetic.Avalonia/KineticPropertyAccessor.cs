@@ -356,7 +356,7 @@ public sealed class KineticPropertyAccessor : IPropertyAccessorPlugin
                         value.OldIndex),
                     ListChangeAction.Move => new NotifyCollectionChangedEventArgs(
                         NotifyCollectionChangedAction.Move,
-                        value.NewItem,
+                        _list[value.NewIndex],
                         value.NewIndex,
                         value.OldIndex),
                     _ => throw new NotSupportedException()

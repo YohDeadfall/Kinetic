@@ -185,10 +185,9 @@ public static partial class ObservableView
                             }
 
                             _continuation.OnNext(
-                                ListChange.Move(
+                                ListChange.Move<TResult>(
                                     oldIndexTranslated,
-                                    newIndexTranslated,
-                                    item.Item));
+                                    newIndexTranslated));
                         }
 
                         break;

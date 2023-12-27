@@ -329,7 +329,7 @@ public static partial class ObservableView
                     _items.Insert(newIndex, item);
 
                     _indexes[item.OriginalIndex] = newIndex;
-                    _continuation.OnNext(ListChange.Move(oldIndex, newIndex, item.Value));
+                    _continuation.OnNext(ListChange.Move<T>(oldIndex, newIndex));
                 }
             }
 
@@ -347,7 +347,7 @@ public static partial class ObservableView
                     if (oldIndex != newIndex)
                     {
                         _indexes[item.OriginalIndex] = newIndex;
-                        _continuation.OnNext(ListChange.Move(oldIndex, newIndex, item.Value));
+                        _continuation.OnNext(ListChange.Move<T>(oldIndex, newIndex));
                     }
                 }
             }

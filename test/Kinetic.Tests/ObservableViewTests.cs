@@ -5,47 +5,6 @@ namespace Kinetic.Linq.Tests;
 public class ObservableViewTests
 {
     [Fact]
-    public void WhereAsync()
-    {
-        var list = new ObservableList<Item>();
-        var view = list.WhereAsync(item => item.Number.Changed.Select(static number => number % 2 == 0)).ToView();
-
-        var itemA = new Item(0, "A");
-        var itemB = new Item(1, "B");
-        var itemC = new Item(2, "C");
-        var itemD = new Item(3, "D");
-
-        list.Add(itemA);
-        list.Add(itemB);
-        list.Add(itemC);
-        list.Add(itemD);
-
-        Assert.Equal(new[] { itemA, itemC }, view);
-
-        itemA.Number.Set(5);
-        itemB.Number.Set(4);
-
-        Assert.Equal(new[] { itemB, itemC }, view);
-
-        list.Remove(itemA);
-        list.Remove(itemB);
-
-        Assert.Equal(new[] { itemC }, view);
-
-        list[1] = itemB;
-
-        Assert.Equal(new[] { itemC, itemB }, view);
-
-        list.Move(1, 0);
-
-        Assert.Equal(new[] { itemB, itemC }, view);
-
-        list.Clear();
-
-        Assert.Empty(view);
-    }
-
-    [Fact]
     public void OrderBy_StaticKey()
     {
         var list = new ObservableList<Item>();
@@ -226,6 +185,88 @@ public class ObservableViewTests
         list.Move(1, 0);
 
         Assert.Equal(new[] { "Y", "Z" }, view);
+
+        list.Clear();
+
+        Assert.Empty(view);
+    }
+
+    [Fact]
+    public void Where()
+    {
+        var list = new ObservableList<Item>();
+        var view = list.Where(item => item.Number % 2 == 0).ToView();
+
+        var itemA = new Item(0, "A");
+        var itemB = new Item(1, "B");
+        var itemC = new Item(2, "C");
+        var itemD = new Item(3, "D");
+
+        list.Add(itemA);
+        list.Add(itemB);
+        list.Add(itemC);
+        list.Add(itemD);
+
+        Assert.Equal(new[] { itemA, itemC }, view);
+
+        itemA.Number.Set(5);
+        itemB.Number.Set(4);
+
+        Assert.Equal(new[] { itemA, itemC }, view);
+
+        list.Remove(itemA);
+        list.Remove(itemB);
+
+        Assert.Equal(new[] { itemC }, view);
+
+        list[1] = itemB;
+
+        Assert.Equal(new[] { itemC, itemB }, view);
+
+        list.Move(1, 0);
+
+        Assert.Equal(new[] { itemB, itemC }, view);
+
+        list.Clear();
+
+        Assert.Empty(view);
+    }
+
+    [Fact]
+    public void WhereAsync()
+    {
+        var list = new ObservableList<Item>();
+        var view = list.WhereAsync(item => item.Number.Changed.Select(static number => number % 2 == 0)).ToView();
+
+        var itemA = new Item(0, "A");
+        var itemB = new Item(1, "B");
+        var itemC = new Item(2, "C");
+        var itemD = new Item(3, "D");
+
+        list.Add(itemA);
+        list.Add(itemB);
+        list.Add(itemC);
+        list.Add(itemD);
+
+        Assert.Equal(new[] { itemA, itemC }, view);
+
+        itemA.Number.Set(5);
+        itemB.Number.Set(4);
+
+        Assert.Equal(new[] { itemB, itemC }, view);
+
+        list.Remove(itemA);
+        list.Remove(itemB);
+
+        Assert.Equal(new[] { itemC }, view);
+
+        list[1] = itemB;
+
+        Assert.Equal(new[] { itemC, itemB }, view);
+
+        list.Move(1, 0);
+
+        Assert.Equal(new[] { itemB, itemC }, view);
 
         list.Clear();
 

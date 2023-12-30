@@ -12,4 +12,7 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\src\Kinetic\ValueBitmap.cs" />
+  </ItemGroup>
 </Project>

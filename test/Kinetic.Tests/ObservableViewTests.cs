@@ -5,7 +5,7 @@ namespace Kinetic.Linq.Tests;
 public class ObservableViewTests
 {
     [Fact]
-    public void OrderBy_StaticKey()
+    public void OrderBy()
     {
         var list = new ObservableList<Item>();
         var view = list.OrderBy(item => item.Number.Get()).ToView();
@@ -60,10 +60,10 @@ public class ObservableViewTests
     }
 
     [Fact]
-    public void OrderBy_DynamicKey()
+    public void OrderByAsync()
     {
         var list = new ObservableList<Item>();
-        var view = list.OrderBy(item => item.Number).ToView();
+        var view = list.OrderByAsync(item => item.Number).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");

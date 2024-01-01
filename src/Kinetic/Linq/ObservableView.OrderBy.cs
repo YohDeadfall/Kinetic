@@ -13,29 +13,12 @@ public static partial class ObservableView
     public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ObserverBuilder<ListChange<T>> source, Func<T, TKey> keySelector, IComparer<TKey>? keyComparer = null) =>
         source.ContinueWith<OrderByCore<T, TKey>.StateMachineFactory, ListChange<T>>(new(keySelector, keyComparer));
 
-    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ObserverBuilder<ListChange<T>> source, ObserverBuilderFactory<T, TKey> keySelector, IComparer<TKey>? keyComparer = null) =>
-        source.ContinueWith<OrderByCore<T, TKey>.StateMachineFactory, ListChange<T>>(new(keySelector, keyComparer));
-
-    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ObserverBuilder<ListChange<T>> source, Func<T, Property<TKey>> keySelector, IComparer<TKey>? keyComparer = null) =>
-        source.OrderBy(item => keySelector(item).Changed.ToBuilder(), keyComparer);
-
-    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ObserverBuilder<ListChange<T>> source, Func<T, ReadOnlyProperty<TKey>> keySelector, IComparer<TKey>? keyComparer = null) =>
-        source.OrderBy(item => keySelector(item).Changed.ToBuilder(), keyComparer);
-
     public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ReadOnlyObservableList<T> source, Func<T, TKey> keySelector, IComparer<TKey>? keyComparer = null) =>
-        source.Changed.ToBuilder().OrderBy(keySelector, keyComparer);
-
-    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ReadOnlyObservableList<T> source, ObserverBuilderFactory<T, TKey> keySelector, IComparer<TKey>? keyComparer = null) =>
-        source.Changed.ToBuilder().OrderBy(keySelector, keyComparer);
-
-    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ReadOnlyObservableList<T> source, Func<T, Property<TKey>> keySelector, IComparer<TKey>? keyComparer = null) =>
-        source.Changed.ToBuilder().OrderBy(keySelector, keyComparer);
-
-    public static ObserverBuilder<ListChange<T>> OrderBy<T, TKey>(this ReadOnlyObservableList<T> source, Func<T, ReadOnlyProperty<TKey>> keySelector, IComparer<TKey>? keyComparer = null) =>
         source.Changed.ToBuilder().OrderBy(keySelector, keyComparer);
 
     private static class OrderByCore<T, TKey>
     {
+        // A single element value tuple is used here to solve a conflict between interfaces.
         private interface IStateMachine<TItem> :
             IObserverStateMachine<ListChange<T>>,
             IObserverStateMachine<ValueTuple<TItem>>,
@@ -138,7 +121,6 @@ public static partial class ObservableView
             }
         }
 
-        // A single element value tuple is used here to solve a conflict between interfaces.
         private struct StateMachine<TItem, TKeySelector, TKeyComparer, TContinuation> :
             IStateMachine<TItem>
             where TItem : IItem<TItem>
@@ -167,7 +149,9 @@ public static partial class ObservableView
 
             public void Initialize(ObserverStateMachineBox box)
             {
-                _continuation.Initialize(Box = box);
+                Box = box;
+
+                _continuation.Initialize(box);
                 _keyComparer.Initialize(ref this);
             }
 

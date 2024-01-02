@@ -51,7 +51,7 @@ public static partial class ObservableView
         private interface IKeyComparer<TItem> : IDisposable
             where TItem : IItem<TItem>
         {
-            public ItemComparer<TItem>? ItemComparer { get; }
+            public ItemComparer<TItem>? ItemComparer { get; set; }
 
             public void Initialize<TStateMachine>(ref TStateMachine stateMachine)
                 where TStateMachine : struct, IStateMachine<TItem>;
@@ -321,6 +321,7 @@ public static partial class ObservableView
             {
                 Debug.Assert(typeof(TItem) == typeof(DynamicItem));
 
+                _keyComparer.ItemComparer = ItemComparer<TItem>.Create(value);
                 _items.Sort(_keyComparer.ItemComparer);
 
                 for (var newIndex = 0; newIndex < _items.Count; newIndex += 1)
@@ -518,10 +519,10 @@ public static partial class ObservableView
             }
         }
 
-        private readonly struct StaticKeyComparer<TItem> : IKeyComparer<TItem>
+        private struct StaticKeyComparer<TItem> : IKeyComparer<TItem>
             where TItem : IItem<TItem>
         {
-            public ItemComparer<TItem>? ItemComparer { get; }
+            public ItemComparer<TItem>? ItemComparer { get; set; }
 
             public StaticKeyComparer(IComparer<TKey>? keyComparer) =>
                 ItemComparer = ItemComparer<TItem>.Create(keyComparer);
@@ -539,7 +540,7 @@ public static partial class ObservableView
             private readonly IObservable<IComparer<TKey>?> _observable;
             private IDisposable? _subscription;
 
-            public ItemComparer<TItem>? ItemComparer { get; private set; }
+            public ItemComparer<TItem>? ItemComparer { get; set; }
 
             public DynamicKeyComparer(IObservable<IComparer<TKey>?> observable) =>
                 _observable = observable;

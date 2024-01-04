@@ -6,44 +6,44 @@ namespace Kinetic.Linq;
 
 public static partial class ObservableView
 {
-    public static ObserverBuilder<ListChange<TResult>> SelectAsync<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, ObserverBuilderFactory<TSource, TResult> selector) =>
-        source.ContinueWith<SelectAsyncStateMachineFactory<TSource, TResult>, ListChange<TResult>>(new(selector));
+    public static ObserverBuilder<ListChange<T>> Where<T>(this ObserverBuilder<ListChange<T>> source, ObserverBuilderFactory<T, bool> predicate) =>
+        source.ContinueWith<WhereAsyncStateMachineFactory<T>, ListChange<T>>(new(predicate));
 
-    public static ObserverBuilder<ListChange<TResult>> SelectAsync<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, Property<TResult>> selector) =>
-        source.SelectAsync((item) => selector(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<T>> Where<T>(this ObserverBuilder<ListChange<T>> source, Func<T, Property<bool>> predicate) =>
+        source.Where((item) => predicate(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> SelectAsync<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, ReadOnlyProperty<TResult>> selector) =>
-        source.SelectAsync((item) => selector(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<T>> Where<T>(this ObserverBuilder<ListChange<T>> source, Func<T, ReadOnlyProperty<bool>> predicate) =>
+        source.Where((item) => predicate(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> SelectAsync<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, IObservable<TResult>> selector) =>
-        source.SelectAsync((item) => selector(item).ToBuilder());
+    public static ObserverBuilder<ListChange<T>> Where<T>(this ObserverBuilder<ListChange<T>> source, Func<T, IObservable<bool>> predicate) =>
+        source.Where((item) => predicate(item).ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> SelectAsync<TSource, TResult>(this ReadOnlyObservableList<TSource> source, ObserverBuilderFactory<TSource, TResult> selector) =>
-        source.Changed.ToBuilder().SelectAsync(selector);
+    public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, ObserverBuilderFactory<T, bool> predicate) =>
+        source.Changed.ToBuilder().Where(predicate);
 
-    public static ObserverBuilder<ListChange<TResult>> SelectAsync<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, Property<TResult>> selector) =>
-        source.SelectAsync((item) => selector(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, Func<T, Property<bool>> predicate) =>
+        source.Where((item) => predicate(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> SelectAsync<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, ReadOnlyProperty<TResult>> selector) =>
-        source.SelectAsync((item) => selector(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, Func<T, ReadOnlyProperty<bool>> predicate) =>
+        source.Where((item) => predicate(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> SelectAsync<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TResult>> selector) =>
-        source.SelectAsync((item) => selector(item).ToBuilder());
+    public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, Func<T, IObservable<bool>> predicate) =>
+        source.Where((item) => predicate(item).ToBuilder());
 
-    private struct SelectAsyncStateMachine<TSource, TResult, TContinuation> :
-        IObserverStateMachine<ListChange<TSource>>,
-        IObserverStateMachine<ObservableViewItem<TResult>>
-        where TContinuation : struct, IObserverStateMachine<ListChange<TResult>>
+    private struct WhereAsyncStateMachine<T, TContinuation> :
+        IObserverStateMachine<ListChange<T>>,
+        IObserverStateMachine<ObservableViewItem<T>>
+        where TContinuation : struct, IObserverStateMachine<ListChange<T>>
     {
-        private readonly ObserverBuilderFactory<TSource, TResult> _selector;
-        private readonly List<ObservableViewItem<TResult>> _items = new();
         private TContinuation _continuation;
+        private ObserverBuilderFactory<T, bool> _predicate;
+        private List<ObservableViewItem<T>> _items = new();
         private ObserverStateMachineBox? _box;
 
-        public SelectAsyncStateMachine(in TContinuation continuation, ObserverBuilderFactory<TSource, TResult> selector)
+        public WhereAsyncStateMachine(in TContinuation continuation, ObserverBuilderFactory<T, bool> predicate)
         {
             _continuation = continuation;
-            _selector = selector;
+            _predicate = predicate;
         }
 
         public void Dispose()
@@ -66,7 +66,7 @@ public static partial class ObservableView
         public void OnError(Exception error) =>
             _continuation.OnError(error);
 
-        public void OnNext(ListChange<TSource> value)
+        public void OnNext(ListChange<T> value)
         {
             switch (value.Action)
             {
@@ -76,9 +76,7 @@ public static partial class ObservableView
                             item.Dispose();
 
                         _items.Clear();
-                        _continuation.OnNext(
-                            ListChange.RemoveAll<TResult>());
-
+                        _continuation.OnNext(value);
                         break;
                     }
                 case ListChangeAction.Remove:
@@ -86,23 +84,23 @@ public static partial class ObservableView
                         var index = value.OldIndex;
                         var item = _items[index];
 
-                        _items[index].Dispose();
+                        item.Dispose();
                         _items.RemoveAt(index);
 
                         if (item.Present)
                         {
                             _continuation.OnNext(
-                                ListChange.Remove<TResult>(CountBefore(index)));
+                                ListChange.Remove<T>(
+                                    index: CountBefore(index)));
                         }
 
                         break;
                     }
                 case ListChangeAction.Insert:
                     {
-                        var index = value.NewIndex;
-                        var item = new ObservableViewItem<TResult>(index);
-                        var subscription = _selector(value.NewItem)
-                            .ContinueWith<SelectorStateMachineFactory<TResult>, ObservableViewItem<TResult>>(new(item))
+                        var item = new ObservableViewItem<T>(value.NewIndex) { Item = value.NewItem };
+                        var subscription = _predicate(item.Item)
+                            .ContinueWith<PredicateStateMachineFactory<T>, ObservableViewItem<T>>(new(item))
                             .Subscribe(ref this, _box!);
 
                         _items.Insert(item.Index, item);
@@ -125,9 +123,9 @@ public static partial class ObservableView
 
                         oldItem.Dispose();
 
-                        var newItem = new ObservableViewItem<TResult>(value.NewIndex);
-                        var newSubscription = _selector(value.NewItem)
-                            .ContinueWith<SelectorStateMachineFactory<TResult>, ObservableViewItem<TResult>>(new(newItem))
+                        var newItem = new ObservableViewItem<T>(value.NewIndex) { Item = value.NewItem };
+                        var newSubscription = _predicate(newItem.Item)
+                            .ContinueWith<PredicateStateMachineFactory<T>, ObservableViewItem<T>>(new(newItem))
                             .Subscribe(ref this, _box!);
 
                         _items[index] = newItem;
@@ -145,7 +143,7 @@ public static partial class ObservableView
                             else
                             {
                                 _continuation.OnNext(
-                                    ListChange.Remove<TResult>(
+                                    ListChange.Remove<T>(
                                         index: CountBefore(index)));
                             }
                         }
@@ -185,7 +183,7 @@ public static partial class ObservableView
                             }
 
                             _continuation.OnNext(
-                                ListChange.Move<TResult>(
+                                ListChange.Move<T>(
                                     oldIndexTranslated,
                                     newIndexTranslated));
                         }
@@ -195,27 +193,18 @@ public static partial class ObservableView
             }
         }
 
-        public void OnNext(ObservableViewItem<TResult> value)
+        public void OnNext(ObservableViewItem<T> value)
         {
             var index = CountBefore(value.Index);
 
-            if (value.Present)
-            {
-                _continuation.OnNext(
-                    ListChange.Replace(index, value.Item));
-            }
-            else
-            {
-                value.Present = true;
-
-                _continuation.OnNext(
-                    ListChange.Insert(index, value.Item));
-            }
+            _continuation.OnNext(value.Present
+                ? ListChange.Insert(index, value.Item)
+                : ListChange.Remove<T>(index));
         }
 
         private int CountBefore(int index)
         {
-            var count = 0;
+            int count = 0;
 
             while (true)
             {
@@ -232,25 +221,25 @@ public static partial class ObservableView
         }
     }
 
-    private readonly struct SelectAsyncStateMachineFactory<TSource, TResult> : IObserverStateMachineFactory<ListChange<TSource>, ListChange<TResult>>
+    private readonly struct WhereAsyncStateMachineFactory<T> : IObserverStateMachineFactory<ListChange<T>, ListChange<T>>
     {
-        private readonly ObserverBuilderFactory<TSource, TResult> _selector;
+        private readonly ObserverBuilderFactory<T, bool> _predicate;
 
-        public SelectAsyncStateMachineFactory(ObserverBuilderFactory<TSource, TResult> selector) =>
-            _selector = selector;
+        public WhereAsyncStateMachineFactory(ObserverBuilderFactory<T, bool> predicate) =>
+            _predicate = predicate;
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<TSource>> source)
-            where TContinuation : struct, IObserverStateMachine<ListChange<TResult>> =>
-            source.ContinueWith(new SelectAsyncStateMachine<TSource, TResult, TContinuation>(continuation, _selector));
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<T>> source)
+            where TContinuation : struct, IObserverStateMachine<ListChange<T>> =>
+            source.ContinueWith(new WhereAsyncStateMachine<T, TContinuation>(continuation, _predicate));
     }
 
-    private struct SelectorStateMachine<T, TContinuation> : IObserverStateMachine<T>
+    private struct PredicateStateMachine<T, TContinuation> : IObserverStateMachine<bool>
         where TContinuation : struct, IObserverStateMachine<ObservableViewItem<T>>
     {
         private TContinuation _continuation;
         private ObservableViewItem<T> _item;
 
-        public SelectorStateMachine(in TContinuation continuation, ObservableViewItem<T> item)
+        public PredicateStateMachine(in TContinuation continuation, ObservableViewItem<T> item)
         {
             _continuation = continuation;
             _item = item;
@@ -268,26 +257,27 @@ public static partial class ObservableView
         public void OnError(Exception error) =>
             _continuation.OnError(error);
 
-        public void OnNext(T value)
+        public void OnNext(bool value)
         {
-            _item.Item = value;
+            if (_item.Present == value)
+                return;
+
+            _item.Present = value;
 
             if (_item.Initialized)
                 _continuation.OnNext(_item);
-            else
-                _item.Present = true;
         }
     }
 
-    private readonly struct SelectorStateMachineFactory<T> : IObserverStateMachineFactory<T, ObservableViewItem<T>>
+    private readonly struct PredicateStateMachineFactory<T> : IObserverStateMachineFactory<bool, ObservableViewItem<T>>
     {
         private readonly ObservableViewItem<T> _item;
 
-        public SelectorStateMachineFactory(ObservableViewItem<T> item) =>
+        public PredicateStateMachineFactory(ObservableViewItem<T> item) =>
             _item = item;
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<bool> source)
             where TContinuation : struct, IObserverStateMachine<ObservableViewItem<T>> =>
-            source.ContinueWith(new SelectorStateMachine<T, TContinuation>(continuation, _item));
+            source.ContinueWith(new PredicateStateMachine<T, TContinuation>(continuation, _item));
     }
 }

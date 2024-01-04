@@ -44,14 +44,11 @@ In contradiction to .NET and DynamicData, there are no multiple element changes 
 
 Other than that Kinetic collections looks pretty similar to what the .NET ecosystem has.
 
-For possible scenarios of making views using LINQ operators please refer to tests. Currently there are three operators with their async variants available, but more options and operators should come to Kinetic:
+For possible scenarios of making views using LINQ operators please refer to tests. Currently there are three operators, but more options and operators should come to Kinetic:
 
 * `OrderBy`
-* `OrderByAsync`
 * `Select`
-* `SelectAsync`
 * `Where`
-* `WhereAsync`
 
 ### Commands
 

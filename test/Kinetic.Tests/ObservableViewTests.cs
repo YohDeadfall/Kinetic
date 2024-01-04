@@ -5,7 +5,7 @@ namespace Kinetic.Linq.Tests;
 public class ObservableViewTests
 {
     [Fact]
-    public void OrderBy()
+    public void OrderByStatic()
     {
         var list = new ObservableList<Item>();
         var view = list.OrderBy(item => item.Number.Get()).ToView();
@@ -60,10 +60,10 @@ public class ObservableViewTests
     }
 
     [Fact]
-    public void OrderByAsync()
+    public void OrderByDynamic()
     {
         var list = new ObservableList<Item>();
-        var view = list.OrderByAsync(item => item.Number).ToView();
+        var view = list.OrderBy(item => item.Number).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -115,7 +115,7 @@ public class ObservableViewTests
     }
 
     [Fact]
-    public void Select()
+    public void SelectStatic()
     {
         var list = new ObservableList<Item>();
         var view = list.Select(item => item.Name.Get()).ToView();
@@ -151,10 +151,10 @@ public class ObservableViewTests
     }
 
     [Fact]
-    public void SelectAsync()
+    public void SelectDynamic()
     {
         var list = new ObservableList<Item>();
-        var view = list.SelectAsync(item => item.Name).ToView();
+        var view = list.Select(item => item.Name).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -192,7 +192,7 @@ public class ObservableViewTests
     }
 
     [Fact]
-    public void Where()
+    public void WhereStatic()
     {
         var list = new ObservableList<Item>();
         var view = list.Where(item => item.Number % 2 == 0).ToView();
@@ -233,10 +233,10 @@ public class ObservableViewTests
     }
 
     [Fact]
-    public void WhereAsync()
+    public void WhereDynamic()
     {
         var list = new ObservableList<Item>();
-        var view = list.WhereAsync(item => item.Number.Changed.Select(static number => number % 2 == 0)).ToView();
+        var view = list.Where(item => item.Number.Changed.Select(static number => number % 2 == 0)).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");

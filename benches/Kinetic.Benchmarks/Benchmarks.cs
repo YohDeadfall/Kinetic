@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Kinetic.Linq.StateMachines;
@@ -19,8 +22,32 @@ public class Benchmarks
 [MemoryDiagnoser]
 public abstract class ObjectBenchmarks
 {
+    protected NpcTestObject NpcObject = new();
     protected KineticTestObject KineticObject = new();
     protected ReactiveTestObject ReactiveObject = new();
+
+    protected class NpcTestObject : INotifyPropertyChanged
+    {
+        private int _field;
+        public int Property
+        {
+            get => _field;
+            set => Set(ref _field, value);
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Set<T>(ref T field, T value, [CallerMemberName] string property = "")
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+                return;
+
+            field = value;
+
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+        }
+    }
 
     protected class KineticTestObject : ObservableObject
     {
@@ -41,8 +68,9 @@ public abstract class ObjectBenchmarks
 
 public class GetterBenchmarks : ObjectBenchmarks
 {
-    [Benchmark] public int Kinetic() => KineticObject.Property;
-    [Benchmark] public int Reactive() => ReactiveObject.Property;
+    [Benchmark] public int NpcGetter() => NpcObject.Property;
+    [Benchmark] public int KineticGetter() => KineticObject.Property;
+    [Benchmark] public int ReactiveGetter() => ReactiveObject.Property;
 }
 
 public class SetterBenchmarks : ObjectBenchmarks
@@ -55,6 +83,8 @@ public class SetterBenchmarks : ObjectBenchmarks
     {
         if (WithObserver)
         {
+            NpcObject.PropertyChanged += (_, _) => { };
+
             var observer = new Observer<int>();
             KineticObject.Property.Changed
                 .Subscribe(observer);
@@ -68,8 +98,9 @@ public class SetterBenchmarks : ObjectBenchmarks
 
     [Params(false, true)] public bool WithObserver { get; set; }
     [Params(false, true)] public bool WithSameValue { get; set; }
-    [Benchmark] public void Kinetic() => KineticObject.Property.Set(_value += _change);
-    [Benchmark] public void Reactive() => ReactiveObject.Property = _value += _change;
+    [Benchmark] public void NpcSeter() => NpcObject.Property = _value += _change;
+    [Benchmark] public void KineticSetter() => KineticObject.Property.Set(_value += _change);
+    [Benchmark] public void ReactiveSetter() => ReactiveObject.Property = _value += _change;
 
     private class Observer<T> : IObserver<T>
     {

@@ -98,7 +98,7 @@ public class SetterBenchmarks : ObjectBenchmarks
 
     [Params(false, true)] public bool WithObserver { get; set; }
     [Params(false, true)] public bool WithSameValue { get; set; }
-    [Benchmark] public void NpcSeter() => NpcObject.Property = _value += _change;
+    [Benchmark] public void NpcSetter() => NpcObject.Property = _value += _change;
     [Benchmark] public void KineticSetter() => KineticObject.Property.Set(_value += _change);
     [Benchmark] public void ReactiveSetter() => ReactiveObject.Property = _value += _change;
 

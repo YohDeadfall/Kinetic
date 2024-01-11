@@ -338,6 +338,36 @@ public class LinqTests
     }
 
     [Fact]
+    public async ValueTask SelectAsync_WithTask()
+    {
+        var source = new PublishSubject<Task<int>>();
+        var values = source
+            .SelectAsync(value => value)
+            .ToArray()
+            .ToValueTask();
+
+        source.OnNext(Task.FromResult(1));
+        source.OnNext(TaskWithYeldedResult(2));
+
+        Assert.Equal(new[] { 1, 2 }, await values);
+    }
+
+    [Fact]
+    public async ValueTask SelectAsync_WithValueTask()
+    {
+        var source = new PublishSubject<ValueTask<int>>();
+        var values = source
+            .SelectAsync(value => value)
+            .ToArray()
+            .ToValueTask();
+
+        source.OnNext(ValueTask.FromResult(1));
+        source.OnNext(ValueTaskWithYeldedResult(2));
+
+        Assert.Equal(new[] { 1, 2 }, await values);
+    }
+
+    [Fact]
     public async ValueTask Single_WithPredicate()
     {
         var source = new PublishSubject<int>();
@@ -626,6 +656,18 @@ public class LinqTests
         source.OnNext(4);
 
         Assert.Equal(new[] { 3, 4 }, await values);
+    }
+
+    private static async Task<T> TaskWithYeldedResult<T>(T value)
+    {
+        await Task.Yield();
+        return value;
+    }
+
+    private static async ValueTask<T> ValueTaskWithYeldedResult<T>(T value)
+    {
+        await Task.Yield();
+        return value;
     }
 
     private sealed class Container<T> : ObservableObject

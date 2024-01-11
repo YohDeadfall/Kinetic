@@ -658,6 +658,48 @@ public class LinqTests
         Assert.Equal(new[] { 3, 4 }, await values);
     }
 
+    [Fact]
+    public async ValueTask WhereAsync_WithTask()
+    {
+        var source = new PublishSubject<int>();
+        var values = source
+            .WhereAsync(value =>
+                value > 2 is var result &&
+                value % 2 == 0
+                ? Task.FromResult(result)
+                : TaskWithYeldedResult(result))
+            .ToArray()
+            .ToValueTask();
+
+        source.OnNext(1);
+        source.OnNext(3);
+        source.OnNext(2);
+        source.OnNext(4);
+
+        Assert.Equal(new[] { 3, 4 }, await values);
+    }
+
+    [Fact]
+    public async ValueTask WhereAsync_WithValueTask()
+    {
+        var source = new PublishSubject<int>();
+        var values = source
+            .WhereAsync(value =>
+                value > 2 is var result &&
+                value % 2 == 0
+                ? ValueTask.FromResult(result)
+                : ValueTaskWithYeldedResult(result))
+            .ToArray()
+            .ToValueTask();
+
+        source.OnNext(1);
+        source.OnNext(3);
+        source.OnNext(2);
+        source.OnNext(4);
+
+        Assert.Equal(new[] { 3, 4 }, await values);
+    }
+
     private static async Task<T> TaskWithYeldedResult<T>(T value)
     {
         await Task.Yield();

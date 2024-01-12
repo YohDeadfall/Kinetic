@@ -34,8 +34,8 @@ public static partial class Observable
         where TContinuation : struct, IObserverStateMachine<bool>
     {
         private TContinuation _continuation;
-        private TSource _value;
-        private IEqualityComparer<TSource>? _comparer;
+        private readonly TSource _value;
+        private readonly IEqualityComparer<TSource>? _comparer;
 
         public ContainsStateMachine(TContinuation continuation, TSource value, IEqualityComparer<TSource>? comparer)
         {
@@ -44,14 +44,21 @@ public static partial class Observable
             _comparer = comparer;
         }
 
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnNext(TSource value)
         {
             var result =
                 _comparer?.Equals(_value, value) ??
                 EqualityComparer<TSource>.Default.Equals(_value, value);
+
             if (result)
             {
                 _continuation.OnNext(true);

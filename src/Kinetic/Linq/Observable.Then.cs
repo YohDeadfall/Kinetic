@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -29,24 +28,20 @@ public static partial class Observable
         where TContinuation : struct, IObserverStateMachine<TResult>
     {
         private TContinuation _continuation;
-        private readonly Func<TSource, IObservable<TResult>> _selector;
-        private ObserverStateMachineBox? _box;
         private IDisposable? _subscription;
+        private readonly Func<TSource, IObservable<TResult>> _selector;
 
         public ThenStateMachine(TContinuation continuation, Func<TSource, IObservable<TResult>> selector)
         {
             _continuation = continuation;
             _selector = selector;
-
-            _box = null;
-            _subscription = null;
         }
 
-        public void Initialize(ObserverStateMachineBox box)
-        {
-            _box = box;
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
             _continuation.Initialize(box);
-        }
 
         public void Dispose()
         {
@@ -56,13 +51,11 @@ public static partial class Observable
 
         public void OnNext(TSource value)
         {
-            Debug.Assert(_box is not null);
-
             try
             {
                 _subscription?.Dispose();
                 _subscription = _selector(value) is { } observable
-                    ? _box.Subscribe(observable, ref _continuation)
+                    ? observable.Subscribe(ref _continuation)
                     : null;
             }
             catch (Exception error)
@@ -71,10 +64,8 @@ public static partial class Observable
             }
         }
 
-        public void OnError(Exception error)
-        {
+        public void OnError(Exception error) =>
             _continuation.OnError(error);
-        }
 
         public void OnCompleted()
         {

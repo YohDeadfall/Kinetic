@@ -31,13 +31,19 @@ public sealed class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
 
     private struct StateMachine : IObserverStateMachine<ListChange<T>>
     {
+        private ObserverStateMachineBox? _box;
         private readonly ObservableView<T> _view;
 
         public StateMachine(ObservableView<T> view) =>
             _view = view;
 
+        public ObserverStateMachineBox Box =>
+            _box ?? throw new InvalidOperationException();
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _box = box;
+
         public void Dispose() { }
-        public void Initialize(ObserverStateMachineBox box) { }
 
         public void OnCompleted() { }
         public void OnError(Exception error) { }

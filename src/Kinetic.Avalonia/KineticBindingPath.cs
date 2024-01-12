@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Linq;
 using Kinetic.Linq;
 using Kinetic.Linq.StateMachines;
@@ -50,22 +49,16 @@ public static class KineticBindingPath
         where TContinuation : struct, IObserverStateMachine<TSource?>
     {
         private TContinuation _continuation;
-        private ObserverStateMachineBox? _box;
         private IDisposable? _subscription;
 
-        public PropertyStateMachine(TContinuation continuation)
-        {
+        public PropertyStateMachine(TContinuation continuation) =>
             _continuation = continuation;
 
-            _box = null;
-            _subscription = null;
-        }
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box)
-        {
-            _box = box;
+        public void Initialize(ObserverStateMachineBox box) =>
             _continuation.Initialize(box);
-        }
 
         public void Dispose()
         {
@@ -90,14 +83,11 @@ public static class KineticBindingPath
 
         private void OnNextCore(ReadOnlyProperty<TSource>? value)
         {
-            Debug.Assert(_box is not null);
-
             _subscription?.Dispose();
 
             if (value is { } property)
             {
-                _subscription = _box.Subscribe(
-                    property.Changed, ref this);
+                _subscription = property.Changed.Subscribe(ref this);
             }
             else
             {

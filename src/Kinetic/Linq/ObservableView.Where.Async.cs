@@ -38,7 +38,6 @@ public static partial class ObservableView
         private TContinuation _continuation;
         private ObserverBuilderFactory<T, bool> _predicate;
         private List<ObservableViewItem<T>> _items = new();
-        private ObserverStateMachineBox? _box;
 
         public WhereAsyncStateMachine(in TContinuation continuation, ObserverBuilderFactory<T, bool> predicate)
         {
@@ -46,18 +45,18 @@ public static partial class ObservableView
             _predicate = predicate;
         }
 
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
         public void Dispose()
         {
             foreach (var item in _items)
                 item.Dispose();
 
             _continuation.Dispose();
-        }
-
-        public void Initialize(ObserverStateMachineBox box)
-        {
-            _box = box;
-            _continuation.Initialize(box);
         }
 
         public void OnCompleted() =>
@@ -101,7 +100,7 @@ public static partial class ObservableView
                         var item = new ObservableViewItem<T>(value.NewIndex) { Item = value.NewItem };
                         var subscription = _predicate(item.Item)
                             .ContinueWith<PredicateStateMachineFactory<T>, ObservableViewItem<T>>(new(item))
-                            .Subscribe(ref this, _box!);
+                            .Subscribe(ref this);
 
                         _items.Insert(item.Index, item);
                         item.Initialize(subscription);
@@ -126,7 +125,7 @@ public static partial class ObservableView
                         var newItem = new ObservableViewItem<T>(value.NewIndex) { Item = value.NewItem };
                         var newSubscription = _predicate(newItem.Item)
                             .ContinueWith<PredicateStateMachineFactory<T>, ObservableViewItem<T>>(new(newItem))
-                            .Subscribe(ref this, _box!);
+                            .Subscribe(ref this);
 
                         _items[index] = newItem;
                         newItem.Initialize(newSubscription);
@@ -237,7 +236,7 @@ public static partial class ObservableView
         where TContinuation : struct, IObserverStateMachine<ObservableViewItem<T>>
     {
         private TContinuation _continuation;
-        private ObservableViewItem<T> _item;
+        private readonly ObservableViewItem<T> _item;
 
         public PredicateStateMachine(in TContinuation continuation, ObservableViewItem<T> item)
         {
@@ -245,11 +244,14 @@ public static partial class ObservableView
             _item = item;
         }
 
-        public void Dispose() =>
-            _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
 
         public void Initialize(ObserverStateMachineBox box) =>
             _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnCompleted() =>
             _continuation.OnCompleted();

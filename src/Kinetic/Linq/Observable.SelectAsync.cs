@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Threading.Tasks;
 using Kinetic.Linq.StateMachines;
 
@@ -70,7 +69,6 @@ public static partial class Observable
         where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, TSource, TResult>
     {
         private TContinuation _continuation;
-        private ObserverStateMachineBox? _box;
         private readonly TAwaiterFactory _selector;
 
         public SelectAsyncStateMachine(in TContinuation continuation, TAwaiterFactory selector)
@@ -79,13 +77,14 @@ public static partial class Observable
             _selector = selector;
         }
 
-        public void Initialize(ObserverStateMachineBox box)
-        {
-            _box = box;
-            _continuation.Initialize(box);
-        }
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
 
-        public void Dispose() => _continuation.Dispose();
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnNext(TSource value)
         {
@@ -106,17 +105,18 @@ public static partial class Observable
             }
             else
             {
-                Debug.Assert(_box is not null);
-
-                var reference = new ObserverStateMachineReference<TResult, TContinuation>(_box, ref _continuation);
+                var reference = new ObserverStateMachineReference<TResult, TContinuation>(ref _continuation);
                 var completion = () => ForwardResult(awaiter, ref reference.Target);
 
                 awaiter.OnCompleted(completion);
             }
         }
 
-        public void OnError(Exception error) => _continuation.OnError(error);
-        public void OnCompleted() => _continuation.OnCompleted();
+        public void OnError(Exception error) =>
+            _continuation.OnError(error);
+
+        public void OnCompleted() =>
+            _continuation.OnCompleted();
 
         private static void ForwardResult(TAwaiter awaiter, ref TContinuation continuation)
         {

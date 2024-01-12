@@ -75,7 +75,11 @@ public static partial class Observable
         private readonly Func<TSource, TKey> _keySelector;
         private readonly Func<TSource, TValue> _valueSelector;
 
-        public ToDictionaryStateMachine(TContinuation continuation, Func<TSource, TKey> keySelector, Func<TSource, TValue> valueSelector, IEqualityComparer<TKey>? comparer)
+        public ToDictionaryStateMachine(
+            TContinuation continuation,
+            Func<TSource, TKey> keySelector,
+            Func<TSource, TValue> valueSelector,
+            IEqualityComparer<TKey>? comparer)
         {
             _continuation = continuation;
             _result = new Dictionary<TKey, TValue>(comparer);
@@ -83,8 +87,14 @@ public static partial class Observable
             _valueSelector = valueSelector;
         }
 
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnNext(TSource value)
         {
@@ -100,10 +110,8 @@ public static partial class Observable
             }
         }
 
-        public void OnError(Exception error)
-        {
+        public void OnError(Exception error) =>
             _continuation.OnError(error);
-        }
 
         public void OnCompleted()
         {

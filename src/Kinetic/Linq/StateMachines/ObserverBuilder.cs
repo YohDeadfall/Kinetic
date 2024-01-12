@@ -61,12 +61,8 @@ public ref struct ObserverBuilder<T>
             _subscription = null;
         }
 
-        public void Dispose()
-        {
-            _subscription?.Dispose();
-            _subscription = null;
-            _observable = null;
-        }
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
 
         public void Initialize(ObserverStateMachineBox box)
         {
@@ -75,9 +71,20 @@ public ref struct ObserverBuilder<T>
                 (ObserverStateMachineBox<T, StateMachine<TContinuation>>) box);
         }
 
-        public void OnCompleted() => _continuation.OnCompleted();
-        public void OnError(Exception error) => _continuation.OnError(error);
-        public void OnNext(T value) => _continuation.OnNext(value);
+        public void Dispose()
+        {
+            _subscription?.Dispose();
+            _continuation.Dispose();
+        }
+
+        public void OnCompleted() =>
+            _continuation.OnCompleted();
+
+        public void OnError(Exception error) =>
+            _continuation.OnError(error);
+
+        public void OnNext(T value) =>
+            _continuation.OnNext(value);
     }
 
     private readonly struct StateMachineFactory : IObserverStateMachineFactory<T, T>

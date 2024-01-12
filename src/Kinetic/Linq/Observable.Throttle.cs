@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Kinetic.Linq.StateMachines;
@@ -43,10 +44,11 @@ public static partial class Observable
             _publisher = new ThrottleStateMachinePublisher<TSource>(delay, continueOnCapturedContext);
         }
 
-        public void Initialize(ObserverStateMachineBox box)
-        {
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
             _continuation.Initialize(box);
-        }
 
         public void Dispose()
         {
@@ -54,10 +56,14 @@ public static partial class Observable
             _continuation.Dispose();
         }
 
-        public void OnNext(TSource value) => _publisher.OnNext(value);
+        public void OnNext(TSource value) =>
+            _publisher.OnNext(value);
 
-        public void OnError(Exception error) => _continuation.OnError(error);
-        public void OnCompleted() => _continuation.OnCompleted();
+        public void OnError(Exception error) =>
+            _continuation.OnError(error);
+
+        public void OnCompleted() =>
+            _continuation.OnCompleted();
     }
 
     private sealed class ThrottleStateMachinePublisher<TSource> : IObservable<TSource>, IDisposable
@@ -115,13 +121,13 @@ public static partial class Observable
         private readonly TimeSpan _delay;
         private readonly SynchronizationContext? _context;
         private IObserver<TSource>? _observer;
+
+        [AllowNull]
         private TSource _value;
 
         public ThrottleStateMachinePublisher(TimeSpan delay, bool continueOnCapturedContext)
         {
             _delay = delay;
-            _value = default!;
-
             _timer = new Timer(s_timerCallback, this, Timeout.Infinite, Timeout.Infinite);
             _context = continueOnCapturedContext ? SynchronizationContext.Current : null;
         }

@@ -6,6 +6,8 @@ namespace Kinetic.Linq.StateMachines;
 
 public interface IObserverStateMachine<T> : IObserver<T>, IDisposable
 {
+    ObserverStateMachineBox Box { get; }
+
     void Initialize(ObserverStateMachineBox box);
 }
 
@@ -27,8 +29,11 @@ public readonly struct ObserverStateMachineReference<T, TStateMachine>
     private readonly ObserverStateMachineBox _box;
     private readonly IntPtr _stateMachineOffset;
 
-    public ObserverStateMachineReference(ObserverStateMachineBox box, ref TStateMachine stateMachine) =>
-        _stateMachineOffset = (_box = box).OffsetTo<T, TStateMachine>(ref stateMachine);
+    public ObserverStateMachineReference(ref TStateMachine stateMachine)
+    {
+        _box = stateMachine.Box;
+        _stateMachineOffset = _box.OffsetTo<T, TStateMachine>(ref stateMachine);
+    }
 
     public ref TStateMachine Target =>
         ref _box.ReferenceTo<T, TStateMachine>(_stateMachineOffset);
@@ -64,146 +69,6 @@ public abstract class ObserverStateMachineBox
         ref var machinePart = ref Unsafe.AddByteOffset(ref machineHost, offset);
 
         return ref Unsafe.As<byte, TStateMachine>(ref machinePart);
-    }
-
-    public IDisposable Subscribe<T, TStateMachine>(IObservable<T> observable, ref TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<T>
-    {
-        return Subscribe(observable.ToBuilder(), ref stateMachine);
-    }
-
-    public IDisposable Subscribe<T, TStateMachine>(ObserverBuilder<T> builder, ref TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<T>
-    {
-        return builder.Build<SubscribeStateMachine<T, TStateMachine>, SubscribeBoxFactory, IDisposable>(
-            new(new ObserverStateMachineReference<T, TStateMachine>(this, ref stateMachine)), new());
-    }
-
-    private readonly struct SubscribeStateMachine<T, TStateMachine> : IObserverStateMachine<T>
-        where TStateMachine : struct, IObserverStateMachine<T>
-    {
-        private readonly ObserverStateMachineReference<T, TStateMachine> _stateMachine;
-
-        public SubscribeStateMachine(ObserverStateMachineReference<T, TStateMachine> stateMachine) =>
-            _stateMachine = stateMachine;
-
-        public void Dispose() { }
-        public void Initialize(ObserverStateMachineBox box) { }
-        public void OnCompleted() => _stateMachine.Target.OnCompleted();
-        public void OnError(Exception error) => _stateMachine.Target.OnError(error);
-        public void OnNext(T value) => _stateMachine.Target.OnNext(value);
-    }
-
-    private readonly struct SubscribeBoxFactory : IObserverFactory<IDisposable>
-    {
-        public IDisposable Create<T, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<T> =>
-            new SubscribeBox<T, TStateMachine>(stateMachine);
-    }
-
-    private sealed class SubscribeBox<T, TStateMachine> : ObserverStateMachineBox<T, TStateMachine>, IDisposable
-        where TStateMachine : struct, IObserverStateMachine<T>
-    {
-        public SubscribeBox(in TStateMachine stateMachine) :
-            base(stateMachine) => StateMachine.Initialize(this);
-
-        public void Dispose() => StateMachine.Dispose();
-    }
-
-    public ObserverBuilder<T> Observe<T, TStateMachine>(IObservable<T> observable, ref TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<T>
-    {
-        return Observe(observable.ToBuilder(), ref stateMachine);
-    }
-
-    public ObserverBuilder<T> Observe<T, TStateMachine>(ObserverBuilder<T> builder, ref TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<T>
-    {
-        return builder.ContinueWith<ObserveStateMachineFactory<T, TStateMachine>, T>(
-            new(new(this, ref stateMachine)));
-    }
-
-    private readonly struct ObserveStateMachineFactory<T, TStateMachine> : IObserverStateMachineFactory<T, T>
-        where TStateMachine : struct, IObserverStateMachine<T>
-    {
-        private readonly ObserverStateMachineReference<T, TStateMachine> _stateMachine;
-
-        public ObserveStateMachineFactory(ObserverStateMachineReference<T, TStateMachine> stateMachine) =>
-            _stateMachine = stateMachine;
-
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IObserverStateMachine<T>
-        {
-            source.ContinueWith<ObserveStateMachine<T, TStateMachine, TContinuation>>(new(continuation, _stateMachine));
-        }
-    }
-
-    private struct ObserveStateMachine<T, TStateMachine, TContinuation> : IObserverStateMachine<T>
-        where TStateMachine : struct, IObserverStateMachine<T>
-        where TContinuation : struct, IObserverStateMachine<T>
-    {
-        private readonly SubscribeStateMachine<T, TStateMachine> _observer;
-        private TContinuation _continuation;
-
-        public ObserveStateMachine(in TContinuation continuation, ObserverStateMachineReference<T, TStateMachine> observer)
-        {
-            _continuation = continuation;
-            _observer = new SubscribeStateMachine<T, TStateMachine>(observer);
-        }
-
-        public void Dispose() =>
-            _continuation.Dispose();
-
-        public void Initialize(ObserverStateMachineBox box) =>
-            _continuation.Initialize(box);
-
-        public void OnCompleted()
-        {
-            try
-            {
-                _observer.OnCompleted();
-            }
-            catch (Exception ex)
-            {
-                _continuation.OnError(ex);
-
-                return;
-            }
-
-            _continuation.OnCompleted();
-        }
-
-        public void OnError(Exception error)
-        {
-            try
-            {
-                _observer.OnError(error);
-            }
-            catch (Exception ex)
-            {
-                _continuation.OnError(ex);
-
-                return;
-            }
-
-            _continuation.OnError(error);
-        }
-
-        public void OnNext(T value)
-        {
-            try
-            {
-                _observer.OnNext(value);
-            }
-            catch (Exception ex)
-            {
-                _continuation.OnError(ex);
-
-                return;
-            }
-
-            _continuation.OnNext(value);
-        }
     }
 }
 

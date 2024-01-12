@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -25,32 +26,39 @@ public static partial class Observable
         }
     }
 
-    private struct MinStateMachine<TContinuation, T> : IObserverStateMachine<T>
-        where TContinuation : struct, IObserverStateMachine<T>
+    private struct MinStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
+        where TContinuation : struct, IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;
-        private IComparer<T>? _comparer;
-        private T _value;
+        private readonly IComparer<TSource>? _comparer;
+
+        [AllowNull]
+        private TSource _value;
         private bool _hasValue;
 
-        public MinStateMachine(TContinuation continuation, IComparer<T>? comparer)
+        public MinStateMachine(TContinuation continuation, IComparer<TSource>? comparer)
         {
             _continuation = continuation;
             _comparer = comparer;
-            _value = default!;
-            _hasValue = false;
         }
 
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
 
-        public void OnNext(T value)
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
+
+        public void OnNext(TSource value)
         {
             if (_hasValue)
             {
                 var result =
                     _comparer?.Compare(_value, value) ??
-                    Comparer<T>.Default.Compare(_value, value);
+                    Comparer<TSource>.Default.Compare(_value, value);
+
                 if (result > 0)
                 {
                     _value = value;

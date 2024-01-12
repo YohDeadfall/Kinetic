@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -29,7 +30,9 @@ public static partial class Observable
         where TContinuation : struct, IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;
-        private IComparer<TSource>? _comparer;
+        private readonly IComparer<TSource>? _comparer;
+
+        [AllowNull]
         private TSource _value;
         private bool _hasValue;
 
@@ -37,12 +40,16 @@ public static partial class Observable
         {
             _continuation = continuation;
             _comparer = comparer;
-            _value = default!;
-            _hasValue = false;
         }
 
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnNext(TSource value)
         {
@@ -51,6 +58,7 @@ public static partial class Observable
                 var result =
                     _comparer?.Compare(_value, value) ??
                     Comparer<TSource>.Default.Compare(_value, value);
+
                 if (result < 0)
                 {
                     _value = value;

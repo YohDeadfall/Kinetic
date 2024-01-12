@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using Kinetic.Linq.StateMachines;
 
@@ -37,15 +36,17 @@ public static partial class Observable
         private TSource _value;
         private bool _hasValue;
 
-        public SingleOrDefaultStateMachine(TContinuation continuation)
-        {
+        public SingleOrDefaultStateMachine(TContinuation continuation) =>
             _continuation = continuation;
-            _value = default;
-            _hasValue = false;
-        }
 
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnNext(TSource value)
         {

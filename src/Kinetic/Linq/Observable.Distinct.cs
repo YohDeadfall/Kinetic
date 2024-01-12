@@ -32,7 +32,7 @@ public static partial class Observable
         where TContinuation : struct, IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;
-        private HashSet<TSource> _set;
+        private readonly HashSet<TSource> _set;
 
         public DistinctStateMachine(TContinuation continuation, IEqualityComparer<TSource>? comparer)
         {
@@ -40,8 +40,14 @@ public static partial class Observable
             _set = new HashSet<TSource>(comparer);
         }
 
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnNext(TSource value)
         {

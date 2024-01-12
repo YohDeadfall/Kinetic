@@ -61,7 +61,11 @@ internal static class ValueTaskSource<TResult>
 
     internal struct StateMachine : IObserverStateMachine<TResult>
     {
+        private ObserverStateMachineBox? _box;
         private IntPtr _core;
+
+        public ObserverStateMachineBox Box =>
+            _box ?? throw new InvalidOperationException();
 
         public void Dispose() { }
 
@@ -69,6 +73,7 @@ internal static class ValueTaskSource<TResult>
         {
             var boxTyped = (IBox) box;
 
+            _box = box;
             _core = Unsafe.ByteOffset(
                 ref Unsafe.As<StateMachine, IntPtr>(ref this),
                 ref Unsafe.As<ManualResetValueTaskSourceCore<TResult>, IntPtr>(ref boxTyped.Core));

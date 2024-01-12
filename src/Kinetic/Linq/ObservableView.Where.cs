@@ -24,11 +24,14 @@ public static partial class ObservableView
             _predicate = predicate;
         }
 
-        public void Dispose() =>
-            _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
 
         public void Initialize(ObserverStateMachineBox box) =>
             _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnCompleted() =>
             _continuation.OnCompleted();

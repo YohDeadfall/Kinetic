@@ -48,7 +48,11 @@ internal static class Observable<TResult>
 
     internal struct StateMachine : IObserverStateMachine<TResult>
     {
+        private ObserverStateMachineBox _box;
         private IntPtr _subscriptions;
+
+        public ObserverStateMachineBox Box =>
+            _box ?? throw new InvalidOperationException();
 
         public void Dispose() { }
 
@@ -56,14 +60,20 @@ internal static class Observable<TResult>
         {
             var boxTyped = (IBox) box;
 
+            _box = box;
             _subscriptions = Unsafe.ByteOffset(
                 ref Unsafe.As<StateMachine, IntPtr>(ref this),
                 ref Unsafe.As<ObservableSubscriptions<TResult>, IntPtr>(ref boxTyped.Subscriptions));
         }
 
-        public void OnCompleted() => GetSubscriptions(ref this).OnCompleted();
-        public void OnError(Exception error) => GetSubscriptions(ref this).OnError(error);
-        public void OnNext(TResult value) => GetSubscriptions(ref this).OnNext(value);
+        public void OnCompleted() =>
+            GetSubscriptions(ref this).OnCompleted();
+
+        public void OnError(Exception error) =>
+            GetSubscriptions(ref this).OnError(error);
+
+        public void OnNext(TResult value) =>
+            GetSubscriptions(ref this).OnNext(value);
 
         private static ref ObservableSubscriptions<TResult> GetSubscriptions(ref StateMachine self) =>
             ref Unsafe.As<IntPtr, ObservableSubscriptions<TResult>>(

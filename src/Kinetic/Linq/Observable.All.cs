@@ -31,9 +31,17 @@ public static partial class Observable
     {
         private TContinuation _continuation;
 
-        public AllStateMachine(in TContinuation continuation) => _continuation = continuation;
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public AllStateMachine(in TContinuation continuation) =>
+            _continuation = continuation;
+
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnNext(bool value)
         {

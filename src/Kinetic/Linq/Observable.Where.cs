@@ -28,7 +28,7 @@ public static partial class Observable
         where TContinuation : struct, IObserverStateMachine<TSource>
     {
         private TContinuation _continuation;
-        private Func<TSource, bool> _predicate;
+        private readonly Func<TSource, bool> _predicate;
 
         public WhereStateMachine(TContinuation continuation, Func<TSource, bool> predicate)
         {
@@ -36,8 +36,14 @@ public static partial class Observable
             _predicate = predicate;
         }
 
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnNext(TSource value)
         {
@@ -54,7 +60,10 @@ public static partial class Observable
             }
         }
 
-        public void OnError(Exception error) => _continuation.OnError(error);
-        public void OnCompleted() => _continuation.OnCompleted();
+        public void OnError(Exception error) =>
+            _continuation.OnError(error);
+
+        public void OnCompleted() =>
+            _continuation.OnCompleted();
     }
 }

@@ -49,7 +49,6 @@ public static partial class ObservableView
             IObserverStateMachine<IComparer<TKey>?>
             where TItem : IItem<TItem>
         {
-            public ObserverStateMachineBox Box { get; }
         }
 
         private interface IItem<TSelf> : IComparable<TSelf>, IDisposable
@@ -158,9 +157,6 @@ public static partial class ObservableView
             private TKeySelector _keySelector;
             private TKeyComparer _keyComparer;
 
-            [AllowNull]
-            public ObserverStateMachineBox Box { get; private set; }
-
             public StateMachine(in TContinuation continuation, in TKeySelector keySelector, in TKeyComparer keyComparer)
             {
                 _continuation = continuation;
@@ -171,10 +167,11 @@ public static partial class ObservableView
                 _indexes = new List<int>();
             }
 
+            public ObserverStateMachineBox Box =>
+                _continuation.Box;
+
             public void Initialize(ObserverStateMachineBox box)
             {
-                Box = box;
-
                 _continuation.Initialize(box);
                 _keyComparer.Initialize(ref this);
             }
@@ -467,6 +464,9 @@ public static partial class ObservableView
                     _continuation = continuation;
                 }
 
+                public ObserverStateMachineBox Box =>
+                    _continuation.Box;
+
                 public void Initialize(ObserverStateMachineBox box) =>
                     _continuation.Initialize(box);
 
@@ -536,7 +536,7 @@ public static partial class ObservableView
                 var subscription = _keySelector
                     .Invoke(value)
                     .ContinueWith<DynamicItem.StateMachineFactory, ValueTuple<DynamicItem>>(new DynamicItem.StateMachineFactory(item))
-                    .Subscribe(ref stateMachine, stateMachine.Box);
+                    .Subscribe(ref stateMachine);
 
                 item.OriginalIndex = index;
                 return (item, subscription);
@@ -574,7 +574,7 @@ public static partial class ObservableView
             {
                 Debug.Assert(_subscription is null);
 
-                _subscription = stateMachine.Box.Subscribe(_observable, ref stateMachine);
+                _subscription = _observable.Subscribe(ref stateMachine);
             }
 
             public void Dispose() =>

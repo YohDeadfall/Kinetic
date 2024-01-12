@@ -31,11 +31,16 @@ public static partial class Observable
         {
             _continuation = continuation;
             _result = Array.Empty<TResult>();
-            _length = 0;
         }
 
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         private void IncreareResultLength()
         {
@@ -61,10 +66,8 @@ public static partial class Observable
             _length += 1;
         }
 
-        public void OnError(Exception error)
-        {
+        public void OnError(Exception error) =>
             _continuation.OnError(error);
-        }
 
         public void OnCompleted()
         {

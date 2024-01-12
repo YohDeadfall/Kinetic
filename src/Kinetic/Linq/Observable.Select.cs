@@ -28,7 +28,7 @@ public static partial class Observable
         where TContinuation : struct, IObserverStateMachine<TResult>
     {
         private TContinuation _continuation;
-        private Func<TSource, TResult> _selector;
+        private readonly Func<TSource, TResult> _selector;
 
         public SelectStateMachine(TContinuation continuation, Func<TSource, TResult> selector)
         {
@@ -36,8 +36,14 @@ public static partial class Observable
             _selector = selector;
         }
 
-        public void Initialize(ObserverStateMachineBox box) => _continuation.Initialize(box);
-        public void Dispose() => _continuation.Dispose();
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnNext(TSource value)
         {
@@ -51,7 +57,10 @@ public static partial class Observable
             }
         }
 
-        public void OnError(Exception error) => _continuation.OnError(error);
-        public void OnCompleted() => _continuation.OnCompleted();
+        public void OnError(Exception error) =>
+            _continuation.OnError(error);
+
+        public void OnCompleted() =>
+            _continuation.OnCompleted();
     }
 }

@@ -16,9 +16,8 @@ public static partial class ObservableView
         where TContinuation : struct, IObserverStateMachine<ListChange<TResult>>
     {
         private TContinuation _continuation;
-        private Func<TSource, TResult> _selector;
-        private List<TResult> _items = new();
-        private ObserverStateMachineBox? _box;
+        private readonly Func<TSource, TResult> _selector;
+        private readonly List<TResult> _items = new();
 
         public SelectStateMachine(in TContinuation continuation, Func<TSource, TResult> selector)
         {
@@ -26,14 +25,14 @@ public static partial class ObservableView
             _selector = selector;
         }
 
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
         public void Dispose() =>
             _continuation.Dispose();
-
-        public void Initialize(ObserverStateMachineBox box)
-        {
-            _box = box;
-            _continuation.Initialize(box);
-        }
 
         public void OnCompleted() =>
             _continuation.OnCompleted();

@@ -3,9 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Avalonia;
 using Avalonia.Data;
+using Kinetic.Linq;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Data;
@@ -173,11 +173,14 @@ public abstract class KineticBinding : IBinding
     {
         private IBox? _box;
 
-        public void Dispose() =>
-            _box = null;
+        public ObserverStateMachineBox Box =>
+            (ObserverStateMachineBox) (_box ?? throw new InvalidOperationException());
 
         public void Initialize(ObserverStateMachineBox box) =>
             _box = (IBox) box;
+
+        public void Dispose() =>
+            _box = null;
 
         public void OnCompleted() =>
             _box!.Observer?.OnCompleted();
@@ -207,6 +210,15 @@ public abstract class KineticBinding : IBinding
             _subscription = null;
         }
 
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box)
+        {
+            _box = (IBox<TProperty>) box;
+            _continuation.Initialize(box);
+        }
+
         public void Dispose()
         {
             _continuation.Dispose();
@@ -216,12 +228,6 @@ public abstract class KineticBinding : IBinding
 
             _subscription?.Dispose();
             _subscription = null;
-        }
-
-        public void Initialize(ObserverStateMachineBox box)
-        {
-            _box = (IBox<TProperty>) box;
-            _continuation.Initialize(box);
         }
 
         public void OnNext(Property<TProperty>? value) =>
@@ -238,9 +244,7 @@ public abstract class KineticBinding : IBinding
 
                 if (value is { } property)
                 {
-                    _subscription = Unsafe
-                        .As<ObserverStateMachineBox>(_box!)
-                        .Subscribe(property.Changed, ref this);
+                    _subscription = property.Changed.Subscribe(ref this);
                 }
                 else
                 {
@@ -291,15 +295,18 @@ public abstract class KineticBinding : IBinding
             _proxy = null;
         }
 
+        public ObserverStateMachineBox Box =>
+            _continuation.Box;
+
+        public void Initialize(ObserverStateMachineBox box) =>
+            _continuation.Initialize(box);
+
         public void Dispose()
         {
             _continuation.Dispose();
             _proxy?.Dispose();
             _proxy = null;
         }
-
-        public void Initialize(ObserverStateMachineBox box) =>
-            _continuation.Initialize(box);
 
         public void OnCompleted() =>
             _continuation.OnCompleted();

@@ -5,6 +5,9 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
+    public static IDisposable Subscribe<T>(this IObservable<T> source) =>
+        source.ToBuilder().Subscribe();
+
     public static IDisposable Subscribe<T>(this IObservable<T> source, Action<T> onNext) =>
         source.ToBuilder().Subscribe(onNext);
 
@@ -17,25 +20,22 @@ public static partial class Observable
     public static IDisposable Subscribe<T>(this IObservable<T> source, Action<T> onNext, Action<Exception> onError, Action onCompleted) =>
         source.ToBuilder().Subscribe(onNext, onError, onCompleted);
 
-    public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext) =>
+    public static IDisposable Subscribe<T>(this ObserverBuilder<T> source) =>
         source.Build<SubscribeStateMachine<T>, SubscribeBoxFactory, IDisposable>(
-            continuation: new(onNext, onError: null, onCompleted: null),
+            continuation: new(),
             factory: new());
+
+    public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext) =>
+        source.Do(onNext).Subscribe();
 
     public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext, Action<Exception> onError) =>
-        source.Build<SubscribeStateMachine<T>, SubscribeBoxFactory, IDisposable>(
-            continuation: new(onNext, onError, onCompleted: null),
-            factory: new());
+        source.Do(onNext, onError).Subscribe();
 
     public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext, Action onCompleted) =>
-        source.Build<SubscribeStateMachine<T>, SubscribeBoxFactory, IDisposable>(
-            continuation: new(onNext, onError: null, onCompleted),
-            factory: new());
+        source.Do(onNext, onCompleted).Subscribe();
 
     public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext, Action<Exception> onError, Action onCompleted) =>
-        source.Build<SubscribeStateMachine<T>, SubscribeBoxFactory, IDisposable>(
-            continuation: new(onNext, onError, onCompleted),
-            factory: new());
+        source.Do(onNext, onError, onCompleted).Subscribe();
 
     private sealed class SubscribeBox<T, TStateMachine> : ObserverStateMachineBox<T, TStateMachine>, IDisposable
         where TStateMachine : struct, IObserverStateMachine<T>
@@ -56,17 +56,7 @@ public static partial class Observable
 
     private struct SubscribeStateMachine<T> : IObserverStateMachine<T>
     {
-        private readonly Action<T>? _onNext;
-        private readonly Action<Exception>? _onError;
-        private readonly Action? _onCompleted;
         private ObserverStateMachineBox? _box;
-
-        public SubscribeStateMachine(Action<T>? onNext, Action<Exception>? onError, Action? onCompleted)
-        {
-            _onNext = onNext;
-            _onError = onError;
-            _onCompleted = onCompleted;
-        }
 
         public ObserverStateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
@@ -77,13 +67,8 @@ public static partial class Observable
         public void Dispose() =>
             _box = null;
 
-        public void OnCompleted() =>
-            _onCompleted?.Invoke();
-
-        public void OnError(Exception error) =>
-            _onError?.Invoke(error);
-
-        public void OnNext(T value) =>
-            _onNext?.Invoke(value);
+        public void OnCompleted() { }
+        public void OnError(Exception error) { }
+        public void OnNext(T value) { }
     }
 }

@@ -18,17 +18,17 @@ public static partial class Observable
     public static ObserverBuilder<TSource> Single<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
         source.ToBuilder().Single(predicate);
 
-    private readonly struct SingleStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
+    private readonly struct SingleStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
+            where TContinuation : struct, IStateMachine<TSource>
         {
             source.ContinueWith(new SingleStateMachine<TContinuation, TSource>(continuation));
         }
     }
 
-    private struct SingleStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource>
+    private struct SingleStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
 
@@ -39,10 +39,10 @@ public static partial class Observable
         public SingleStateMachine(TContinuation continuation) =>
             _continuation = continuation;
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

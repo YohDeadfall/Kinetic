@@ -11,21 +11,21 @@ public static partial class Observable
     public static ObserverBuilder<TResult> Select<TSource, TResult>(this IObservable<TSource> source, Func<TSource, TResult> selector) =>
         source.ToBuilder().Select(selector);
 
-    private readonly struct SelectStateMachineFactory<TSource, TResult> : IObserverStateMachineFactory<TSource, TResult>
+    private readonly struct SelectStateMachineFactory<TSource, TResult> : IStateMachineFactory<TSource, TResult>
     {
         private readonly Func<TSource, TResult> _selector;
 
         public SelectStateMachineFactory(Func<TSource, TResult> selector) => _selector = selector;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TResult>
+            where TContinuation : struct, IStateMachine<TResult>
         {
             source.ContinueWith(new SelectStateMachine<TContinuation, TSource, TResult>(continuation, _selector));
         }
     }
 
-    private struct SelectStateMachine<TContinuation, TSource, TResult> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TResult>
+    private struct SelectStateMachine<TContinuation, TSource, TResult> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TResult>
     {
         private TContinuation _continuation;
         private readonly Func<TSource, TResult> _selector;
@@ -36,10 +36,10 @@ public static partial class Observable
             _selector = selector;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

@@ -44,9 +44,9 @@ public static partial class ObservableView
     {
         // A single element value tuple is used here to solve a conflict between interfaces.
         private interface IStateMachine<TItem> :
-            IObserverStateMachine<ListChange<T>>,
-            IObserverStateMachine<ValueTuple<TItem>>,
-            IObserverStateMachine<IComparer<TKey>?>
+            StateMachines.IStateMachine<ListChange<T>>,
+            StateMachines.IStateMachine<ValueTuple<TItem>>,
+            StateMachines.IStateMachine<IComparer<TKey>?>
             where TItem : IItem<TItem>
         {
         }
@@ -80,7 +80,7 @@ public static partial class ObservableView
                 where TStateMachine : struct, IStateMachine<TItem>;
         }
 
-        public readonly struct StateMachineFactory : IObserverStateMachineFactory<ListChange<T>, ListChange<T>>
+        public readonly struct StateMachineFactory : IStateMachineFactory<ListChange<T>, ListChange<T>>
         {
             private readonly object _keySelector;
             private readonly object? _keyComparer;
@@ -110,7 +110,7 @@ public static partial class ObservableView
             }
 
             public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<T>> source)
-                where TContinuation : struct, IObserverStateMachine<ListChange<T>>
+                where TContinuation : struct, StateMachines.IStateMachine<ListChange<T>>
             {
                 if (_keyComparer is IObservable<IComparer<TKey>?> dynamicComparer)
                 {
@@ -149,7 +149,7 @@ public static partial class ObservableView
             where TItem : IItem<TItem>
             where TKeySelector : struct, IKeySelector<TItem>
             where TKeyComparer : struct, IKeyComparer<TItem>
-            where TContinuation : struct, IObserverStateMachine<ListChange<T>>
+            where TContinuation : struct, StateMachines.IStateMachine<ListChange<T>>
         {
             private readonly List<TItem> _items;
             private readonly List<int> _indexes;
@@ -167,10 +167,10 @@ public static partial class ObservableView
                 _indexes = new List<int>();
             }
 
-            public ObserverStateMachineBox Box =>
+            public StateMachineBox Box =>
                 _continuation.Box;
 
-            public void Initialize(ObserverStateMachineBox box)
+            public void Initialize(StateMachineBox box)
             {
                 _continuation.Initialize(box);
                 _keyComparer.Initialize(ref this);
@@ -452,8 +452,8 @@ public static partial class ObservableView
             public void Dispose() =>
                 _subscription?.Dispose();
 
-            public struct StateMachine<TContinuation> : IObserverStateMachine<TKey>
-                where TContinuation : struct, IObserverStateMachine<ValueTuple<DynamicItem>>
+            public struct StateMachine<TContinuation> : StateMachines.IStateMachine<TKey>
+                where TContinuation : struct, StateMachines.IStateMachine<ValueTuple<OrderByCore<T, TKey>.DynamicItem>>
             {
                 private readonly DynamicItem _item;
                 private TContinuation _continuation;
@@ -464,10 +464,10 @@ public static partial class ObservableView
                     _continuation = continuation;
                 }
 
-                public ObserverStateMachineBox Box =>
+                public StateMachineBox Box =>
                     _continuation.Box;
 
-                public void Initialize(ObserverStateMachineBox box) =>
+                public void Initialize(StateMachineBox box) =>
                     _continuation.Initialize(box);
 
                 public void Dispose() =>
@@ -488,7 +488,7 @@ public static partial class ObservableView
                 }
             }
 
-            public readonly struct StateMachineFactory : IObserverStateMachineFactory<TKey, ValueTuple<DynamicItem>>
+            public readonly struct StateMachineFactory : IStateMachineFactory<TKey, ValueTuple<DynamicItem>>
             {
                 private readonly DynamicItem _item;
 
@@ -496,7 +496,7 @@ public static partial class ObservableView
                     _item = item;
 
                 public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TKey> source)
-                    where TContinuation : struct, IObserverStateMachine<ValueTuple<DynamicItem>>
+                    where TContinuation : struct, StateMachines.IStateMachine<ValueTuple<OrderByCore<T, TKey>.DynamicItem>>
                 {
                     source.ContinueWith(new StateMachine<TContinuation>(_item, continuation));
                 }

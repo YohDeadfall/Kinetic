@@ -18,7 +18,7 @@ public static partial class Observable
     public static ObserverBuilder<T> OnErrorAsync<T>(this ObserverBuilder<T> source, Func<Exception, ValueTask> onError) =>
         source.ContinueWith<OnErrorAsyncStateMachineFactory<T>, T>(new(onError));
 
-    private readonly struct OnErrorAsyncStateMachineFactory<T> : IObserverStateMachineFactory<T, T>
+    private readonly struct OnErrorAsyncStateMachineFactory<T> : IStateMachineFactory<T, T>
     {
         private readonly Delegate _onError;
 
@@ -29,7 +29,7 @@ public static partial class Observable
             _onError = onError;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IObserverStateMachine<T>
+            where TContinuation : struct, IStateMachine<T>
         {
             if (_onError is Func<Exception, Task> onErrorTask)
             {
@@ -48,8 +48,8 @@ public static partial class Observable
         }
     }
 
-    private struct OnErrorAsyncStateMachine<TContinuation, T, TAwaiter, TAwaiterFactory> : IObserverStateMachine<T>
-        where TContinuation : struct, IObserverStateMachine<T>
+    private struct OnErrorAsyncStateMachine<TContinuation, T, TAwaiter, TAwaiterFactory> : IStateMachine<T>
+        where TContinuation : struct, IStateMachine<T>
         where TAwaiter : struct, IAwaiter
         where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, Exception>
     {
@@ -62,10 +62,10 @@ public static partial class Observable
             _onError = onError;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>
@@ -93,7 +93,7 @@ public static partial class Observable
             }
             else
             {
-                var reference = new ObserverStateMachineReference<T, TContinuation>(ref _continuation);
+                var reference = new StateMachineReference<T, TContinuation>(ref _continuation);
                 var completion = () => ForwardResult(error, awaiter, ref reference.Target);
 
                 awaiter.OnCompleted(completion);

@@ -31,9 +31,9 @@ public static partial class ObservableView
         source.Select((item) => selector(item).ToBuilder());
 
     private struct SelectAsyncStateMachine<TSource, TResult, TContinuation> :
-        IObserverStateMachine<ListChange<TSource>>,
-        IObserverStateMachine<ObservableViewItem<TResult>>
-        where TContinuation : struct, IObserverStateMachine<ListChange<TResult>>
+        IStateMachine<ListChange<TSource>>,
+        IStateMachine<ObservableViewItem<TResult>>
+        where TContinuation : struct, IStateMachine<ListChange<TResult>>
     {
         private readonly ObserverBuilderFactory<TSource, TResult> _selector;
         private readonly List<ObservableViewItem<TResult>> _items = new();
@@ -45,10 +45,10 @@ public static partial class ObservableView
             _selector = selector;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose()
@@ -231,7 +231,7 @@ public static partial class ObservableView
         }
     }
 
-    private readonly struct SelectAsyncStateMachineFactory<TSource, TResult> : IObserverStateMachineFactory<ListChange<TSource>, ListChange<TResult>>
+    private readonly struct SelectAsyncStateMachineFactory<TSource, TResult> : IStateMachineFactory<ListChange<TSource>, ListChange<TResult>>
     {
         private readonly ObserverBuilderFactory<TSource, TResult> _selector;
 
@@ -239,12 +239,12 @@ public static partial class ObservableView
             _selector = selector;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<TSource>> source)
-            where TContinuation : struct, IObserverStateMachine<ListChange<TResult>> =>
+            where TContinuation : struct, IStateMachine<ListChange<TResult>> =>
             source.ContinueWith(new SelectAsyncStateMachine<TSource, TResult, TContinuation>(continuation, _selector));
     }
 
-    private struct SelectorStateMachine<T, TContinuation> : IObserverStateMachine<T>
-        where TContinuation : struct, IObserverStateMachine<ObservableViewItem<T>>
+    private struct SelectorStateMachine<T, TContinuation> : IStateMachine<T>
+        where TContinuation : struct, IStateMachine<ObservableViewItem<T>>
     {
         private TContinuation _continuation;
         private readonly ObservableViewItem<T> _item;
@@ -255,10 +255,10 @@ public static partial class ObservableView
             _item = item;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>
@@ -281,7 +281,7 @@ public static partial class ObservableView
         }
     }
 
-    private readonly struct SelectorStateMachineFactory<T> : IObserverStateMachineFactory<T, ObservableViewItem<T>>
+    private readonly struct SelectorStateMachineFactory<T> : IStateMachineFactory<T, ObservableViewItem<T>>
     {
         private readonly ObservableViewItem<T> _item;
 
@@ -289,7 +289,7 @@ public static partial class ObservableView
             _item = item;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IObserverStateMachine<ObservableViewItem<T>> =>
+            where TContinuation : struct, IStateMachine<ObservableViewItem<T>> =>
             source.ContinueWith(new SelectorStateMachine<T, TContinuation>(continuation, _item));
     }
 }

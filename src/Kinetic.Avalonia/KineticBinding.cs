@@ -91,8 +91,8 @@ public abstract class KineticBinding : IBinding
         Property<TProperty>? Property { get; set; }
     }
 
-    private sealed class Box<TContext, TProperty, TStateMachine> : ObserverStateMachineBox<TContext, TStateMachine>, IBox<TProperty>
-        where TStateMachine : struct, IObserverStateMachine<TContext>
+    private sealed class Box<TContext, TProperty, TStateMachine> : StateMachineBox<TContext, TStateMachine>, IBox<TProperty>
+        where TStateMachine : struct, IStateMachine<TContext>
     {
         private EventHandler<AvaloniaPropertyChangedEventArgs>? _targetChanged;
 
@@ -157,7 +157,7 @@ public abstract class KineticBinding : IBinding
         void IObserver<object?>.OnNext(object? value) => Property?.Set((TProperty) value!);
     }
 
-    internal readonly struct BoxFactory<TProperty> : IObserverFactory<IBox>
+    internal readonly struct BoxFactory<TProperty> : IStateMachineBoxFactory<IBox>
     {
         public readonly AvaloniaObject _target;
 
@@ -165,18 +165,18 @@ public abstract class KineticBinding : IBinding
             _target = target;
 
         public IBox Create<T, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<T> =>
+            where TStateMachine : struct, IStateMachine<T> =>
             new Box<T, TProperty, TStateMachine>(stateMachine, _target);
     }
 
-    internal struct PublishStateMachine<TProperty> : IObserverStateMachine<TProperty>
+    internal struct PublishStateMachine<TProperty> : IStateMachine<TProperty>
     {
         private IBox? _box;
 
-        public ObserverStateMachineBox Box =>
-            (ObserverStateMachineBox) (_box ?? throw new InvalidOperationException());
+        public StateMachineBox Box =>
+            (StateMachineBox) (_box ?? throw new InvalidOperationException());
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _box = (IBox) box;
 
         public void Dispose() =>
@@ -193,10 +193,10 @@ public abstract class KineticBinding : IBinding
     }
 
     internal struct PropertyStateMachine<TContinuation, TProperty> :
-        IObserverStateMachine<Property<TProperty>?>,
-        IObserverStateMachine<ReadOnlyProperty<TProperty>?>,
-        IObserverStateMachine<TProperty>
-        where TContinuation : struct, IObserverStateMachine<TProperty?>
+        IStateMachine<Property<TProperty>?>,
+        IStateMachine<ReadOnlyProperty<TProperty>?>,
+        IStateMachine<TProperty>
+        where TContinuation : struct, IStateMachine<TProperty?>
     {
         private TContinuation _continuation;
         private IBox<TProperty>? _box;
@@ -210,10 +210,10 @@ public abstract class KineticBinding : IBinding
             _subscription = null;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box)
+        public void Initialize(StateMachineBox box)
         {
             _box = (IBox<TProperty>) box;
             _continuation.Initialize(box);
@@ -269,22 +269,22 @@ public abstract class KineticBinding : IBinding
     }
 
     internal readonly struct PropertyStateMachineFactory<TValue> :
-        IObserverStateMachineFactory<Property<TValue>?, TValue?>,
-        IObserverStateMachineFactory<ReadOnlyProperty<TValue>?, TValue?>
+        IStateMachineFactory<Property<TValue>?, TValue?>,
+        IStateMachineFactory<ReadOnlyProperty<TValue>?, TValue?>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<Property<TValue>?> source)
-            where TContinuation : struct, IObserverStateMachine<TValue?> =>
+            where TContinuation : struct, IStateMachine<TValue?> =>
             source.ContinueWith(new PropertyStateMachine<TContinuation, TValue>(continuation));
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ReadOnlyProperty<TValue>?> source)
-            where TContinuation : struct, IObserverStateMachine<TValue?> =>
+            where TContinuation : struct, IStateMachine<TValue?> =>
             source.ContinueWith(new PropertyStateMachine<TContinuation, TValue>(continuation));
     }
 
     internal struct ListStateMachine<TElement, TContinuation> :
-        IObserverStateMachine<ObservableList<TElement>?>,
-        IObserverStateMachine<ReadOnlyObservableList<TElement>?>
-        where TContinuation : struct, IObserverStateMachine<ListProxy<TElement>?>
+        IStateMachine<ObservableList<TElement>?>,
+        IStateMachine<ReadOnlyObservableList<TElement>?>
+        where TContinuation : struct, IStateMachine<ListProxy<TElement>?>
     {
         private TContinuation _continuation;
         private ListProxy<TElement>? _proxy;
@@ -295,10 +295,10 @@ public abstract class KineticBinding : IBinding
             _proxy = null;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose()
@@ -335,15 +335,15 @@ public abstract class KineticBinding : IBinding
     }
 
     internal readonly struct ListStateMachineFactory<TElement> :
-        IObserverStateMachineFactory<ObservableList<TElement>?, ListProxy<TElement>?>,
-        IObserverStateMachineFactory<ReadOnlyObservableList<TElement>?, ListProxy<TElement>?>
+        IStateMachineFactory<ObservableList<TElement>?, ListProxy<TElement>?>,
+        IStateMachineFactory<ReadOnlyObservableList<TElement>?, ListProxy<TElement>?>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ObservableList<TElement>?> source)
-            where TContinuation : struct, IObserverStateMachine<ListProxy<TElement>?> =>
+            where TContinuation : struct, IStateMachine<ListProxy<TElement>?> =>
             source.ContinueWith(new ListStateMachine<TElement, TContinuation>(continuation));
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ReadOnlyObservableList<TElement>?> source)
-            where TContinuation : struct, IObserverStateMachine<ListProxy<TElement>?> =>
+            where TContinuation : struct, IStateMachine<ListProxy<TElement>?> =>
             source.ContinueWith(new ListStateMachine<TElement, TContinuation>(continuation));
     }
 

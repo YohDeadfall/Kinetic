@@ -11,17 +11,17 @@ public static partial class Observable
     public static ObserverBuilder<TResult[]> ToArray<TResult>(this IObservable<TResult> source) =>
         source.ToBuilder().ToArray();
 
-    private readonly struct ToArrayStateMachineFactory<TResult> : IObserverStateMachineFactory<TResult, TResult[]>
+    private readonly struct ToArrayStateMachineFactory<TResult> : IStateMachineFactory<TResult, TResult[]>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TResult> source)
-            where TContinuation : struct, IObserverStateMachine<TResult[]>
+            where TContinuation : struct, IStateMachine<TResult[]>
         {
             source.ContinueWith(new ToArrayStateMachine<TContinuation, TResult>(continuation));
         }
     }
 
-    private struct ToArrayStateMachine<TContinuation, TResult> : IObserverStateMachine<TResult>
-        where TContinuation : struct, IObserverStateMachine<TResult[]>
+    private struct ToArrayStateMachine<TContinuation, TResult> : IStateMachine<TResult>
+        where TContinuation : struct, IStateMachine<TResult[]>
     {
         private TContinuation _continuation;
         private TResult[] _result;
@@ -33,10 +33,10 @@ public static partial class Observable
             _result = Array.Empty<TResult>();
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

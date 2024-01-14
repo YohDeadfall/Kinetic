@@ -18,7 +18,7 @@ public static partial class Observable
     public static ObserverBuilder<T> OnNextAsync<T>(this ObserverBuilder<T> source, Func<T, ValueTask> onNext) =>
         source.ContinueWith<OnNextAsyncStateMachineFactory<T>, T>(new(onNext));
 
-    private readonly struct OnNextAsyncStateMachineFactory<T> : IObserverStateMachineFactory<T, T>
+    private readonly struct OnNextAsyncStateMachineFactory<T> : IStateMachineFactory<T, T>
     {
         private readonly Delegate _onNext;
 
@@ -29,7 +29,7 @@ public static partial class Observable
             _onNext = onNext;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IObserverStateMachine<T>
+            where TContinuation : struct, IStateMachine<T>
         {
             if (_onNext is Func<T, Task> onNextTask)
             {
@@ -47,8 +47,8 @@ public static partial class Observable
         }
     }
 
-    private struct OnNextAsyncStateMachine<TContinuation, T, TAwaiter, TAwaiterFactory> : IObserverStateMachine<T>
-        where TContinuation : struct, IObserverStateMachine<T>
+    private struct OnNextAsyncStateMachine<TContinuation, T, TAwaiter, TAwaiterFactory> : IStateMachine<T>
+        where TContinuation : struct, IStateMachine<T>
         where TAwaiter : struct, IAwaiter
         where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, T>
     {
@@ -61,10 +61,10 @@ public static partial class Observable
             _onNext = onNext;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>
@@ -89,7 +89,7 @@ public static partial class Observable
             }
             else
             {
-                var reference = new ObserverStateMachineReference<T, TContinuation>(ref _continuation);
+                var reference = new StateMachineReference<T, TContinuation>(ref _continuation);
                 var completion = () => ForwardResult(value, awaiter, ref reference.Target);
 
                 awaiter.OnCompleted(completion);

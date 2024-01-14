@@ -12,7 +12,7 @@ public static partial class Observable
     public static ObserverBuilder<TSource> Distinct<TSource>(this IObservable<TSource> source, IEqualityComparer<TSource>? comparer = null) =>
         source.ToBuilder().Distinct(comparer);
 
-    private readonly struct DistinctStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
+    private readonly struct DistinctStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly IEqualityComparer<TSource>? _comparer;
 
@@ -22,14 +22,14 @@ public static partial class Observable
         }
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
+            where TContinuation : struct, IStateMachine<TSource>
         {
             source.ContinueWith(new DistinctStateMachine<TContinuation, TSource>(continuation, _comparer));
         }
     }
 
-    private struct DistinctStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource>
+    private struct DistinctStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
         private readonly HashSet<TSource> _set;
@@ -40,10 +40,10 @@ public static partial class Observable
             _set = new HashSet<TSource>(comparer);
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

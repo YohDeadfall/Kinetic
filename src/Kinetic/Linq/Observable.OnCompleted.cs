@@ -11,7 +11,7 @@ public static partial class Observable
     public static ObserverBuilder<T> OnCompleted<T>(this ObserverBuilder<T> source, Action onCompleted) =>
         source.ContinueWith<OnCompletedStateMachineFactory<T>, T>(new(onCompleted));
 
-    private readonly struct OnCompletedStateMachineFactory<T> : IObserverStateMachineFactory<T, T>
+    private readonly struct OnCompletedStateMachineFactory<T> : IStateMachineFactory<T, T>
     {
         private readonly Action _onCompleted;
 
@@ -19,14 +19,14 @@ public static partial class Observable
             _onCompleted = onCompleted;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IObserverStateMachine<T>
+            where TContinuation : struct, IStateMachine<T>
         {
             source.ContinueWith(new OnCompletedStateMachine<TContinuation, T>(continuation, _onCompleted));
         }
     }
 
-    private struct OnCompletedStateMachine<TContinuation, T> : IObserverStateMachine<T>
-        where TContinuation : struct, IObserverStateMachine<T>
+    private struct OnCompletedStateMachine<TContinuation, T> : IStateMachine<T>
+        where TContinuation : struct, IStateMachine<T>
     {
         private TContinuation _continuation;
         private readonly Action _onCompleted;
@@ -37,10 +37,10 @@ public static partial class Observable
             _onCompleted = onCompleted;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

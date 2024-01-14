@@ -37,8 +37,8 @@ public static partial class Observable
     public static IDisposable Subscribe<T>(this ObserverBuilder<T> source, Action<T> onNext, Action<Exception> onError, Action onCompleted) =>
         source.Do(onNext, onError, onCompleted).Subscribe();
 
-    private sealed class SubscribeBox<T, TStateMachine> : ObserverStateMachineBox<T, TStateMachine>, IDisposable
-        where TStateMachine : struct, IObserverStateMachine<T>
+    private sealed class SubscribeBox<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IDisposable
+        where TStateMachine : struct, IStateMachine<T>
     {
         public SubscribeBox(in TStateMachine stateMachine) :
             base(stateMachine) => StateMachine.Initialize(this);
@@ -47,21 +47,21 @@ public static partial class Observable
             StateMachine.Dispose();
     }
 
-    private readonly struct SubscribeBoxFactory : IObserverFactory<IDisposable>
+    private readonly struct SubscribeBoxFactory : IStateMachineBoxFactory<IDisposable>
     {
         public IDisposable Create<T, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<T> =>
+            where TStateMachine : struct, IStateMachine<T> =>
             new SubscribeBox<T, TStateMachine>(stateMachine);
     }
 
-    private struct SubscribeStateMachine<T> : IObserverStateMachine<T>
+    private struct SubscribeStateMachine<T> : IStateMachine<T>
     {
-        private ObserverStateMachineBox? _box;
+        private StateMachineBox? _box;
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _box = box;
 
         public void Dispose() =>

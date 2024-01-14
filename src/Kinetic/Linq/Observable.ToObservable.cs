@@ -19,8 +19,8 @@ internal static class Observable<TResult>
         ref ObservableSubscriptions<TResult> Subscriptions { get; }
     }
 
-    private sealed class Box<T, TStateMachine> : ObserverStateMachineBox<T, TStateMachine>, IBox
-        where TStateMachine : struct, IObserverStateMachine<T>
+    private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IBox
+        where TStateMachine : struct, IStateMachine<T>
     {
         private ObservableSubscriptions<TResult> _subscriptions;
 
@@ -39,24 +39,24 @@ internal static class Observable<TResult>
             _subscriptions.Unsubscribe(subscription);
     }
 
-    internal readonly struct BoxFactory : IObserverFactory<IObservable<TResult>>
+    internal readonly struct BoxFactory : IStateMachineBoxFactory<IObservable<TResult>>
     {
         public IObservable<TResult> Create<T, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<T> =>
+            where TStateMachine : struct, IStateMachine<T> =>
             new Box<T, TStateMachine>(stateMachine);
     }
 
-    internal struct StateMachine : IObserverStateMachine<TResult>
+    internal struct StateMachine : IStateMachine<TResult>
     {
-        private ObserverStateMachineBox _box;
+        private StateMachineBox _box;
         private IntPtr _subscriptions;
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
 
         public void Dispose() { }
 
-        public void Initialize(ObserverStateMachineBox box)
+        public void Initialize(StateMachineBox box)
         {
             var boxTyped = (IBox) box;
 

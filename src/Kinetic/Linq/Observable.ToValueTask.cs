@@ -33,8 +33,8 @@ internal static class ValueTaskSource<TResult>
         ref ManualResetValueTaskSourceCore<TResult> Core { get; }
     }
 
-    private sealed class Box<T, TStateMachine> : ObserverStateMachineBox<T, TStateMachine>, IBox
-        where TStateMachine : struct, IObserverStateMachine<T>
+    private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IBox
+        where TStateMachine : struct, IStateMachine<T>
     {
         private ManualResetValueTaskSourceCore<TResult> _core;
 
@@ -52,24 +52,24 @@ internal static class ValueTaskSource<TResult>
             _core.OnCompleted(continuation, state, token, flags);
     }
 
-    internal readonly struct BoxFactory : IObserverFactory<IBoxExternal>
+    internal readonly struct BoxFactory : IStateMachineBoxFactory<IBoxExternal>
     {
         public IBoxExternal Create<T, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<T> =>
+            where TStateMachine : struct, IStateMachine<T> =>
             new Box<T, TStateMachine>(stateMachine);
     }
 
-    internal struct StateMachine : IObserverStateMachine<TResult>
+    internal struct StateMachine : IStateMachine<TResult>
     {
-        private ObserverStateMachineBox? _box;
+        private StateMachineBox? _box;
         private IntPtr _core;
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
 
         public void Dispose() { }
 
-        public void Initialize(ObserverStateMachineBox box)
+        public void Initialize(StateMachineBox box)
         {
             var boxTyped = (IBox) box;
 

@@ -12,8 +12,8 @@ public static partial class ObservableView
     public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, TResult> selector) =>
         source.Changed.ToBuilder().Select(selector);
 
-    private struct SelectStateMachine<TSource, TResult, TContinuation> : IObserverStateMachine<ListChange<TSource>>
-        where TContinuation : struct, IObserverStateMachine<ListChange<TResult>>
+    private struct SelectStateMachine<TSource, TResult, TContinuation> : IStateMachine<ListChange<TSource>>
+        where TContinuation : struct, IStateMachine<ListChange<TResult>>
     {
         private TContinuation _continuation;
         private readonly Func<TSource, TResult> _selector;
@@ -25,10 +25,10 @@ public static partial class ObservableView
             _selector = selector;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>
@@ -102,7 +102,7 @@ public static partial class ObservableView
         }
     }
 
-    private readonly struct SelectStateMachineFactory<TSource, TResult> : IObserverStateMachineFactory<ListChange<TSource>, ListChange<TResult>>
+    private readonly struct SelectStateMachineFactory<TSource, TResult> : IStateMachineFactory<ListChange<TSource>, ListChange<TResult>>
     {
         private readonly Func<TSource, TResult> _selector;
 
@@ -110,7 +110,7 @@ public static partial class ObservableView
             _selector = selector;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<TSource>> source)
-            where TContinuation : struct, IObserverStateMachine<ListChange<TResult>> =>
+            where TContinuation : struct, IStateMachine<ListChange<TResult>> =>
             source.ContinueWith(new SelectStateMachine<TSource, TResult, TContinuation>(continuation, _selector));
     }
 }

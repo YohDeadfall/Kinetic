@@ -14,7 +14,7 @@ public static partial class Observable
     public static ObserverBuilder<TSource> Throttle<TSource>(this IObservable<TSource> source, TimeSpan delay, bool continueOnCapturedContext = true) =>
         source.ToBuilder().Throttle(delay, continueOnCapturedContext);
 
-    private readonly struct ThrottleStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
+    private readonly struct ThrottleStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly TimeSpan _delay;
         private readonly bool _continueOnCapturedContext;
@@ -26,14 +26,14 @@ public static partial class Observable
         }
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
+            where TContinuation : struct, IStateMachine<TSource>
         {
             source.ContinueWith(new ThrottleStateMachine<TContinuation, TSource>(continuation, _delay, _continueOnCapturedContext));
         }
     }
 
-    private struct ThrottleStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource>
+    private struct ThrottleStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
         private ThrottleStateMachinePublisher<TSource> _publisher;
@@ -44,10 +44,10 @@ public static partial class Observable
             _publisher = new ThrottleStateMachinePublisher<TSource>(delay, continueOnCapturedContext);
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose()

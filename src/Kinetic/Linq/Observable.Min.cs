@@ -13,21 +13,21 @@ public static partial class Observable
     public static ObserverBuilder<TSource> Min<TSource>(this IObservable<TSource> source, IComparer<TSource>? comparer = null) =>
         source.ToBuilder().Min(comparer);
 
-    private readonly struct MinStateMachineBuilder<TSource> : IObserverStateMachineFactory<TSource, TSource>
+    private readonly struct MinStateMachineBuilder<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly IComparer<TSource>? _comparer;
 
         public MinStateMachineBuilder(IComparer<TSource>? comparer) => _comparer = comparer;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
+            where TContinuation : struct, IStateMachine<TSource>
         {
             source.ContinueWith(new MinStateMachine<TContinuation, TSource>(continuation, _comparer));
         }
     }
 
-    private struct MinStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource>
+    private struct MinStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
         private readonly IComparer<TSource>? _comparer;
@@ -42,10 +42,10 @@ public static partial class Observable
             _comparer = comparer;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

@@ -12,7 +12,7 @@ public static partial class Observable
     public static ObserverBuilder<bool> Contains<TSource>(this IObservable<TSource> source, TSource value, IEqualityComparer<TSource>? comparer = null) =>
         source.ToBuilder().Contains(value, comparer);
 
-    private readonly struct ContainsStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, bool>
+    private readonly struct ContainsStateMachineFactory<TSource> : IStateMachineFactory<TSource, bool>
     {
         private readonly TSource _value;
         private readonly IEqualityComparer<TSource>? _comparer;
@@ -24,14 +24,14 @@ public static partial class Observable
         }
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<bool>
+            where TContinuation : struct, IStateMachine<bool>
         {
             source.ContinueWith(new ContainsStateMachine<TContinuation, TSource>(continuation, _value, _comparer));
         }
     }
 
-    private struct ContainsStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<bool>
+    private struct ContainsStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<bool>
     {
         private TContinuation _continuation;
         private readonly TSource _value;
@@ -44,10 +44,10 @@ public static partial class Observable
             _comparer = comparer;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

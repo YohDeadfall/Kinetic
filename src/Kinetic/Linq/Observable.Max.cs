@@ -13,21 +13,21 @@ public static partial class Observable
     public static ObserverBuilder<TSource> Max<TSource>(this IObservable<TSource> source, IComparer<TSource>? comparer = null) =>
         source.ToBuilder().Max(comparer);
 
-    private readonly struct MaxStateMachineBuilder<TSource> : IObserverStateMachineFactory<TSource, TSource>
+    private readonly struct MaxStateMachineBuilder<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly IComparer<TSource>? _comparer;
 
         public MaxStateMachineBuilder(IComparer<TSource>? comparer) => _comparer = comparer;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
+            where TContinuation : struct, IStateMachine<TSource>
         {
             source.ContinueWith(new MaxStateMachine<TContinuation, TSource>(continuation, _comparer));
         }
     }
 
-    private struct MaxStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource>
+    private struct MaxStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
         private readonly IComparer<TSource>? _comparer;
@@ -42,10 +42,10 @@ public static partial class Observable
             _comparer = comparer;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

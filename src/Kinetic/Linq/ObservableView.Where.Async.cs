@@ -31,9 +31,9 @@ public static partial class ObservableView
         source.Where((item) => predicate(item).ToBuilder());
 
     private struct WhereAsyncStateMachine<T, TContinuation> :
-        IObserverStateMachine<ListChange<T>>,
-        IObserverStateMachine<ObservableViewItem<T>>
-        where TContinuation : struct, IObserverStateMachine<ListChange<T>>
+        IStateMachine<ListChange<T>>,
+        IStateMachine<ObservableViewItem<T>>
+        where TContinuation : struct, IStateMachine<ListChange<T>>
     {
         private TContinuation _continuation;
         private ObserverBuilderFactory<T, bool> _predicate;
@@ -45,10 +45,10 @@ public static partial class ObservableView
             _predicate = predicate;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose()
@@ -220,7 +220,7 @@ public static partial class ObservableView
         }
     }
 
-    private readonly struct WhereAsyncStateMachineFactory<T> : IObserverStateMachineFactory<ListChange<T>, ListChange<T>>
+    private readonly struct WhereAsyncStateMachineFactory<T> : IStateMachineFactory<ListChange<T>, ListChange<T>>
     {
         private readonly ObserverBuilderFactory<T, bool> _predicate;
 
@@ -228,12 +228,12 @@ public static partial class ObservableView
             _predicate = predicate;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<T>> source)
-            where TContinuation : struct, IObserverStateMachine<ListChange<T>> =>
+            where TContinuation : struct, IStateMachine<ListChange<T>> =>
             source.ContinueWith(new WhereAsyncStateMachine<T, TContinuation>(continuation, _predicate));
     }
 
-    private struct PredicateStateMachine<T, TContinuation> : IObserverStateMachine<bool>
-        where TContinuation : struct, IObserverStateMachine<ObservableViewItem<T>>
+    private struct PredicateStateMachine<T, TContinuation> : IStateMachine<bool>
+        where TContinuation : struct, IStateMachine<ObservableViewItem<T>>
     {
         private TContinuation _continuation;
         private readonly ObservableViewItem<T> _item;
@@ -244,10 +244,10 @@ public static partial class ObservableView
             _item = item;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>
@@ -271,7 +271,7 @@ public static partial class ObservableView
         }
     }
 
-    private readonly struct PredicateStateMachineFactory<T> : IObserverStateMachineFactory<bool, ObservableViewItem<T>>
+    private readonly struct PredicateStateMachineFactory<T> : IStateMachineFactory<bool, ObservableViewItem<T>>
     {
         private readonly ObservableViewItem<T> _item;
 
@@ -279,7 +279,7 @@ public static partial class ObservableView
             _item = item;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<bool> source)
-            where TContinuation : struct, IObserverStateMachine<ObservableViewItem<T>> =>
+            where TContinuation : struct, IStateMachine<ObservableViewItem<T>> =>
             source.ContinueWith(new PredicateStateMachine<T, TContinuation>(continuation, _item));
     }
 }

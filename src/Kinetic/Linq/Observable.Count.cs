@@ -17,17 +17,17 @@ public static partial class Observable
     public static ObserverBuilder<int> Count<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
         source.ToBuilder().Count(predicate);
 
-    private readonly struct CountStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, int>
+    private readonly struct CountStateMachineFactory<TSource> : IStateMachineFactory<TSource, int>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<int>
+            where TContinuation : struct, IStateMachine<int>
         {
             source.ContinueWith(new CountStateMachine<TContinuation, TSource>(continuation));
         }
     }
 
-    private struct CountStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<int>
+    private struct CountStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<int>
     {
         private TContinuation _continuation;
         private int _count;
@@ -38,10 +38,10 @@ public static partial class Observable
             _count = 0;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

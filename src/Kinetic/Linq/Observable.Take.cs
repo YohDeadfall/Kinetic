@@ -11,7 +11,7 @@ public static partial class Observable
     public static ObserverBuilder<TSource> Take<TSource>(this IObservable<TSource> source, int count) =>
         source.ToBuilder().Take(count);
 
-    private readonly struct TakeStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
+    private readonly struct TakeStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly int _count;
 
@@ -21,14 +21,14 @@ public static partial class Observable
         }
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
+            where TContinuation : struct, IStateMachine<TSource>
         {
             source.ContinueWith(new TakeStateMachine<TContinuation, TSource>(continuation, (uint) _count));
         }
     }
 
-    private struct TakeStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource>
+    private struct TakeStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
         private uint _count;
@@ -39,10 +39,10 @@ public static partial class Observable
             _count = count;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

@@ -17,21 +17,21 @@ public static partial class Observable
     public static ObserverBuilder<TSource?> DefaultIfEmpty<TSource>(this IObservable<TSource> source, TSource? defaultValue) =>
         source.ToBuilder().DefaultIfEmpty(defaultValue);
 
-    private readonly struct DefaultIfEmptyStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource?>
+    private readonly struct DefaultIfEmptyStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource?>
     {
         private readonly TSource? _defaultValue;
 
         public DefaultIfEmptyStateMachineFactory(TSource? defaultValue) => _defaultValue = defaultValue;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource?>
+            where TContinuation : struct, IStateMachine<TSource?>
         {
             source.ContinueWith(new DefaultIfEmptyStateMachine<TContinuation, TSource>(continuation, _defaultValue));
         }
     }
 
-    private struct DefaultIfEmptyStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource?>
+    private struct DefaultIfEmptyStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource?>
     {
         private TContinuation _continuation;
         private readonly TSource? _defaultValue;
@@ -44,10 +44,10 @@ public static partial class Observable
             _isEmpty = true;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

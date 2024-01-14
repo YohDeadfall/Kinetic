@@ -25,22 +25,22 @@ public sealed class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
     internal static ObservableView<T> Create(ObserverBuilder<ListChange<T>> builder)
     {
         var view = new ObservableView<T>();
-        return builder.Build<StateMachine, StateMachineBoxFactory, ObservableView<T>>(
+        return builder.Build<StateMachine, BoxFactory, ObservableView<T>>(
             continuation: new(view), factory: new(view));
     }
 
-    private struct StateMachine : IObserverStateMachine<ListChange<T>>
+    private struct StateMachine : IStateMachine<ListChange<T>>
     {
-        private ObserverStateMachineBox? _box;
+        private StateMachineBox? _box;
         private readonly ObservableView<T> _view;
 
         public StateMachine(ObservableView<T> view) =>
             _view = view;
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _box = box;
 
         public void Dispose() { }
@@ -75,10 +75,10 @@ public sealed class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
         }
     }
 
-    private sealed class StateMachineBox<TChange, TStateMachine> : ObserverStateMachineBox<TChange, TStateMachine>, IDisposable
-        where TStateMachine : struct, IObserverStateMachine<TChange>
+    private sealed class Box<TChange, TStateMachine> : StateMachineBox<TChange, TStateMachine>, IDisposable
+        where TStateMachine : struct, IStateMachine<TChange>
     {
-        public StateMachineBox(in TStateMachine stateMachine) :
+        public Box(in TStateMachine stateMachine) :
             base(stateMachine) =>
             StateMachine.Initialize(this);
 
@@ -86,17 +86,17 @@ public sealed class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
             StateMachine.Dispose();
     }
 
-    private readonly struct StateMachineBoxFactory : IObserverFactory<ObservableView<T>>
+    private readonly struct BoxFactory : IStateMachineBoxFactory<ObservableView<T>>
     {
         public readonly ObservableView<T> View;
 
-        public StateMachineBoxFactory(ObservableView<T> view) => View = view;
+        public BoxFactory(ObservableView<T> view) => View = view;
 
         public ObservableView<T> Create<TSource, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<TSource>
+            where TStateMachine : struct, IStateMachine<TSource>
         {
             Debug.Assert(View._stateMachineBox is null);
-            View._stateMachineBox = new StateMachineBox<TSource, TStateMachine>(stateMachine);
+            View._stateMachineBox = new Box<TSource, TStateMachine>(stateMachine);
 
             return View;
         }

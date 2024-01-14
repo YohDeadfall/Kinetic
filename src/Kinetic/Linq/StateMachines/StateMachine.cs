@@ -4,32 +4,32 @@ using System.Runtime.InteropServices;
 
 namespace Kinetic.Linq.StateMachines;
 
-public interface IObserverStateMachine<T> : IObserver<T>, IDisposable
+public interface IStateMachine<T> : IObserver<T>, IDisposable
 {
-    ObserverStateMachineBox Box { get; }
+    StateMachineBox Box { get; }
 
-    void Initialize(ObserverStateMachineBox box);
+    void Initialize(StateMachineBox box);
 }
 
-public interface IObserverStateMachineFactory<T, TResult>
+public interface IStateMachineFactory<T, TResult>
 {
     void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-        where TContinuation : struct, IObserverStateMachine<TResult>;
+        where TContinuation : struct, IStateMachine<TResult>;
 }
 
-public interface IObserverFactory<TObserver>
+public interface IStateMachineBoxFactory<TBox>
 {
-    TObserver Create<T, TStateMachine>(in TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<T>;
+    TBox Create<T, TStateMachine>(in TStateMachine stateMachine)
+        where TStateMachine : struct, IStateMachine<T>;
 }
 
-public readonly struct ObserverStateMachineReference<T, TStateMachine>
-    where TStateMachine : struct, IObserverStateMachine<T>
+public readonly struct StateMachineReference<T, TStateMachine>
+    where TStateMachine : struct, IStateMachine<T>
 {
-    private readonly ObserverStateMachineBox _box;
+    private readonly StateMachineBox _box;
     private readonly IntPtr _stateMachineOffset;
 
-    public ObserverStateMachineReference(ref TStateMachine stateMachine)
+    public StateMachineReference(ref TStateMachine stateMachine)
     {
         _box = stateMachine.Box;
         _stateMachineOffset = _box.OffsetTo<T, TStateMachine>(ref stateMachine);
@@ -39,14 +39,14 @@ public readonly struct ObserverStateMachineReference<T, TStateMachine>
         ref _box.ReferenceTo<T, TStateMachine>(_stateMachineOffset);
 }
 
-public abstract class ObserverStateMachineBox
+public abstract class StateMachineBox
 {
     private protected abstract ReadOnlySpan<byte> StateMachineData { get; }
 
-    private protected ObserverStateMachineBox() { }
+    private protected StateMachineBox() { }
 
     internal IntPtr OffsetTo<T, TStateMachine>(ref TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<T>
+        where TStateMachine : struct, IStateMachine<T>
     {
         var machineHost = StateMachineData;
         var machinePart = MemoryMarshal.CreateSpan(
@@ -72,8 +72,8 @@ public abstract class ObserverStateMachineBox
     }
 }
 
-public abstract class ObserverStateMachineBox<T, TStateMachine> : ObserverStateMachineBox, IObserver<T>
-    where TStateMachine : struct, IObserverStateMachine<T>
+public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObserver<T>
+    where TStateMachine : struct, IStateMachine<T>
 {
     private TStateMachine _stateMachine;
 
@@ -84,7 +84,7 @@ public abstract class ObserverStateMachineBox<T, TStateMachine> : ObserverStateM
 
     protected ref TStateMachine StateMachine => ref _stateMachine;
 
-    protected ObserverStateMachineBox(in TStateMachine stateMachine) =>
+    protected StateMachineBox(in TStateMachine stateMachine) =>
         _stateMachine = stateMachine;
 
     public void OnCompleted()

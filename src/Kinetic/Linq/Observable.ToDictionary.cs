@@ -45,7 +45,7 @@ public static partial class Observable
         return source.ToBuilder().ToDictionary(keySelector, valueSelector, comparer);
     }
 
-    private readonly struct ToDictionaryStateMachineFactory<TSource, TKey, TValue> : IObserverStateMachineFactory<TSource, Dictionary<TKey, TValue>>
+    private readonly struct ToDictionaryStateMachineFactory<TSource, TKey, TValue> : IStateMachineFactory<TSource, Dictionary<TKey, TValue>>
         where TKey : notnull
     {
         private readonly Func<TSource, TKey> _keySelector;
@@ -60,14 +60,14 @@ public static partial class Observable
         }
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<Dictionary<TKey, TValue>>
+            where TContinuation : struct, IStateMachine<Dictionary<TKey, TValue>>
         {
             source.ContinueWith(new ToDictionaryStateMachine<TContinuation, TSource, TKey, TValue>(continuation, _keySelector, _valueSelector, _comparer));
         }
     }
 
-    private struct ToDictionaryStateMachine<TContinuation, TSource, TKey, TValue> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<Dictionary<TKey, TValue>>
+    private struct ToDictionaryStateMachine<TContinuation, TSource, TKey, TValue> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<Dictionary<TKey, TValue>>
         where TKey : notnull
     {
         private TContinuation _continuation;
@@ -87,10 +87,10 @@ public static partial class Observable
             _valueSelector = valueSelector;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

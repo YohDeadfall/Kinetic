@@ -17,17 +17,17 @@ public static partial class Observable
     public static ObserverBuilder<TSource?> LastOrDefault<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
         source.ToBuilder().LastOrDefault(predicate);
 
-    private readonly struct LastOrDefaultStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource?>
+    private readonly struct LastOrDefaultStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource?>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource?>
+            where TContinuation : struct, IStateMachine<TSource?>
         {
             source.ContinueWith(new LastOrDefaultStateMachine<TContinuation, TSource>(continuation));
         }
     }
 
-    private struct LastOrDefaultStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource?>
+    private struct LastOrDefaultStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource?>
     {
         private TContinuation _continuation;
         private TSource? _last;
@@ -38,10 +38,10 @@ public static partial class Observable
             _last = default;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

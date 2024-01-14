@@ -17,27 +17,27 @@ public static partial class Observable
     public static ObserverBuilder<TSource?> FirstOrDefault<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
         source.ToBuilder().FirstOrDefault(predicate);
 
-    private readonly struct FirstOrDefaultStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource?>
+    private readonly struct FirstOrDefaultStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource?>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource?>
+            where TContinuation : struct, IStateMachine<TSource?>
         {
             source.ContinueWith(new FirstOrDefaultStateMachine<TContinuation, TSource>(continuation));
         }
     }
 
-    private struct FirstOrDefaultStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource?>
+    private struct FirstOrDefaultStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource?>
     {
         private TContinuation _continuation;
 
         public FirstOrDefaultStateMachine(TContinuation continuation) =>
             _continuation = continuation;
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

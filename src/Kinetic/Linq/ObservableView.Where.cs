@@ -11,8 +11,8 @@ public static partial class ObservableView
     public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, Func<T, bool> predicate) =>
         source.Changed.ToBuilder().Where(predicate);
 
-    private struct WhereStateMachine<T, TContinuation> : IObserverStateMachine<ListChange<T>>
-        where TContinuation : struct, IObserverStateMachine<ListChange<T>>
+    private struct WhereStateMachine<T, TContinuation> : IStateMachine<ListChange<T>>
+        where TContinuation : struct, IStateMachine<ListChange<T>>
     {
         private TContinuation _continuation;
         private ValueBitmap _itemPresence;
@@ -24,10 +24,10 @@ public static partial class ObservableView
             _predicate = predicate;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>
@@ -152,7 +152,7 @@ public static partial class ObservableView
         }
     }
 
-    private readonly struct WhereStateMachineFactory<T> : IObserverStateMachineFactory<ListChange<T>, ListChange<T>>
+    private readonly struct WhereStateMachineFactory<T> : IStateMachineFactory<ListChange<T>, ListChange<T>>
     {
         private readonly Func<T, bool> _predicate;
 
@@ -160,7 +160,7 @@ public static partial class ObservableView
             _predicate = predicate;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<T>> source)
-            where TContinuation : struct, IObserverStateMachine<ListChange<T>> =>
+            where TContinuation : struct, IStateMachine<ListChange<T>> =>
             source.ContinueWith(new WhereStateMachine<T, TContinuation>(continuation, _predicate));
     }
 }

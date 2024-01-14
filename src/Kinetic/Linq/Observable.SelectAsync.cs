@@ -18,7 +18,7 @@ public static partial class Observable
     public static ObserverBuilder<TResult> SelectAsync<TSource, TResult>(this IObservable<TSource> source, Func<TSource, ValueTask<TResult>> selector) =>
         source.ToBuilder().SelectAsync(selector);
 
-    private readonly struct SelectAsyncStateMachineFactory<TSource, TResult> : IObserverStateMachineFactory<TSource, TResult>
+    private readonly struct SelectAsyncStateMachineFactory<TSource, TResult> : IStateMachineFactory<TSource, TResult>
     {
         private readonly Delegate _selector;
 
@@ -29,7 +29,7 @@ public static partial class Observable
             _selector = selector;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TResult>
+            where TContinuation : struct, IStateMachine<TResult>
         {
             if (_selector is Func<TSource, Task<TResult>> taskSelector)
             {
@@ -63,8 +63,8 @@ public static partial class Observable
         }
     }
 
-    private struct SelectAsyncStateMachine<TContinuation, TSource, TResult, TAwaiter, TAwaiterFactory> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TResult>
+    private struct SelectAsyncStateMachine<TContinuation, TSource, TResult, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TResult>
         where TAwaiter : struct, IAwaiter<TResult>
         where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, TSource, TResult>
     {
@@ -77,10 +77,10 @@ public static partial class Observable
             _selector = selector;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>
@@ -105,7 +105,7 @@ public static partial class Observable
             }
             else
             {
-                var reference = new ObserverStateMachineReference<TResult, TContinuation>(ref _continuation);
+                var reference = new StateMachineReference<TResult, TContinuation>(ref _continuation);
                 var completion = () => ForwardResult(awaiter, ref reference.Target);
 
                 awaiter.OnCompleted(completion);

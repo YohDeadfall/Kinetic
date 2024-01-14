@@ -26,27 +26,27 @@ public static class KineticBindingPath
         source.ContinueWith<PropertyStateMachineFactory<TSource>, TSource?>(default).Property(selector);
 
     private struct PropertyStateMachineFactory<TSource>
-        : IObserverStateMachineFactory<Property<TSource>?, TSource?>
-        , IObserverStateMachineFactory<ReadOnlyProperty<TSource>?, TSource?>
+        : IStateMachineFactory<Property<TSource>?, TSource?>
+        , IStateMachineFactory<ReadOnlyProperty<TSource>?, TSource?>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<Property<TSource>?> source)
-            where TContinuation : struct, IObserverStateMachine<TSource?>
+            where TContinuation : struct, IStateMachine<TSource?>
         {
             source.ContinueWith(new PropertyStateMachine<TContinuation, TSource>(continuation));
         }
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ReadOnlyProperty<TSource>?> source)
-            where TContinuation : struct, IObserverStateMachine<TSource?>
+            where TContinuation : struct, IStateMachine<TSource?>
         {
             source.ContinueWith(new PropertyStateMachine<TContinuation, TSource>(continuation));
         }
     }
 
     private struct PropertyStateMachine<TContinuation, TSource>
-        : IObserverStateMachine<Property<TSource>?>
-        , IObserverStateMachine<ReadOnlyProperty<TSource>?>
-        , IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource?>
+        : IStateMachine<Property<TSource>?>
+        , IStateMachine<ReadOnlyProperty<TSource>?>
+        , IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource?>
     {
         private TContinuation _continuation;
         private IDisposable? _subscription;
@@ -54,10 +54,10 @@ public static class KineticBindingPath
         public PropertyStateMachine(TContinuation continuation) =>
             _continuation = continuation;
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose()

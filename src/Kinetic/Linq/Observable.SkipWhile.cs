@@ -11,7 +11,7 @@ public static partial class Observable
     public static ObserverBuilder<TSource> SkipWhile<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
         source.ToBuilder().SkipWhile(predicate);
 
-    private readonly struct SkipWhileStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
+    private readonly struct SkipWhileStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly Func<TSource, bool> _predicate;
 
@@ -21,14 +21,14 @@ public static partial class Observable
         }
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
+            where TContinuation : struct, IStateMachine<TSource>
         {
             source.ContinueWith(new SkipWhileStateMachine<TContinuation, TSource>(continuation, _predicate));
         }
     }
 
-    private struct SkipWhileStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource>
+    private struct SkipWhileStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
         private Func<TSource, bool>? _predicate;
@@ -39,10 +39,10 @@ public static partial class Observable
             _predicate = predicate;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

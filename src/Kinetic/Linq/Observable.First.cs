@@ -18,17 +18,17 @@ public static partial class Observable
     public static ObserverBuilder<TSource> First<TSource>(this IObservable<TSource> source, Func<TSource, bool> predicate) =>
         source.ToBuilder().First(predicate);
 
-    private readonly struct FirstStateMachineFactory<TSource> : IObserverStateMachineFactory<TSource, TSource>
+    private readonly struct FirstStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
-            where TContinuation : struct, IObserverStateMachine<TSource>
+            where TContinuation : struct, IStateMachine<TSource>
         {
             source.ContinueWith(new FirstStateMachine<TContinuation, TSource>(continuation));
         }
     }
 
-    private struct FirstStateMachine<TContinuation, TSource> : IObserverStateMachine<TSource>
-        where TContinuation : struct, IObserverStateMachine<TSource>
+    private struct FirstStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
         private bool _notCompleted;
@@ -39,10 +39,10 @@ public static partial class Observable
             _notCompleted = true;
         }
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
         public void Dispose() =>

@@ -5,17 +5,17 @@ namespace Kinetic.Linq.StateMachines;
 public static partial class Observable
 {
     public static IDisposable Subscribe<T, TStateMachine>(this IObservable<T> source, ref TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<T> =>
+        where TStateMachine : struct, IStateMachine<T> =>
         source.ToBuilder().Subscribe(ref stateMachine);
 
     public static IDisposable Subscribe<T, TStateMachine>(this ObserverBuilder<T> source, ref TStateMachine stateMachine)
-        where TStateMachine : struct, IObserverStateMachine<T> =>
+        where TStateMachine : struct, IStateMachine<T> =>
         source.Build<SubscribeStateMachine<T, TStateMachine>, SubscribeBoxFactory, IDisposable>(
             continuation: new(new(ref stateMachine)),
             factory: new());
 
-    private sealed class SubscribeBox<T, TStateMachine> : ObserverStateMachineBox<T, TStateMachine>, IDisposable
-        where TStateMachine : struct, IObserverStateMachine<T>
+    private sealed class SubscribeBox<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IDisposable
+        where TStateMachine : struct, IStateMachine<T>
     {
         public SubscribeBox(in TStateMachine stateMachine) :
             base(stateMachine) => StateMachine.Initialize(this);
@@ -24,26 +24,26 @@ public static partial class Observable
             StateMachine.Dispose();
     }
 
-    private readonly struct SubscribeBoxFactory : IObserverFactory<IDisposable>
+    private readonly struct SubscribeBoxFactory : IStateMachineBoxFactory<IDisposable>
     {
         public IDisposable Create<T, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IObserverStateMachine<T> =>
+            where TStateMachine : struct, IStateMachine<T> =>
             new SubscribeBox<T, TStateMachine>(stateMachine);
     }
 
-    private struct SubscribeStateMachine<T, TStateMachine> : IObserverStateMachine<T>
-        where TStateMachine : struct, IObserverStateMachine<T>
+    private struct SubscribeStateMachine<T, TStateMachine> : IStateMachine<T>
+        where TStateMachine : struct, IStateMachine<T>
     {
-        private readonly ObserverStateMachineReference<T, TStateMachine> _stateMachine;
-        private ObserverStateMachineBox? _box;
+        private readonly StateMachineReference<T, TStateMachine> _stateMachine;
+        private StateMachineBox? _box;
 
-        public SubscribeStateMachine(ObserverStateMachineReference<T, TStateMachine> stateMachine) =>
+        public SubscribeStateMachine(StateMachineReference<T, TStateMachine> stateMachine) =>
             _stateMachine = stateMachine;
 
-        public ObserverStateMachineBox Box =>
+        public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
 
-        public void Initialize(ObserverStateMachineBox box) =>
+        public void Initialize(StateMachineBox box) =>
             _box = box;
 
         public void Dispose() { }

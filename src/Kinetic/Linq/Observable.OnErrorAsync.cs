@@ -56,10 +56,10 @@ public static partial class Observable
         private TContinuation _continuation;
         private readonly TAwaiterFactory _onError;
 
-        public OnErrorAsyncStateMachine(in TContinuation continuation, TAwaiterFactory onNext)
+        public OnErrorAsyncStateMachine(in TContinuation continuation, TAwaiterFactory onError)
         {
             _continuation = continuation;
-            _onError = onNext;
+            _onError = onError;
         }
 
         public ObserverStateMachineBox Box =>

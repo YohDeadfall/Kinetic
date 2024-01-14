@@ -88,6 +88,12 @@ internal struct AwaiterForValueTask<T> : IAwaiter<T>
         _awaiter.GetResult();
 }
 
+interface IAwaiterFactory<TAwaiter>
+    where TAwaiter : struct, IAwaiter
+{
+    TAwaiter GetAwaiter();
+}
+
 interface IAwaiterFactory<TAwaiter, TSource>
     where TAwaiter : struct, IAwaiter
 {
@@ -98,6 +104,18 @@ interface IAwaiterFactory<TAwaiter, TSource, TResult>
     where TAwaiter : struct, IAwaiter<TResult>
 {
     TAwaiter GetAwaiter(TSource value);
+}
+
+internal readonly struct AwaiterFactoryForTask :
+    IAwaiterFactory<AwaiterForTask>
+{
+    private readonly Func<Task> _factory;
+
+    public AwaiterFactoryForTask(Func<Task> factory) =>
+        _factory = factory;
+
+    public AwaiterForTask GetAwaiter() =>
+        new(_factory().GetAwaiter());
 }
 
 internal readonly struct AwaiterFactoryForTask<TSource> :
@@ -122,6 +140,18 @@ internal readonly struct AwaiterFactoryForTask<TSource, TResult> :
 
     public AwaiterForTask<TResult> GetAwaiter(TSource value) =>
         new(_factory(value).GetAwaiter());
+}
+
+internal readonly struct AwaiterFactoryForValueTask :
+    IAwaiterFactory<AwaiterForValueTask>
+{
+    private readonly Func<ValueTask> _factory;
+
+    public AwaiterFactoryForValueTask(Func<ValueTask> factory) =>
+        _factory = factory;
+
+    public AwaiterForValueTask GetAwaiter() =>
+        new(_factory().GetAwaiter());
 }
 
 internal readonly struct AwaiterFactoryForValueTask<TSource> :

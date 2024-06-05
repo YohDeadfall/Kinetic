@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -7,46 +6,61 @@ namespace Kinetic.Linq;
 public static partial class ObservableView
 {
     public static ObservableView<T> ToView<T>(this ObserverBuilder<ListChange<T>> builder) =>
-        ObservableView<T>.Create(builder);
+        new ObservableView<T>(builder);
 }
 
-public sealed class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
+public class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
 {
-    private IDisposable? _stateMachineBox;
+    private readonly IDisposable _stateMachineBox;
 
-    private ObservableView() { }
+    public ObservableView(ObserverBuilder<ListChange<T>> builder) =>
+        _stateMachineBox = builder
+            .ContinueWith<BindStateMachineFactory, ListChange<T>>(new(this))
+            .Subscribe();
 
-    public void Dispose()
+    public void Dispose() =>
+        _stateMachineBox.Dispose();
+
+    private readonly struct BindStateMachineFactory : IStateMachineFactory<ListChange<T>, ListChange<T>>
     {
-        _stateMachineBox?.Dispose();
-        _stateMachineBox = null;
-    }
-
-    internal static ObservableView<T> Create(ObserverBuilder<ListChange<T>> builder)
-    {
-        var view = new ObservableView<T>();
-        return builder.Build<StateMachine, BoxFactory, ObservableView<T>>(
-            continuation: new(view), factory: new(view));
-    }
-
-    private struct StateMachine : IStateMachine<ListChange<T>>
-    {
-        private StateMachineBox? _box;
         private readonly ObservableView<T> _view;
 
-        public StateMachine(ObservableView<T> view) =>
+        public BindStateMachineFactory(ObservableView<T> view) =>
             _view = view;
 
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<T>> source)
+            where TContinuation : struct, IStateMachine<ListChange<T>>
+        {
+            source.ContinueWith<BindStateMachine<TContinuation>>(new(continuation, _view));
+        }
+    }
+
+    private struct BindStateMachine<TContinuation> : IStateMachine<ListChange<T>>
+        where TContinuation : struct, IStateMachine<ListChange<T>>
+    {
+        private TContinuation _continuation;
+        private readonly ObservableView<T> _view;
+
+        public BindStateMachine(in TContinuation continuation, ObservableView<T> view)
+        {
+            _continuation = continuation;
+            _view = view;
+        }
+
         public StateMachineBox Box =>
-            _box ?? throw new InvalidOperationException();
+            _continuation.Box;
 
         public void Initialize(StateMachineBox box) =>
-            _box = box;
+            _continuation.Initialize(box);
 
-        public void Dispose() { }
+        public void Dispose() =>
+            _continuation.Dispose();
 
-        public void OnCompleted() { }
-        public void OnError(Exception error) { }
+        public void OnCompleted() =>
+            _continuation.OnCompleted();
+
+        public void OnError(Exception error) =>
+            _continuation.OnError(error);
 
         public void OnNext(ListChange<T> value)
         {
@@ -72,33 +86,6 @@ public sealed class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
                     _view.MoveItem(value.OldIndex, value.NewIndex);
                     break;
             }
-        }
-    }
-
-    private sealed class Box<TChange, TStateMachine> : StateMachineBox<TChange, TStateMachine>, IDisposable
-        where TStateMachine : struct, IStateMachine<TChange>
-    {
-        public Box(in TStateMachine stateMachine) :
-            base(stateMachine) =>
-            StateMachine.Initialize(this);
-
-        public void Dispose() =>
-            StateMachine.Dispose();
-    }
-
-    private readonly struct BoxFactory : IStateMachineBoxFactory<ObservableView<T>>
-    {
-        public readonly ObservableView<T> View;
-
-        public BoxFactory(ObservableView<T> view) => View = view;
-
-        public ObservableView<T> Create<TSource, TStateMachine>(in TStateMachine stateMachine)
-            where TStateMachine : struct, IStateMachine<TSource>
-        {
-            Debug.Assert(View._stateMachineBox is null);
-            View._stateMachineBox = new Box<TSource, TStateMachine>(stateMachine);
-
-            return View;
         }
     }
 }

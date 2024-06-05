@@ -6,7 +6,7 @@ namespace Kinetic.Linq;
 
 public static partial class ObservableView
 {
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, ObserverBuilderFactory<TSource, TResult> selector) =>
+    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, ObserverBuilder<TResult>> selector) =>
         source.ContinueWith<SelectAsyncStateMachineFactory<TSource, TResult>, ListChange<TResult>>(new(selector));
 
     public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, Property<TResult>> selector) =>
@@ -18,28 +18,28 @@ public static partial class ObservableView
     public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, IObservable<TResult>> selector) =>
         source.Select((item) => selector(item).ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, ObserverBuilderFactory<TSource, TResult> selector) =>
+    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, ObserverBuilder<TResult>> selector) =>
         source.Changed.ToBuilder().Select(selector);
 
     public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, Property<TResult>> selector) =>
-        source.Select((item) => selector(item).Changed.ToBuilder());
+        source.Changed.ToBuilder().Select((item) => selector(item).Changed.ToBuilder());
 
     public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, ReadOnlyProperty<TResult>> selector) =>
-        source.Select((item) => selector(item).Changed.ToBuilder());
+        source.Changed.ToBuilder().Select((item) => selector(item).Changed.ToBuilder());
 
     public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TResult>> selector) =>
-        source.Select((item) => selector(item).ToBuilder());
+        source.Changed.ToBuilder().Select((item) => selector(item).ToBuilder());
 
     private struct SelectAsyncStateMachine<TSource, TResult, TContinuation> :
         IStateMachine<ListChange<TSource>>,
         IStateMachine<ObservableViewItem<TResult>>
         where TContinuation : struct, IStateMachine<ListChange<TResult>>
     {
-        private readonly ObserverBuilderFactory<TSource, TResult> _selector;
+        private readonly Func<TSource, ObserverBuilder<TResult>> _selector;
         private readonly List<ObservableViewItem<TResult>> _items = new();
         private TContinuation _continuation;
 
-        public SelectAsyncStateMachine(in TContinuation continuation, ObserverBuilderFactory<TSource, TResult> selector)
+        public SelectAsyncStateMachine(in TContinuation continuation, Func<TSource, ObserverBuilder<TResult>> selector)
         {
             _continuation = continuation;
             _selector = selector;
@@ -233,9 +233,9 @@ public static partial class ObservableView
 
     private readonly struct SelectAsyncStateMachineFactory<TSource, TResult> : IStateMachineFactory<ListChange<TSource>, ListChange<TResult>>
     {
-        private readonly ObserverBuilderFactory<TSource, TResult> _selector;
+        private readonly Func<TSource, ObserverBuilder<TResult>> _selector;
 
-        public SelectAsyncStateMachineFactory(ObserverBuilderFactory<TSource, TResult> selector) =>
+        public SelectAsyncStateMachineFactory(Func<TSource, ObserverBuilder<TResult>> selector) =>
             _selector = selector;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<TSource>> source)

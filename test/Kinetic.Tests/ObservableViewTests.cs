@@ -1,9 +1,163 @@
+using System;
+using System.Linq;
 using Xunit;
 
 namespace Kinetic.Linq.Tests;
 
 public class ObservableViewTests
 {
+    [Fact]
+    public void GroupByWithoutComparer()
+    {
+        var list = new ObservableList<Item>();
+        var groupings = list.GroupBy(item => item.Name.Get()).ToView();
+        var groupingsOrdered = list.GroupBy(item => item.Name.Get(), items => items.OrderBy(item => item.Number)).ToView();
+
+        var itemA = new Item(0, "A");
+        var itemB = new Item(1, "B");
+        var itemC = new Item(2, "A");
+        var itemD = new Item(3, "B");
+
+        list.Add(itemB);
+        list.Add(itemC);
+        list.Add(itemD);
+        list.Add(itemA);
+
+        var aGrouping = groupings.First(g => g.Key == "A");
+        var bGrouping = groupings.First(g => g.Key == "B");
+        var aGroupingOrdered = groupingsOrdered.First(g => g.Key == "A");
+        var bGroupingOrdered = groupingsOrdered.First(g => g.Key == "B");
+
+        Assert.Equal(new[] { bGrouping, aGrouping }, groupings);
+        Assert.Equal(new[] { itemC, itemA }, aGrouping);
+        Assert.Equal(new[] { itemB, itemD }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered, aGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemA, itemC }, aGroupingOrdered);
+        Assert.Equal(new[] { itemB, itemD }, bGroupingOrdered);
+
+        list.Move(1, 0);
+
+        Assert.Equal(new[] { bGrouping, aGrouping }, groupings);
+        Assert.Equal(new[] { itemC, itemA }, aGrouping);
+        Assert.Equal(new[] { itemB, itemD }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered, aGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemA, itemC }, aGroupingOrdered);
+        Assert.Equal(new[] { itemB, itemD }, bGroupingOrdered);
+
+        itemA.Number.Set(5);
+        itemB.Number.Set(4);
+
+        Assert.Equal(new[] { bGrouping, aGrouping }, groupings);
+        Assert.Equal(new[] { itemC, itemA }, aGrouping);
+        Assert.Equal(new[] { itemB, itemD }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered, aGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemC, itemA }, aGroupingOrdered);
+        Assert.Equal(new[] { itemD, itemB }, bGroupingOrdered);
+
+        list.Remove(itemA);
+        list.Remove(itemD);
+
+        Assert.Equal(new[] { bGrouping, aGrouping }, groupings);
+        Assert.Equal(new[] { itemC }, aGrouping);
+        Assert.Equal(new[] { itemB }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered, aGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemC }, aGroupingOrdered);
+        Assert.Equal(new[] { itemB }, bGroupingOrdered);
+
+        list[1] = itemD;
+
+        Assert.Equal(new[] { bGrouping }, groupings);
+        Assert.Equal(new[] { itemB, itemD }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemD, itemB }, bGroupingOrdered);
+
+        list.Clear();
+
+        Assert.Empty(groupings);
+        Assert.Empty(groupingsOrdered);
+    }
+
+    [Fact]
+    public void GroupByWithComparer()
+    {
+        var list = new ObservableList<Item>();
+        var groupings = list.GroupBy(item => item.Name.Get(), StringComparer.OrdinalIgnoreCase).ToView();
+        var groupingsOrdered = list.GroupBy(item => item.Name.Get(), items => items.OrderBy(item => item.Number), StringComparer.OrdinalIgnoreCase).ToView();
+
+        var itemA = new Item(0, "A");
+        var itemB = new Item(1, "B");
+        var itemC = new Item(2, "a");
+        var itemD = new Item(3, "b");
+
+        list.Add(itemB);
+        list.Add(itemC);
+        list.Add(itemD);
+        list.Add(itemA);
+
+        var aGrouping = groupings.First(g => g.Key == "a");
+        var bGrouping = groupings.First(g => g.Key == "B");
+        var aGroupingOrdered = groupingsOrdered.First(g => g.Key == "a");
+        var bGroupingOrdered = groupingsOrdered.First(g => g.Key == "B");
+
+        Assert.Equal(new[] { bGrouping, aGrouping }, groupings);
+        Assert.Equal(new[] { itemC, itemA }, aGrouping);
+        Assert.Equal(new[] { itemB, itemD }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered, aGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemA, itemC }, aGroupingOrdered);
+        Assert.Equal(new[] { itemB, itemD }, bGroupingOrdered);
+
+        list.Move(1, 0);
+
+        Assert.Equal(new[] { bGrouping, aGrouping }, groupings);
+        Assert.Equal(new[] { itemC, itemA }, aGrouping);
+        Assert.Equal(new[] { itemB, itemD }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered, aGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemA, itemC }, aGroupingOrdered);
+        Assert.Equal(new[] { itemB, itemD }, bGroupingOrdered);
+
+        itemA.Number.Set(5);
+        itemB.Number.Set(4);
+
+        Assert.Equal(new[] { bGrouping, aGrouping }, groupings);
+        Assert.Equal(new[] { itemC, itemA }, aGrouping);
+        Assert.Equal(new[] { itemB, itemD }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered, aGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemC, itemA }, aGroupingOrdered);
+        Assert.Equal(new[] { itemD, itemB }, bGroupingOrdered);
+
+        list.Remove(itemA);
+        list.Remove(itemD);
+
+        Assert.Equal(new[] { bGrouping, aGrouping }, groupings);
+        Assert.Equal(new[] { itemC }, aGrouping);
+        Assert.Equal(new[] { itemB }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered, aGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemC }, aGroupingOrdered);
+        Assert.Equal(new[] { itemB }, bGroupingOrdered);
+
+        list[1] = itemD;
+
+        Assert.Equal(new[] { bGrouping }, groupings);
+        Assert.Equal(new[] { itemB, itemD }, bGrouping);
+
+        Assert.Equal(new[] { bGroupingOrdered }, groupingsOrdered);
+        Assert.Equal(new[] { itemD, itemB }, bGroupingOrdered);
+
+        list.Clear();
+
+        Assert.Empty(groupings);
+        Assert.Empty(groupingsOrdered);
+    }
+
     [Fact]
     public void OrderByStatic()
     {

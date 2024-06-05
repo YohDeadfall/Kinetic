@@ -5,23 +5,27 @@ using System.Runtime.CompilerServices;
 
 namespace Kinetic.Linq.StateMachines;
 
-public delegate ObserverBuilder<TResult> ObserverBuilderFactory<T, TResult>(T value);
-
 public static class ObserverBuilder
 {
     public static ObserverBuilder<T> ToBuilder<T>(this IObservable<T> source) =>
         ObserverBuilder<T>.Create(source);
 }
 
-public ref struct ObserverBuilder<T>
+public readonly struct ObserverBuilder<T>
 {
-    private ObserverBuilderStep<T> _outer;
-    private ObserverBuilderStep _inner;
+    private readonly ObserverBuilderStep<T> _outer;
+    private readonly ObserverBuilderStep _inner;
+
+    private ObserverBuilder(ObserverBuilderStep<T> outer, ObserverBuilderStep inner)
+    {
+        _outer = outer;
+        _inner = inner;
+    }
 
     public static ObserverBuilder<T> Create(IObservable<T> source)
     {
         var step = new ObserverBuilderStateMachineStep<T, T, StateMachineFactory> { StateMachine = new(source) };
-        var builder = new ObserverBuilder<T> { _outer = step, _inner = step };
+        var builder = new ObserverBuilder<T>(step, step);
 
         return builder;
     }
@@ -30,7 +34,7 @@ public ref struct ObserverBuilder<T>
         where TStateMachine : struct, IStateMachineFactory<T, TResult>
     {
         var step = new ObserverBuilderStateMachineStep<T, TResult, TStateMachine> { StateMachine = stateMachine, Next = _outer };
-        var builder = new ObserverBuilder<TResult> { _outer = step, _inner = _inner ?? step };
+        var builder = new ObserverBuilder<TResult>(step, _inner ?? step);
 
         return builder;
     }

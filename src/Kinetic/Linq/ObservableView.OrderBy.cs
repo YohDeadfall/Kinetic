@@ -317,14 +317,28 @@ public static partial class ObservableView
             {
                 Debug.Assert(typeof(TItem) == typeof(DynamicItem));
 
-                var item = value.Item1;
-                // Old index search is based on reference equality,
-                // while the new index is key comparison based.
+                ref var item = ref value.Item1;
+                // The index search uses two separate BinarySearch calls
+                // to exclude the current item which already has a new key.
                 var oldIndex = _items.IndexOf(item);
-                var newIndex = _items.BinarySearch(item, _keyComparer.ItemComparer);
+                var newIndex = oldIndex;
 
-                if (newIndex < 0)
-                    newIndex = ~newIndex;
+                if (oldIndex > 0)
+                {
+                    newIndex = _items.BinarySearch(index: 0, count: oldIndex, item, _keyComparer.ItemComparer);
+
+                    if (newIndex < 0)
+                        newIndex = ~newIndex;
+                }
+
+                if (newIndex == oldIndex &&
+                    newIndex < _items.Count - 1)
+                {
+                    newIndex = _items.BinarySearch(newIndex + 1, _items.Count - newIndex - 1, item, _keyComparer.ItemComparer);
+
+                    if (newIndex < 0)
+                        newIndex = ~newIndex;
+                }
 
                 if (oldIndex != newIndex)
                 {
@@ -375,7 +389,7 @@ public static partial class ObservableView
                 {
                     foreach (ref var current in indexes)
                     {
-                        if (current > newIndex && current < oldIndex)
+                        if (current >= newIndex && current < oldIndex)
                             current += 1;
                     }
 

@@ -79,10 +79,10 @@ public class ObservableViewTests
         Assert.Equal(new[] { itemA, itemB, itemC, itemD }, view);
 
         itemA.Number.Set(5);
-        itemB.Number.Set(4);
+        itemC.Number.Set(0);
 
         Assert.Equal(new[] { itemA, itemC, itemD, itemB }, list);
-        Assert.Equal(new[] { itemC, itemD, itemB, itemA }, view);
+        Assert.Equal(new[] { itemC, itemB, itemD, itemA }, view);
 
         list.Remove(itemA);
         list.Remove(itemD);
@@ -111,7 +111,7 @@ public class ObservableViewTests
         list.Add(itemB);
 
         Assert.Equal(new[] { itemA, itemC, itemD, itemB }, list);
-        Assert.Equal(new[] { itemC, itemD, itemB, itemA }, view);
+        Assert.Equal(new[] { itemC, itemB, itemD, itemA }, view);
     }
 
     [Fact]

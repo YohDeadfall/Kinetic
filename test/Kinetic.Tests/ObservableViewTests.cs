@@ -337,6 +337,54 @@ public class ObservableViewTests
     }
 
     [Fact]
+    public void OnItemAdded()
+    {
+        var list = new ObservableList<int>();
+        var handledBefore = false;
+        var handledAfter = false;
+
+        using var changes = list
+            .Changed
+            .Do(_ => handledBefore = true)
+            .OnItemAdded(item =>
+            {
+                Assert.True(handledBefore);
+                Assert.False(handledAfter);
+            })
+            .Do(_ => handledAfter = true)
+            .Subscribe();
+
+        list.Add(0);
+
+        Assert.True(handledBefore);
+        Assert.True(handledAfter);
+    }
+
+    [Fact]
+    public void OnItemRemoved()
+    {
+        var list = new ObservableList<int>();
+        var handledBefore = false;
+        var handledAfter = false;
+
+        using var changes = list
+            .Changed
+            .Do(_ => handledBefore = true)
+            .OnItemRemoved(item =>
+            {
+                Assert.True(handledBefore);
+                Assert.True(handledAfter);
+            })
+            .Do(_ => handledAfter = true)
+            .Subscribe();
+
+        list.Add(0);
+
+        Assert.True(handledBefore);
+        Assert.True(handledAfter);
+    }
+
+    [Fact]
     public void OrderByStatic()
     {
         var list = new ObservableList<Item>();

@@ -164,6 +164,7 @@ public abstract class ObservableObject
     }
 }
 
+[DebuggerDisplay("Get()")]
 public readonly struct Property<T>
 {
     internal readonly ObservableObject Owner;
@@ -185,6 +186,7 @@ public readonly struct Property<T>
         new ReadOnlyProperty<T>(property.Owner, property.Offset);
 }
 
+[DebuggerDisplay("Get()")]
 public readonly struct ReadOnlyProperty<T>
 {
     internal readonly ObservableObject Owner;

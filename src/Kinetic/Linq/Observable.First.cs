@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -23,11 +22,11 @@ public static partial class Observable
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
             where TContinuation : struct, IStateMachine<TSource>
         {
-            source.ContinueWith(new FirstStateMachine<TContinuation, TSource>(continuation));
+            source.ContinueWith(new FirstStateMachine<TSource, TContinuation>(continuation));
         }
     }
 
-    private struct FirstStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+    private struct FirstStateMachine<TSource, TContinuation> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;

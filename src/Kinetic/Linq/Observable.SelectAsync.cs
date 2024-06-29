@@ -35,9 +35,9 @@ public static partial class Observable
             {
                 source.ContinueWith(
                     new SelectAsyncStateMachine<
-                        TContinuation,
                         TSource,
                         TResult,
+                        TContinuation,
                         AwaiterForTask<TResult>,
                         AwaiterFactoryForTask<TSource, TResult>>
                         (continuation, new(taskSelector)));
@@ -49,9 +49,9 @@ public static partial class Observable
             {
                 source.ContinueWith(
                     new SelectAsyncStateMachine<
-                        TContinuation,
                         TSource,
                         TResult,
+                        TContinuation,
                         AwaiterForValueTask<TResult>,
                         AwaiterFactoryForValueTask<TSource, TResult>>
                         (continuation, new(valueTaskSelector)));
@@ -63,7 +63,7 @@ public static partial class Observable
         }
     }
 
-    private struct SelectAsyncStateMachine<TContinuation, TSource, TResult, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
+    private struct SelectAsyncStateMachine<TSource, TResult, TContinuation, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TResult>
         where TAwaiter : struct, IAwaiter<TResult>
         where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, TSource, TResult>

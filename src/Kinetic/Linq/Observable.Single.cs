@@ -23,11 +23,11 @@ public static partial class Observable
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
             where TContinuation : struct, IStateMachine<TSource>
         {
-            source.ContinueWith(new SingleStateMachine<TContinuation, TSource>(continuation));
+            source.ContinueWith(new SingleStateMachine<TSource, TContinuation>(continuation));
         }
     }
 
-    private struct SingleStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+    private struct SingleStateMachine<TSource, TContinuation> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;

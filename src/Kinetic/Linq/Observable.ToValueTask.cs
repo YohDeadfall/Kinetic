@@ -13,7 +13,7 @@ public static partial class Observable
 
     public static ValueTask<T> ToValueTask<T>(this ObserverBuilder<T> source)
     {
-        var taskSource = source.First().Build<ValueTaskSource<T>.StateMachine, ValueTaskSource<T>.BoxFactory, ValueTaskSource<T>.IBoxExternal>(
+        var taskSource = source.First().Build<ValueTaskSource<T>.ValueTaskStateMachine, ValueTaskSource<T>.BoxFactory, ValueTaskSource<T>.IBoxExternal>(
             continuation: new(),
             factory: new());
 
@@ -59,13 +59,19 @@ internal static class ValueTaskSource<TResult>
             new Box<T, TStateMachine>(stateMachine);
     }
 
-    internal struct StateMachine : IStateMachine<TResult>
+    internal struct ValueTaskStateMachine : IStateMachine<TResult>
     {
         private StateMachineBox? _box;
         private IntPtr _core;
 
         public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
+
+        public StateMachine<TResult> Reference =>
+            StateMachine<TResult>.Create(ref this);
+
+        public StateMachine? Continuation =>
+            null;
 
         public void Dispose() { }
 
@@ -75,7 +81,7 @@ internal static class ValueTaskSource<TResult>
 
             _box = box;
             _core = Unsafe.ByteOffset(
-                ref Unsafe.As<StateMachine, IntPtr>(ref this),
+                ref Unsafe.As<ValueTaskStateMachine, IntPtr>(ref this),
                 ref Unsafe.As<ManualResetValueTaskSourceCore<TResult>, IntPtr>(ref boxTyped.Core));
         }
 
@@ -83,10 +89,10 @@ internal static class ValueTaskSource<TResult>
         public void OnError(Exception error) => GetCore(ref this).SetException(error);
         public void OnNext(TResult value) => GetCore(ref this).SetResult(value);
 
-        private static ref ManualResetValueTaskSourceCore<TResult> GetCore(ref StateMachine self) =>
+        private static ref ManualResetValueTaskSourceCore<TResult> GetCore(ref ValueTaskStateMachine self) =>
             ref Unsafe.As<IntPtr, ManualResetValueTaskSourceCore<TResult>>(
                 ref Unsafe.AddByteOffset(
-                    ref Unsafe.As<StateMachine, IntPtr>(ref self),
+                    ref Unsafe.As<ValueTaskStateMachine, IntPtr>(ref self),
                     self._core));
     }
 }

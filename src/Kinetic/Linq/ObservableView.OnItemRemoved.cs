@@ -1,5 +1,8 @@
 using System;
+using System.Buffers;
+using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -23,12 +26,12 @@ public static partial class ObservableView
         }
     }
 
-    private struct OnItemRemovedStateMachine<TSource, TContinuation> : IStateMachine<ListChange<TSource>>
+    private struct OnItemRemovedStateMachine<TSource, TContinuation> : IStateMachine<ListChange<TSource>>, IReadOnlyList<TSource>
         where TContinuation : struct, IStateMachine<ListChange<TSource>>
     {
         private TContinuation _continuation;
+        private IReadOnlyList<TSource>? _items;
         private readonly Action<TSource> _action;
-        private readonly List<TSource> _items = new();
 
         public OnItemRemovedStateMachine(in TContinuation continuation, Action<TSource> action)
         {
@@ -39,8 +42,26 @@ public static partial class ObservableView
         public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Initialize(StateMachineBox box) =>
+        public int Count =>
+            _items!.Count;
+
+        public StateMachine<ListChange<TSource>> Reference =>
+            new ListStateMachine<TSource, OnItemRemovedStateMachine<TSource, TContinuation>>(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
+
+        public TSource this[int index] =>
+            _items![index];
+
+        public StateMachine<ListChange<TSource>> GetReference() =>
+            new ListStateMachine<TSource, OnItemRemovedStateMachine<TSource, TContinuation>>(ref this);
+
+        public void Initialize(StateMachineBox box)
+        {
             _continuation.Initialize(box);
+            _items = _continuation.Reference as IReadOnlyList<TSource> ?? new List<TSource>();
+        }
 
         public void Dispose() =>
             _continuation.Dispose();
@@ -53,58 +74,79 @@ public static partial class ObservableView
 
         public void OnNext(ListChange<TSource> value)
         {
-            _continuation.OnNext(value);
-
             switch (value.Action)
             {
                 case ListChangeAction.RemoveAll:
                     {
-                        foreach (var item in _items)
+                        var buffer = _items!.ToArray();
+
+                        _continuation.OnNext(value);
+
+                        foreach (var item in buffer)
                             _action(item);
 
-                        _items.Clear();
+                        if (_items is List<TSource> items)
+                            items.Clear();
 
                         break;
                     }
                 case ListChangeAction.Remove:
                     {
                         var index = value.OldIndex;
-                        var item = _items[value.OldIndex];
+                        var item = _items![value.OldIndex];
 
+                        _continuation.OnNext(value);
                         _action(item);
-                        _items.RemoveAt(index);
+
+                        if (_items is List<TSource> items)
+                            items.RemoveAt(index);
 
                         break;
                     }
                 case ListChangeAction.Insert:
                     {
-                        _items.Insert(
-                            value.NewIndex,
-                            value.NewItem);
+                        _continuation.OnNext(value);
+
+                        if (_items is List<TSource> items)
+                            items.Insert(value.NewIndex, value.NewItem);
 
                         break;
                     }
                 case ListChangeAction.Replace:
                     {
                         var index = value.OldIndex;
-                        var item = _items[index];
+                        var item = _items![index];
 
+                        _continuation.OnNext(value);
                         _action(item);
-                        _items[index] = value.NewItem;
+
+                        if (_items is List<TSource> items)
+                            items[index] = value.NewItem;
 
                         break;
                     }
                 case ListChangeAction.Move:
                     {
-                        var index = value.OldIndex;
-                        var item = _items[index];
+                        _continuation.OnNext(value);
 
-                        _items.RemoveAt(index);
-                        _items.Insert(index, item);
+                        if (_items is List<TSource> items)
+                        {
+                            var index = value.OldIndex;
+                            var item = items[index];
+
+                            items.RemoveAt(index);
+                            items.Insert(index, item);
+                        }
 
                         break;
                     }
             }
         }
+
+        public IEnumerator<TSource> GetEnumerator() =>
+            _items!.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            _items!.GetEnumerator();
     }
 }

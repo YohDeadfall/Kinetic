@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -35,7 +37,7 @@ public class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
         }
     }
 
-    private struct BindStateMachine<TContinuation> : IStateMachine<ListChange<T>>
+    private struct BindStateMachine<TContinuation> : IStateMachine<ListChange<T>>, IReadOnlyList<T>
         where TContinuation : struct, IStateMachine<ListChange<T>>
     {
         private TContinuation _continuation;
@@ -49,6 +51,18 @@ public class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
 
         public StateMachineBox Box =>
             _continuation.Box;
+
+        public StateMachine<ListChange<T>> Reference =>
+            new ListStateMachine<T, BindStateMachine<TContinuation>>(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
+
+        public int Count =>
+            _view.Count;
+
+        public T this[int index] =>
+            _view[index];
 
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
@@ -87,5 +101,11 @@ public class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
                     break;
             }
         }
+
+        public IEnumerator<T> GetEnumerator() =>
+            _view.GetEnumerator();
+
+        IEnumerator IEnumerable.GetEnumerator() =>
+            _view.GetEnumerator();
     }
 }

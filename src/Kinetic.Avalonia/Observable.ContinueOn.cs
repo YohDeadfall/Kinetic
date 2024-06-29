@@ -53,6 +53,12 @@ public static class Observable
         public StateMachineBox Box =>
             _continuation.Box;
 
+        public StateMachine<TSource> Reference =>
+            new StateMachine<TSource, ContinueOnDispatcherStateMachine<TContinuation, TSource>>(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
+
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 

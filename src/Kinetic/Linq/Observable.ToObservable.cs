@@ -6,8 +6,8 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static IObservable<T> ToObservable<T>(this ObserverBuilder<T> source) =>
-        source.Build<Observable<T>.StateMachine, Observable<T>.BoxFactory, IObservable<T>>(
+    public static IObservable<TSource> ToObservable<TSource>(this ObserverBuilder<TSource> source) =>
+        source.Build<Observable<TSource>.ObservableStateMachine, Observable<TSource>.BoxFactory, IObservable<TSource>>(
             continuation: new(),
             factory: new());
 }
@@ -46,13 +46,19 @@ internal static class Observable<TResult>
             new Box<T, TStateMachine>(stateMachine);
     }
 
-    internal struct StateMachine : IStateMachine<TResult>
+    internal struct ObservableStateMachine : IStateMachine<TResult>
     {
         private StateMachineBox _box;
         private IntPtr _subscriptions;
 
         public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
+
+        public StateMachine<TResult> Reference =>
+            StateMachine<TResult>.Create(ref this);
+
+        public StateMachine? Continuation =>
+            null;
 
         public void Dispose() { }
 
@@ -62,7 +68,7 @@ internal static class Observable<TResult>
 
             _box = box;
             _subscriptions = Unsafe.ByteOffset(
-                ref Unsafe.As<StateMachine, IntPtr>(ref this),
+                ref Unsafe.As<ObservableStateMachine, IntPtr>(ref this),
                 ref Unsafe.As<ObservableSubscriptions<TResult>, IntPtr>(ref boxTyped.Subscriptions));
         }
 
@@ -75,10 +81,10 @@ internal static class Observable<TResult>
         public void OnNext(TResult value) =>
             GetSubscriptions(ref this).OnNext(value);
 
-        private static ref ObservableSubscriptions<TResult> GetSubscriptions(ref StateMachine self) =>
+        private static ref ObservableSubscriptions<TResult> GetSubscriptions(ref ObservableStateMachine self) =>
             ref Unsafe.As<IntPtr, ObservableSubscriptions<TResult>>(
                 ref Unsafe.AddByteOffset(
-                    ref Unsafe.As<StateMachine, IntPtr>(ref self),
+                    ref Unsafe.As<ObservableStateMachine, IntPtr>(ref self),
                     self._subscriptions));
     }
 }

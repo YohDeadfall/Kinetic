@@ -23,11 +23,11 @@ public static partial class Observable
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
             where TContinuation : struct, IStateMachine<TSource>
         {
-            source.ContinueWith(new TakeStateMachine<TContinuation, TSource>(continuation, (uint) _count));
+            source.ContinueWith(new TakeStateMachine<TSource, TContinuation>(continuation, (uint) _count));
         }
     }
 
-    private struct TakeStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+    private struct TakeStateMachine<TSource, TContinuation> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
@@ -41,6 +41,12 @@ public static partial class Observable
 
         public StateMachineBox Box =>
             _continuation.Box;
+
+        public StateMachine<TSource> Reference =>
+            StateMachine<TSource>.Create(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
 
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);

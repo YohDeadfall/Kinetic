@@ -176,6 +176,12 @@ public abstract class KineticBinding : IBinding
         public StateMachineBox Box =>
             (StateMachineBox) (_box ?? throw new InvalidOperationException());
 
+        public StateMachine<TProperty> Reference =>
+            new StateMachine<TProperty, PublishStateMachine<TProperty>>(ref this);
+
+        public StateMachine? Continuation =>
+            null;
+
         public void Initialize(StateMachineBox box) =>
             _box = (IBox) box;
 
@@ -212,6 +218,24 @@ public abstract class KineticBinding : IBinding
 
         public StateMachineBox Box =>
             _continuation.Box;
+
+        StateMachine<Property<TProperty>?> IStateMachine<Property<TProperty>?>.Reference =>
+            new StateMachine<Property<TProperty>?, PropertyStateMachine<TContinuation, TProperty>>(ref this);
+
+        StateMachine<ReadOnlyProperty<TProperty>?> IStateMachine<ReadOnlyProperty<TProperty>?>.Reference =>
+            new StateMachine<ReadOnlyProperty<TProperty>?, PropertyStateMachine<TContinuation, TProperty>>(ref this);
+
+        StateMachine<TProperty> IStateMachine<TProperty>.Reference =>
+            new StateMachine<TProperty, PropertyStateMachine<TContinuation, TProperty>>(ref this);
+
+        StateMachine? IStateMachine<Property<TProperty>?>.Continuation =>
+            _continuation.Reference;
+
+        StateMachine? IStateMachine<ReadOnlyProperty<TProperty>?>.Continuation =>
+            _continuation.Reference;
+
+        StateMachine? IStateMachine<TProperty>.Continuation =>
+            null;
 
         public void Initialize(StateMachineBox box)
         {
@@ -297,6 +321,18 @@ public abstract class KineticBinding : IBinding
 
         public StateMachineBox Box =>
             _continuation.Box;
+
+        StateMachine<ObservableList<TElement>?> IStateMachine<ObservableList<TElement>?>.Reference =>
+            new StateMachine<ObservableList<TElement>?, ListStateMachine<TElement, TContinuation>>(ref this);
+
+        StateMachine<ReadOnlyObservableList<TElement>?> IStateMachine<ReadOnlyObservableList<TElement>?>.Reference =>
+            new StateMachine<ReadOnlyObservableList<TElement>?, ListStateMachine<TElement, TContinuation>>(ref this);
+
+        StateMachine? IStateMachine<ObservableList<TElement>?>.Continuation =>
+            _continuation.Reference;
+
+        StateMachine? IStateMachine<ReadOnlyObservableList<TElement>?>.Continuation =>
+            _continuation.Reference;
 
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);

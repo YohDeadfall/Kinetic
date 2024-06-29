@@ -25,9 +25,9 @@ public static class KineticBindingPath
     public static ObserverBuilder<ReadOnlyProperty<TResult>?> Property<TSource, TResult>(this ObserverBuilder<ReadOnlyProperty<TSource>?> source, Func<TSource?, ReadOnlyProperty<TResult>?> selector) =>
         source.ContinueWith<PropertyStateMachineFactory<TSource>, TSource?>(default).Property(selector);
 
-    private struct PropertyStateMachineFactory<TSource>
-        : IStateMachineFactory<Property<TSource>?, TSource?>
-        , IStateMachineFactory<ReadOnlyProperty<TSource>?, TSource?>
+    private struct PropertyStateMachineFactory<TSource> :
+        IStateMachineFactory<Property<TSource>?, TSource?>,
+        IStateMachineFactory<ReadOnlyProperty<TSource>?, TSource?>
     {
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<Property<TSource>?> source)
             where TContinuation : struct, IStateMachine<TSource?>
@@ -42,10 +42,10 @@ public static class KineticBindingPath
         }
     }
 
-    private struct PropertyStateMachine<TContinuation, TSource>
-        : IStateMachine<Property<TSource>?>
-        , IStateMachine<ReadOnlyProperty<TSource>?>
-        , IStateMachine<TSource>
+    private struct PropertyStateMachine<TContinuation, TSource> :
+        IStateMachine<Property<TSource>?>,
+        IStateMachine<ReadOnlyProperty<TSource>?>,
+        IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource?>
     {
         private TContinuation _continuation;
@@ -56,6 +56,24 @@ public static class KineticBindingPath
 
         public StateMachineBox Box =>
             _continuation.Box;
+
+        StateMachine<Property<TSource>?> IStateMachine<Property<TSource>?>.Reference =>
+            new StateMachine<Property<TSource>?, PropertyStateMachine<TContinuation, TSource>>(ref this);
+
+        StateMachine<ReadOnlyProperty<TSource>?> IStateMachine<ReadOnlyProperty<TSource>?>.Reference =>
+            new StateMachine<ReadOnlyProperty<TSource>?, PropertyStateMachine<TContinuation, TSource>>(ref this);
+
+        StateMachine<TSource> IStateMachine<TSource>.Reference =>
+            new StateMachine<TSource, PropertyStateMachine<TContinuation, TSource>>(ref this);
+
+        StateMachine? IStateMachine<Property<TSource>?>.Continuation =>
+            _continuation.Reference;
+
+        StateMachine? IStateMachine<ReadOnlyProperty<TSource>?>.Continuation =>
+            _continuation.Reference;
+
+        StateMachine? IStateMachine<TSource>.Continuation =>
+            null;
 
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);

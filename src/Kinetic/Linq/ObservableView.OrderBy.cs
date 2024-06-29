@@ -187,6 +187,24 @@ public static partial class ObservableView
             public StateMachineBox Box =>
                 _continuation.Box;
 
+            StateMachine<ListChange<T>> StateMachines.IStateMachine<ListChange<T>>.Reference =>
+                StateMachine<ListChange<T>>.Create(ref this);
+
+            StateMachine<ValueTuple<TItem>> StateMachines.IStateMachine<ValueTuple<TItem>>.Reference =>
+                StateMachine<ValueTuple<TItem>>.Create(ref this);
+
+            StateMachine<IComparer<TKey>?> StateMachines.IStateMachine<IComparer<TKey>?>.Reference =>
+                StateMachine<IComparer<TKey>?>.Create(ref this);
+
+            StateMachine? StateMachines.IStateMachine<ListChange<T>>.Continuation =>
+                _continuation.Reference;
+
+            StateMachine? StateMachines.IStateMachine<ValueTuple<TItem>>.Continuation =>
+                null;
+
+            StateMachine? StateMachines.IStateMachine<IComparer<TKey>?>.Continuation =>
+                null;
+
             public void Initialize(StateMachineBox box)
             {
                 _continuation.Initialize(box);
@@ -497,6 +515,12 @@ public static partial class ObservableView
 
                 public StateMachineBox Box =>
                     _continuation.Box;
+
+                public StateMachines.StateMachine<TKey> Reference =>
+                    StateMachines.StateMachine<TKey>.Create(ref this);
+
+                public StateMachine? Continuation =>
+                    null;
 
                 public void Initialize(StateMachineBox box) =>
                     _continuation.Initialize(box);

@@ -40,6 +40,12 @@ public static partial class Observable
         public StateMachineBox Box =>
             _continuation.Box;
 
+        public StateMachine<TSource> Reference =>
+            StateMachine<TSource>.Create(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
+
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 

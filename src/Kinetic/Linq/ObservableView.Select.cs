@@ -28,6 +28,12 @@ public static partial class ObservableView
         public StateMachineBox Box =>
             _continuation.Box;
 
+        public StateMachine<ListChange<TSource>> Reference =>
+            StateMachine<ListChange<TSource>>.Create(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
+
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 

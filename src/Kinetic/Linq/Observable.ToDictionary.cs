@@ -62,11 +62,11 @@ public static partial class Observable
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
             where TContinuation : struct, IStateMachine<Dictionary<TKey, TValue>>
         {
-            source.ContinueWith(new ToDictionaryStateMachine<TContinuation, TSource, TKey, TValue>(continuation, _keySelector, _valueSelector, _comparer));
+            source.ContinueWith(new ToDictionaryStateMachine<TSource, TKey, TValue, TContinuation>(continuation, _keySelector, _valueSelector, _comparer));
         }
     }
 
-    private struct ToDictionaryStateMachine<TContinuation, TSource, TKey, TValue> : IStateMachine<TSource>
+    private struct ToDictionaryStateMachine<TSource, TKey, TValue, TContinuation> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<Dictionary<TKey, TValue>>
         where TKey : notnull
     {

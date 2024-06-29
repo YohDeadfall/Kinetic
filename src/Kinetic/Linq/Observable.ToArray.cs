@@ -5,32 +5,32 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TResult[]> ToArray<TResult>(this ObserverBuilder<TResult> source) =>
-        source.ContinueWith<ToArrayStateMachineFactory<TResult>, TResult[]>(default);
+    public static ObserverBuilder<TSource[]> ToArray<TSource>(this ObserverBuilder<TSource> source) =>
+        source.ContinueWith<ToArrayStateMachineFactory<TSource>, TSource[]>(default);
 
-    public static ObserverBuilder<TResult[]> ToArray<TResult>(this IObservable<TResult> source) =>
+    public static ObserverBuilder<TSource[]> ToArray<TSource>(this IObservable<TSource> source) =>
         source.ToBuilder().ToArray();
 
-    private readonly struct ToArrayStateMachineFactory<TResult> : IStateMachineFactory<TResult, TResult[]>
+    private readonly struct ToArrayStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource[]>
     {
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TResult> source)
-            where TContinuation : struct, IStateMachine<TResult[]>
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IStateMachine<TSource[]>
         {
-            source.ContinueWith(new ToArrayStateMachine<TContinuation, TResult>(continuation));
+            source.ContinueWith(new ToArrayStateMachine<TSource, TContinuation>(continuation));
         }
     }
 
-    private struct ToArrayStateMachine<TContinuation, TResult> : IStateMachine<TResult>
-        where TContinuation : struct, IStateMachine<TResult[]>
+    private struct ToArrayStateMachine<TSource, TContinuation> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource[]>
     {
         private TContinuation _continuation;
-        private TResult[] _result;
+        private TSource[] _result;
         private int _length;
 
         public ToArrayStateMachine(in TContinuation continuation)
         {
             _continuation = continuation;
-            _result = Array.Empty<TResult>();
+            _result = Array.Empty<TSource>();
         }
 
         public StateMachineBox Box =>
@@ -45,7 +45,7 @@ public static partial class Observable
         private void IncreareResultLength()
         {
             var length = _length == 0 ? 4 : _length * 2;
-            var result = new TResult[length];
+            var result = new TSource[length];
 
             if (_length != 0)
             {
@@ -55,7 +55,7 @@ public static partial class Observable
             _result = result;
         }
 
-        public void OnNext(TResult value)
+        public void OnNext(TSource value)
         {
             if (_result.Length == _length)
             {
@@ -74,7 +74,7 @@ public static partial class Observable
             var result = _result;
             if (result.Length != _length)
             {
-                result = new TResult[_length];
+                result = new TSource[_length];
                 Array.Copy(_result, result, _length);
             }
 

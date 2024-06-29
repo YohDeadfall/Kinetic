@@ -22,11 +22,11 @@ public static partial class Observable
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
             where TContinuation : struct, IStateMachine<TSource>
         {
-            source.ContinueWith(new MaxStateMachine<TContinuation, TSource>(continuation, _comparer));
+            source.ContinueWith(new MaxStateMachine<TSource, TContinuation>(continuation, _comparer));
         }
     }
 
-    private struct MaxStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+    private struct MaxStateMachine<TSource, TContinuation> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;

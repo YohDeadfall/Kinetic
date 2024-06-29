@@ -26,11 +26,11 @@ public static partial class Observable
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
             where TContinuation : struct, IStateMachine<TSource?>
         {
-            source.ContinueWith(new DefaultIfEmptyStateMachine<TContinuation, TSource>(continuation, _defaultValue));
+            source.ContinueWith(new DefaultIfEmptyStateMachine<TSource, TContinuation>(continuation, _defaultValue));
         }
     }
 
-    private struct DefaultIfEmptyStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+    private struct DefaultIfEmptyStateMachine<TSource, TContinuation> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource?>
     {
         private TContinuation _continuation;

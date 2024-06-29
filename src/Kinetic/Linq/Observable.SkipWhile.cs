@@ -23,11 +23,11 @@ public static partial class Observable
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
             where TContinuation : struct, IStateMachine<TSource>
         {
-            source.ContinueWith(new SkipWhileStateMachine<TContinuation, TSource>(continuation, _predicate));
+            source.ContinueWith(new SkipWhileStateMachine<TSource, TContinuation>(continuation, _predicate));
         }
     }
 
-    private struct SkipWhileStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+    private struct SkipWhileStateMachine<TSource, TContinuation> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;

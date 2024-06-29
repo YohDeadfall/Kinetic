@@ -6,19 +6,19 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<T> OnCompletedAsync<T>(this IObservable<T> source, Func<Task> onCompleted) =>
+    public static ObserverBuilder<TSource> OnCompletedAsync<TSource>(this IObservable<TSource> source, Func<Task> onCompleted) =>
         source.ToBuilder().OnCompletedAsync(onCompleted);
 
-    public static ObserverBuilder<T> OnError<T>(this IObservable<T> source, Func<ValueTask> onCompleted) =>
+    public static ObserverBuilder<TSource> OnError<TSource>(this IObservable<TSource> source, Func<ValueTask> onCompleted) =>
         source.ToBuilder().OnCompletedAsync(onCompleted);
 
-    public static ObserverBuilder<T> OnCompletedAsync<T>(this ObserverBuilder<T> source, Func<Task> onCompleted) =>
-        source.ContinueWith<OnCompletedAsyncStateMachineFactory<T>, T>(new(onCompleted));
+    public static ObserverBuilder<TSource> OnCompletedAsync<TSource>(this ObserverBuilder<TSource> source, Func<Task> onCompleted) =>
+        source.ContinueWith<OnCompletedAsyncStateMachineFactory<TSource>, TSource>(new(onCompleted));
 
-    public static ObserverBuilder<T> OnCompletedAsync<T>(this ObserverBuilder<T> source, Func<ValueTask> onCompleted) =>
-        source.ContinueWith<OnCompletedAsyncStateMachineFactory<T>, T>(new(onCompleted));
+    public static ObserverBuilder<TSource> OnCompletedAsync<TSource>(this ObserverBuilder<TSource> source, Func<ValueTask> onCompleted) =>
+        source.ContinueWith<OnCompletedAsyncStateMachineFactory<TSource>, TSource>(new(onCompleted));
 
-    private readonly struct OnCompletedAsyncStateMachineFactory<T> : IStateMachineFactory<T, T>
+    private readonly struct OnCompletedAsyncStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly Delegate _onError;
 
@@ -28,19 +28,21 @@ public static partial class Observable
         public OnCompletedAsyncStateMachineFactory(Func<ValueTask> onError) =>
             _onError = onError;
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IStateMachine<T>
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IStateMachine<TSource>
         {
             if (_onError is Func<Task> onCompleted)
             {
-                source.ContinueWith(new OnCompletedAsyncStateMachine<TContinuation, T, AwaiterForTask, AwaiterFactoryForTask>(continuation, new(onCompleted)));
+                source.ContinueWith<OnCompletedAsyncStateMachine<TSource, TContinuation, AwaiterForTask, AwaiterFactoryForTask>>(
+                    new(continuation, new(onCompleted)));
 
                 return;
             }
 
             if (_onError is Func<ValueTask> onCopletedValueTask)
             {
-                source.ContinueWith(new OnCompletedAsyncStateMachine<TContinuation, T, AwaiterForValueTask, AwaiterFactoryForValueTask>(continuation, new(onCopletedValueTask)));
+                source.ContinueWith<OnCompletedAsyncStateMachine<TSource, TContinuation, AwaiterForValueTask, AwaiterFactoryForValueTask>>(
+                    new(continuation, new(onCopletedValueTask)));
 
                 return;
             }
@@ -49,8 +51,8 @@ public static partial class Observable
         }
     }
 
-    private struct OnCompletedAsyncStateMachine<TContinuation, T, TAwaiter, TAwaiterFactory> : IStateMachine<T>
-        where TContinuation : struct, IStateMachine<T>
+    private struct OnCompletedAsyncStateMachine<TSource, TContinuation, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
         where TAwaiter : struct, IAwaiter
         where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter>
     {
@@ -72,7 +74,7 @@ public static partial class Observable
         public void Dispose() =>
             _continuation.Dispose();
 
-        public void OnNext(T value) =>
+        public void OnNext(TSource value) =>
             _continuation.OnNext(value);
 
         public void OnError(Exception error) =>
@@ -97,7 +99,7 @@ public static partial class Observable
             }
             else
             {
-                var reference = new StateMachineReference<T, TContinuation>(ref _continuation);
+                var reference = new StateMachineReference<TSource, TContinuation>(ref _continuation);
                 var completion = () => ForwardResult(awaiter, ref reference.Target);
 
                 awaiter.OnCompleted(completion);

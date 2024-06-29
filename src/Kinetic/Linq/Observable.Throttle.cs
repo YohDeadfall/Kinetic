@@ -28,11 +28,11 @@ public static partial class Observable
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
             where TContinuation : struct, IStateMachine<TSource>
         {
-            source.ContinueWith(new ThrottleStateMachine<TContinuation, TSource>(continuation, _delay, _continueOnCapturedContext));
+            source.ContinueWith(new ThrottleStateMachine<TSource, TContinuation>(continuation, _delay, _continueOnCapturedContext));
         }
     }
 
-    private struct ThrottleStateMachine<TContinuation, TSource> : IStateMachine<TSource>
+    private struct ThrottleStateMachine<TSource, TContinuation> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;

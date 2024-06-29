@@ -35,8 +35,8 @@ public static partial class Observable
             {
                 source.ContinueWith(
                     new WhereAsyncStateMachine<
-                        TContinuation,
                         TSource,
+                        TContinuation,
                         AwaiterForTask<bool>,
                         AwaiterFactoryForTask<TSource, bool>>
                         (continuation, new(taskPredicate)));
@@ -48,8 +48,8 @@ public static partial class Observable
             {
                 source.ContinueWith(
                     new WhereAsyncStateMachine<
-                        TContinuation,
                         TSource,
+                        TContinuation,
                         AwaiterForValueTask<bool>,
                         AwaiterFactoryForValueTask<TSource, bool>>
                         (continuation, new(valueTaskPredicate)));
@@ -61,7 +61,7 @@ public static partial class Observable
         }
     }
 
-    private struct WhereAsyncStateMachine<TContinuation, TSource, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
+    private struct WhereAsyncStateMachine<TSource, TContinuation, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource>
         where TAwaiter : struct, IAwaiter<bool>
         where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, TSource, bool>

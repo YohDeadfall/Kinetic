@@ -5,33 +5,33 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<T> OnNext<T>(this IObservable<T> source, Action<T> onNext) =>
+    public static ObserverBuilder<TSource> OnNext<TSource>(this IObservable<TSource> source, Action<TSource> onNext) =>
         source.ToBuilder().OnNext(onNext);
 
-    public static ObserverBuilder<T> OnNext<T>(this ObserverBuilder<T> source, Action<T> onNext) =>
-        source.ContinueWith<OnNextStateMachineFactory<T>, T>(new(onNext));
+    public static ObserverBuilder<TSource> OnNext<TSource>(this ObserverBuilder<TSource> source, Action<TSource> onNext) =>
+        source.ContinueWith<OnNextStateMachineFactory<TSource>, TSource>(new(onNext));
 
-    private readonly struct OnNextStateMachineFactory<T> : IStateMachineFactory<T, T>
+    private readonly struct OnNextStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
-        private readonly Action<T> _onNext;
+        private readonly Action<TSource> _onNext;
 
-        public OnNextStateMachineFactory(Action<T> onNext) =>
+        public OnNextStateMachineFactory(Action<TSource> onNext) =>
             _onNext = onNext;
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IStateMachine<T>
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IStateMachine<TSource>
         {
-            source.ContinueWith(new OnNextStateMachine<TContinuation, T>(continuation, _onNext));
+            source.ContinueWith(new OnNextStateMachine<TSource, TContinuation>(continuation, _onNext));
         }
     }
 
-    private struct OnNextStateMachine<TContinuation, T> : IStateMachine<T>
-        where TContinuation : struct, IStateMachine<T>
+    private struct OnNextStateMachine<TSource, TContinuation> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
-        private readonly Action<T> _onNext;
+        private readonly Action<TSource> _onNext;
 
-        public OnNextStateMachine(in TContinuation continuation, Action<T> onNext)
+        public OnNextStateMachine(in TContinuation continuation, Action<TSource> onNext)
         {
             _continuation = continuation;
             _onNext = onNext;
@@ -46,7 +46,7 @@ public static partial class Observable
         public void Dispose() =>
             _continuation.Dispose();
 
-        public void OnNext(T value)
+        public void OnNext(TSource value)
         {
             try
             {

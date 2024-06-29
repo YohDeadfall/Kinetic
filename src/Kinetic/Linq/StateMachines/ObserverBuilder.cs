@@ -24,7 +24,7 @@ public readonly struct ObserverBuilder<T>
 
     public static ObserverBuilder<T> Create(IObservable<T> source)
     {
-        var step = new ObserverBuilderStateMachineStep<T, T, StateMachineFactory> { StateMachine = new(source) };
+        var step = new ObserverBuilderStateMachineStep<T, T, ObserverStateMachineFactory<T>> { StateMachine = new(source) };
         var builder = new ObserverBuilder<T>(step, step);
 
         return builder;
@@ -49,58 +49,6 @@ public readonly struct ObserverBuilder<T>
         _outer.ContinueWith(continuation);
 
         return observer.Observer;
-    }
-
-    private struct StateMachine<TContinuation> : IStateMachine<T>
-        where TContinuation : struct, IStateMachine<T>
-    {
-        private TContinuation _continuation;
-        private IObservable<T>? _observable;
-        private IDisposable? _subscription;
-
-        public StateMachine(in TContinuation continuation, IObservable<T> observable)
-        {
-            _continuation = continuation;
-            _observable = observable;
-            _subscription = null;
-        }
-
-        public StateMachineBox Box =>
-            _continuation.Box;
-
-        public void Initialize(StateMachineBox box)
-        {
-            _continuation.Initialize(box);
-            _subscription = _observable?.Subscribe(
-                (StateMachineBox<T, StateMachine<TContinuation>>) box);
-        }
-
-        public void Dispose()
-        {
-            _subscription?.Dispose();
-            _continuation.Dispose();
-        }
-
-        public void OnCompleted() =>
-            _continuation.OnCompleted();
-
-        public void OnError(Exception error) =>
-            _continuation.OnError(error);
-
-        public void OnNext(T value) =>
-            _continuation.OnNext(value);
-    }
-
-    private readonly struct StateMachineFactory : IStateMachineFactory<T, T>
-    {
-        private readonly IObservable<T> _observable;
-
-        public StateMachineFactory(IObservable<T> observable) =>
-            _observable = observable;
-
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IStateMachine<T> =>
-            source.ContinueWith(new StateMachine<TContinuation>(continuation, _observable));
     }
 }
 

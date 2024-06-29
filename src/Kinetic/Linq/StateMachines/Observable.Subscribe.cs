@@ -43,6 +43,12 @@ public static partial class Observable
         public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
 
+        public StateMachine<T> Reference =>
+            StateMachine<T>.Create(ref this);
+
+        public StateMachine? Continuation =>
+            null;
+
         public void Initialize(StateMachineBox box) =>
             _box = box;
 

@@ -48,6 +48,18 @@ public static partial class ObservableView
         public StateMachineBox Box =>
             _continuation.Box;
 
+        StateMachine<ListChange<TSource>> IStateMachine<ListChange<TSource>>.Reference =>
+            StateMachine<ListChange<TSource>>.Create(ref this);
+
+        StateMachine<ObservableViewItem<TResult>> IStateMachine<ObservableViewItem<TResult>>.Reference =>
+            StateMachine<ObservableViewItem<TResult>>.Create(ref this);
+
+        StateMachine? IStateMachine<ListChange<TSource>>.Continuation =>
+            _continuation.Reference;
+
+        StateMachine? IStateMachine<ObservableViewItem<TResult>>.Continuation =>
+            null;
+
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
 
@@ -257,6 +269,12 @@ public static partial class ObservableView
 
         public StateMachineBox Box =>
             _continuation.Box;
+
+        public StateMachine<T> Reference =>
+            StateMachine<T>.Create(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
 
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);

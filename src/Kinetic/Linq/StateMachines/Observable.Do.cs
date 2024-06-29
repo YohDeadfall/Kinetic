@@ -43,11 +43,17 @@ public static partial class Observable
         public StateMachineBox Box =>
             _continuation.Box;
 
-        public void Dispose() =>
-            _continuation.Dispose();
+        public StateMachine<T> Reference =>
+            StateMachine<T>.Create(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
 
         public void Initialize(StateMachineBox box) =>
             _continuation.Initialize(box);
+
+        public void Dispose() =>
+            _continuation.Dispose();
 
         public void OnCompleted()
         {

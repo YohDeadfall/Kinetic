@@ -5,28 +5,28 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<T> OnError<T>(this IObservable<T> source, Action<Exception> onError) =>
+    public static ObserverBuilder<TSource> OnError<TSource>(this IObservable<TSource> source, Action<Exception> onError) =>
         source.ToBuilder().OnError(onError);
 
-    public static ObserverBuilder<T> OnError<T>(this ObserverBuilder<T> source, Action<Exception> onError) =>
-        source.ContinueWith<OnErrorStateMachineFactory<T>, T>(new(onError));
+    public static ObserverBuilder<TSource> OnError<TSource>(this ObserverBuilder<TSource> source, Action<Exception> onError) =>
+        source.ContinueWith<OnErrorStateMachineFactory<TSource>, TSource>(new(onError));
 
-    private readonly struct OnErrorStateMachineFactory<T> : IStateMachineFactory<T, T>
+    private readonly struct OnErrorStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly Action<Exception> _onError;
 
         public OnErrorStateMachineFactory(Action<Exception> onError) =>
             _onError = onError;
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IStateMachine<T>
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IStateMachine<TSource>
         {
-            source.ContinueWith(new OnErrorStateMachine<TContinuation, T>(continuation, _onError));
+            source.ContinueWith(new OnErrorStateMachine<TSource, TContinuation>(continuation, _onError));
         }
     }
 
-    private struct OnErrorStateMachine<TContinuation, T> : IStateMachine<T>
-        where TContinuation : struct, IStateMachine<T>
+    private struct OnErrorStateMachine<TSource, TContinuation> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
     {
         private TContinuation _continuation;
         private readonly Action<Exception> _onError;
@@ -46,7 +46,7 @@ public static partial class Observable
         public void Dispose() =>
             _continuation.Dispose();
 
-        public void OnNext(T value) =>
+        public void OnNext(TSource value) =>
             _continuation.OnNext(value);
 
         public void OnError(Exception error)

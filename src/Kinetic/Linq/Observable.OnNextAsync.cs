@@ -6,40 +6,42 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<T> OnNextAsync<T>(this IObservable<T> source, Func<T, Task> onNext) =>
+    public static ObserverBuilder<TSource> OnNextAsync<TSource>(this IObservable<TSource> source, Func<TSource, Task> onNext) =>
         source.ToBuilder().OnNextAsync(onNext);
 
-    public static ObserverBuilder<T> OnNextAsync<T>(this IObservable<T> source, Func<T, ValueTask> onNext) =>
+    public static ObserverBuilder<TSource> OnNextAsync<TSource>(this IObservable<TSource> source, Func<TSource, ValueTask> onNext) =>
         source.ToBuilder().OnNextAsync(onNext);
 
-    public static ObserverBuilder<T> OnNextAsync<T>(this ObserverBuilder<T> source, Func<T, Task> onNext) =>
-        source.ContinueWith<OnNextAsyncStateMachineFactory<T>, T>(new(onNext));
+    public static ObserverBuilder<TSource> OnNextAsync<TSource>(this ObserverBuilder<TSource> source, Func<TSource, Task> onNext) =>
+        source.ContinueWith<OnNextAsyncStateMachineFactory<TSource>, TSource>(new(onNext));
 
-    public static ObserverBuilder<T> OnNextAsync<T>(this ObserverBuilder<T> source, Func<T, ValueTask> onNext) =>
-        source.ContinueWith<OnNextAsyncStateMachineFactory<T>, T>(new(onNext));
+    public static ObserverBuilder<TSource> OnNextAsync<TSource>(this ObserverBuilder<TSource> source, Func<TSource, ValueTask> onNext) =>
+        source.ContinueWith<OnNextAsyncStateMachineFactory<TSource>, TSource>(new(onNext));
 
-    private readonly struct OnNextAsyncStateMachineFactory<T> : IStateMachineFactory<T, T>
+    private readonly struct OnNextAsyncStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly Delegate _onNext;
 
-        public OnNextAsyncStateMachineFactory(Func<T, Task> onNext) =>
+        public OnNextAsyncStateMachineFactory(Func<TSource, Task> onNext) =>
             _onNext = onNext;
 
-        public OnNextAsyncStateMachineFactory(Func<T, ValueTask> onNext) =>
+        public OnNextAsyncStateMachineFactory(Func<TSource, ValueTask> onNext) =>
             _onNext = onNext;
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-            where TContinuation : struct, IStateMachine<T>
+        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
+            where TContinuation : struct, IStateMachine<TSource>
         {
-            if (_onNext is Func<T, Task> onNextTask)
+            if (_onNext is Func<TSource, Task> onNextTask)
             {
-                source.ContinueWith(new OnNextAsyncStateMachine<TContinuation, T, AwaiterForTask, AwaiterFactoryForTask<T>>(continuation, new(onNextTask)));
+                source.ContinueWith<OnNextAsyncStateMachine<TSource, TContinuation, AwaiterForTask, AwaiterFactoryForTask<TSource>>>(
+                    new(continuation, new(onNextTask)));
                 return;
             }
 
-            if (_onNext is Func<T, ValueTask> onNextValueTask)
+            if (_onNext is Func<TSource, ValueTask> onNextValueTask)
             {
-                source.ContinueWith(new OnNextAsyncStateMachine<TContinuation, T, AwaiterForValueTask, AwaiterFactoryForValueTask<T>>(continuation, new(onNextValueTask)));
+                source.ContinueWith<OnNextAsyncStateMachine<TSource, TContinuation, AwaiterForValueTask, AwaiterFactoryForValueTask<TSource>>>(
+                    new(continuation, new(onNextValueTask)));
                 return;
             }
 
@@ -47,10 +49,10 @@ public static partial class Observable
         }
     }
 
-    private struct OnNextAsyncStateMachine<TContinuation, T, TAwaiter, TAwaiterFactory> : IStateMachine<T>
-        where TContinuation : struct, IStateMachine<T>
+    private struct OnNextAsyncStateMachine<TSource, TContinuation, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
+        where TContinuation : struct, IStateMachine<TSource>
         where TAwaiter : struct, IAwaiter
-        where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, T>
+        where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, TSource>
     {
         private TContinuation _continuation;
         private readonly TAwaiterFactory _onNext;
@@ -70,7 +72,7 @@ public static partial class Observable
         public void Dispose() =>
             _continuation.Dispose();
 
-        public void OnNext(T value)
+        public void OnNext(TSource value)
         {
             var awaiter = default(TAwaiter);
             try
@@ -89,7 +91,7 @@ public static partial class Observable
             }
             else
             {
-                var reference = new StateMachineReference<T, TContinuation>(ref _continuation);
+                var reference = new StateMachineReference<TSource, TContinuation>(ref _continuation);
                 var completion = () => ForwardResult(value, awaiter, ref reference.Target);
 
                 awaiter.OnCompleted(completion);
@@ -102,7 +104,7 @@ public static partial class Observable
         public void OnCompleted() =>
             _continuation.OnCompleted();
 
-        private static void ForwardResult(T value, TAwaiter awaiter, ref TContinuation continuation)
+        private static void ForwardResult(TSource value, TAwaiter awaiter, ref TContinuation continuation)
         {
             try
             {

@@ -4,41 +4,6 @@ using System.Runtime.InteropServices;
 
 namespace Kinetic.Linq.StateMachines;
 
-public interface IStateMachine<T> : IObserver<T>, IDisposable
-{
-    StateMachineBox Box { get; }
-
-    void Initialize(StateMachineBox box);
-}
-
-public interface IStateMachineFactory<T, TResult>
-{
-    void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<T> source)
-        where TContinuation : struct, IStateMachine<TResult>;
-}
-
-public interface IStateMachineBoxFactory<TBox>
-{
-    TBox Create<T, TStateMachine>(in TStateMachine stateMachine)
-        where TStateMachine : struct, IStateMachine<T>;
-}
-
-public readonly struct StateMachineReference<T, TStateMachine>
-    where TStateMachine : struct, IStateMachine<T>
-{
-    private readonly StateMachineBox _box;
-    private readonly IntPtr _stateMachineOffset;
-
-    public StateMachineReference(ref TStateMachine stateMachine)
-    {
-        _box = stateMachine.Box;
-        _stateMachineOffset = _box.OffsetTo<T, TStateMachine>(ref stateMachine);
-    }
-
-    public ref TStateMachine Target =>
-        ref _box.ReferenceTo<T, TStateMachine>(_stateMachineOffset);
-}
-
 public abstract class StateMachineBox
 {
     private protected abstract ReadOnlySpan<byte> StateMachineData { get; }

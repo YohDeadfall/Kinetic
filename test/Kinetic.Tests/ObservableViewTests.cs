@@ -385,6 +385,7 @@ public class ObservableViewTests
             .Subscribe();
 
         list.Add(0);
+        list.RemoveAt(0);
 
         Assert.True(handledBefore);
         Assert.True(handledAfter);

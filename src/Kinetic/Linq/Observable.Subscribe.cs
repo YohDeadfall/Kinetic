@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.ExceptionServices;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -68,7 +69,10 @@ public static partial class Observable
             _box = null;
 
         public void OnCompleted() { }
-        public void OnError(Exception error) { }
+
+        public void OnError(Exception error) =>
+            ExceptionDispatchInfo.Capture(error).Throw();
+
         public void OnNext(T value) { }
     }
 }

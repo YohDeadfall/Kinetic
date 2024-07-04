@@ -345,19 +345,25 @@ public class ObservableViewTests
 
         using var changes = list
             .Changed
-            .Do(_ => handledBefore = true)
+            .Do(change => SetWhenAdded(change, ref handledBefore))
             .OnItemAdded(item =>
             {
                 Assert.True(handledBefore);
                 Assert.False(handledAfter);
             })
-            .Do(_ => handledAfter = true)
+            .Do(change => SetWhenAdded(change, ref handledAfter))
             .Subscribe();
 
         list.Add(0);
 
         Assert.True(handledBefore);
         Assert.True(handledAfter);
+
+        static void SetWhenAdded<T>(ListChange<T> change, ref bool flag)
+        {
+            if (change.Action is ListChangeAction.Insert or ListChangeAction.Replace)
+                flag = true;
+        }
     }
 
     [Fact]
@@ -369,19 +375,25 @@ public class ObservableViewTests
 
         using var changes = list
             .Changed
-            .Do(_ => handledBefore = true)
+            .Do(change => SetWhenRemoved(change, ref handledBefore))
             .OnItemRemoved(item =>
             {
                 Assert.True(handledBefore);
                 Assert.True(handledAfter);
             })
-            .Do(_ => handledAfter = true)
+            .Do(change => SetWhenRemoved(change, ref handledAfter))
             .Subscribe();
 
         list.Add(0);
 
         Assert.True(handledBefore);
         Assert.True(handledAfter);
+
+        static void SetWhenRemoved<T>(ListChange<T> change, ref bool flag)
+        {
+            if (change.Action is ListChangeAction.Remove or ListChangeAction.RemoveAll or ListChangeAction.Replace)
+                flag = true;
+        }
     }
 
     [Fact]

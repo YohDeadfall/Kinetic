@@ -1,10 +1,13 @@
 using System;
+using System.Diagnostics;
 
 namespace Kinetic.Linq.StateMachines;
 
 public abstract class StateMachine
 {
     private protected StateMachine() { }
+
+    internal abstract StateMachine? Continuation { get; }
 }
 
 public abstract class StateMachine<T> : StateMachine, IObserver<T>
@@ -20,14 +23,18 @@ public abstract class StateMachine<T> : StateMachine, IObserver<T>
         new StateMachine<T, TStateMachine>(ref stateMachine);
 }
 
+[DebuggerTypeProxy(typeof(StateMachineDebugView<,>))]
 public class StateMachine<T, TStateMachine> : StateMachine<T>
     where TStateMachine : struct, IStateMachine<T>
 {
-    protected StateMachineReference<T, TStateMachine> Reference { get; }
+    protected internal StateMachineReference<T, TStateMachine> Reference { get; }
 
     public StateMachine(ref TStateMachine stateMachine) :
         this(new StateMachineReference<T, TStateMachine>(ref stateMachine))
     { }
+
+    internal override StateMachine? Continuation =>
+        Reference.Target.Continuation;
 
     public StateMachine(StateMachineReference<T, TStateMachine> stateMchine) =>
         Reference = stateMchine;

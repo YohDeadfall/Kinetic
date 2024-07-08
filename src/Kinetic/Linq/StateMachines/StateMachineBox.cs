@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
@@ -37,6 +38,7 @@ public abstract class StateMachineBox
     }
 }
 
+[DebuggerTypeProxy(typeof(StateMachineBoxDebugView<,>))]
 public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObserver<T>
     where TStateMachine : struct, IStateMachine<T>
 {
@@ -47,7 +49,7 @@ public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObse
             ref Unsafe.As<TStateMachine, byte>(ref _stateMachine),
             length: Unsafe.SizeOf<TStateMachine>());
 
-    protected ref TStateMachine StateMachine => ref _stateMachine;
+    protected internal ref TStateMachine StateMachine => ref _stateMachine;
 
     protected StateMachineBox(in TStateMachine stateMachine) =>
         _stateMachine = stateMachine;

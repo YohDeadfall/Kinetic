@@ -90,4 +90,19 @@ using Kinetic.Data;
 BindingPlugins.PropertyAccessors.Insert(2, new KineticPropertyAccessor());
 ```
 
-> This approach is incompatible with compiled bindings since XAMLIL has no idea about Kinetic properties and treats them as usual properties. Ability to create compiled bindings in XAML will come in one of next releases, but it's already available in code behind using `OneWay` and `TwoWay` methods of `Binding` type in `Kinetic.Data`.
+> This approach is incompatible with compiled bindings since XAMLIL has no idea about Kinetic properties and treats them as usual properties. Ability to create compiled bindings in XAML will come in one of next releases, but it's already available in code behind using `OneWay` and `TwoWay` methods of `Binding` type in `Kinetic.Data`
+
+## Debugging
+
+Kinetic assembles a chain of LINQ calls into a single state machine, so it's possible to inspect it in the debugger as a single list. No more diving into internal fields, checking subscribers of each operator to find what you want.
+
+As an example, the `observer` variable can be seen in the debugger as a list of 4 state machines:
+
+```csharp
+var source = new PublishSubject<int>();
+var observer = source   // + observable
+                        // ├ ObserverStateMachine
+    .Where(x => x > 0)  // ├ WhereStateMachind
+    .Select(x => x + 1) // ├ SelectStateMachineelectStateMachine
+    .ToObservable();    // └ ObservableStateMachine
+```

@@ -11,23 +11,29 @@ internal interface IObservableInternal<T> : IObservable<T>
 
 internal sealed class ObservableSubscription<T> : IDisposable
 {
+    internal readonly IObserver<T> Observer;
     internal IObservableInternal<T>? Observable;
     internal ObservableSubscription<T>? Next;
 
-    private readonly IObserver<T> _observer;
+    public ObservableSubscription(IObserver<T> observer) =>
+        Observer = observer;
 
-    public ObservableSubscription(IObserver<T> observer) => _observer = observer;
+    public void Dispose() =>
+        Observable?.Unsubscribe(this);
 
-    public void Dispose() => Observable?.Unsubscribe(this);
+    public void OnNext(T value) =>
+        Observer.OnNext(value);
 
-    public void OnNext(T value) => _observer.OnNext(value);
-    public void OnError(Exception error) => _observer.OnError(error);
-    public void OnCompleted() => _observer.OnCompleted();
+    public void OnError(Exception error) =>
+        Observer.OnError(error);
+
+    public void OnCompleted() =>
+        Observer.OnCompleted();
 }
 
 internal struct ObservableSubscriptions<T>
 {
-    private ObservableSubscription<T>? _head;
+    internal ObservableSubscription<T>? Head;
 
     public IDisposable Subscribe(IObservableInternal<T> observable, IObserver<T> observer)
     {
@@ -42,14 +48,14 @@ internal struct ObservableSubscriptions<T>
         subscription.Observable = observable;
         do
         {
-            subscription.Next = _head;
+            subscription.Next = Head;
         }
-        while (Interlocked.CompareExchange(ref _head, subscription, subscription.Next) != subscription.Next);
+        while (Interlocked.CompareExchange(ref Head, subscription, subscription.Next) != subscription.Next);
     }
 
     public void Unsubscribe(ObservableSubscription<T> subscription)
     {
-        ref var current = ref _head;
+        ref var current = ref Head;
         while (current is not null)
         {
             if (current == subscription)
@@ -68,7 +74,7 @@ internal struct ObservableSubscriptions<T>
 
     public void OnNext(T value)
     {
-        var current = _head;
+        var current = Head;
         while (current is not null)
         {
             current.OnNext(value);
@@ -78,7 +84,7 @@ internal struct ObservableSubscriptions<T>
 
     public void OnError(Exception error)
     {
-        var current = _head;
+        var current = Head;
         while (current is not null)
         {
             current.OnError(error);
@@ -88,9 +94,9 @@ internal struct ObservableSubscriptions<T>
 
     public void OnCompleted()
     {
-        while (_head is { } head)
+        while (Head is { } head)
         {
-            _head = head.Next;
+            Head = head.Next;
 
             head.Next = null;
             head.OnCompleted();

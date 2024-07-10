@@ -18,7 +18,7 @@ internal abstract class PropertyObservable
 
 internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>
 {
-    private ObservableSubscriptions<T> _subscriptions;
+    internal ObservableSubscriptions<T> Subscriptions;
 
     public PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next) :
         base(owner, offset, next)
@@ -28,17 +28,17 @@ internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInt
         Changed(Owner.Get<T>(Offset));
 
     public void Changed(T value) =>
-        _subscriptions.OnNext(value);
+        Subscriptions.OnNext(value);
 
     public IDisposable Subscribe(IObserver<T> observer)
     {
         observer.OnNext(Owner.Get<T>(Offset));
-        return _subscriptions.Subscribe(this, observer);
+        return Subscriptions.Subscribe(this, observer);
     }
 
     public void Subscribe(ObservableSubscription<T> subscription) =>
-        _subscriptions.Subscribe(this, subscription);
+        Subscriptions.Subscribe(this, subscription);
 
     public void Unsubscribe(ObservableSubscription<T> subscription) =>
-        _subscriptions.Unsubscribe(subscription);
+        Subscriptions.Unsubscribe(subscription);
 }

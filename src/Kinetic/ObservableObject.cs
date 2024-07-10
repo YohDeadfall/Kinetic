@@ -29,7 +29,7 @@ public abstract class ObservableObject
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private PropertyObservable<T>? GetObservableFor<T>(IntPtr offset)
+    internal PropertyObservable<T>? GetObservableFor<T>(IntPtr offset)
     {
         var observable = GetObservable(offset);
 

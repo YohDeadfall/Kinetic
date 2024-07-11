@@ -1,27 +1,18 @@
 using System;
-using System.Collections.Generic;
 
 namespace Kinetic;
 
 internal sealed class ReadOnlyPropertyDebugView<T>
 {
-    public ReadOnlyPropertyDebugView(Property<T> property)
-    {
-        var subscribers = new List<IObserver<T>>();
-        var subscription = property.Owner
-            .GetObservableFor<T>(property.Offset)?
-            .Subscriptions.Head;
-        while (subscription is { })
-        {
-            subscribers.Add(subscription.Observer);
-            subscription = subscription.Next;
-        }
+    private readonly ReadOnlyProperty<T> _property;
 
-        Subscribers = subscribers;
-        Value = property.Get();
-    }
+    public ReadOnlyPropertyDebugView(ReadOnlyProperty<T> property) =>
+        _property = property;
 
-    public T Value { get; }
+    public IObservable<T> Observers =>
+        _property.Changed;
 
-    public IReadOnlyList<IObserver<T>> Subscribers { get; }
+    public T Value =>
+        _property.Get();
+
 }

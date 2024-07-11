@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace Kinetic;
@@ -101,5 +102,18 @@ internal struct ObservableSubscriptions<T>
             head.Next = null;
             head.OnCompleted();
         }
+    }
+
+    public IObserver<T>[] GetDebugObservers()
+    {
+        var observers = new List<IObserver<T>>();
+        var current = Head;
+        while (current is { })
+        {
+            observers.Add(current.Observer);
+            current = current.Next;
+        }
+
+        return observers.ToArray();
     }
 }

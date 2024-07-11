@@ -129,7 +129,7 @@ class Person : ObservableObject
 // person
 // ├ Address
 // │ ├ Observers    Observers = 1
-//   │ └ [0] SubscribeBox
+// │ │ └ [0] SubscribeBox
 // │ └ Value        "Somewhere in the Universe"
 // └ Name
 //   ├ Observers    Observers = 0

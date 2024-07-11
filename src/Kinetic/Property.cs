@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Kinetic;
 
-[DebuggerDisplay("Get()")]
+[DebuggerDisplay("{Get()}")]
 [DebuggerTypeProxy(typeof(PropertyDebugView<>))]
 public readonly struct Property<T>
 {

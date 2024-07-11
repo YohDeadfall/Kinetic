@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 
 namespace Kinetic;
 
@@ -16,6 +17,7 @@ internal abstract class PropertyObservable
     public abstract void Changed();
 }
 
+[DebuggerTypeProxy(typeof(PropertyObservableDebugView<>))]
 internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>
 {
     internal ObservableSubscriptions<T> Subscriptions;

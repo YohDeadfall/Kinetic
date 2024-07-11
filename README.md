@@ -9,7 +9,7 @@ Kinetic is an alternative implementation of the Reactive framework focused on pe
 To achive the goal Kinetic doesn't support the `INotifyPropertyChanged` interface and fully relies on `IObservable<T>`. To make it work an observable property should via `Property<T>` or `ReadOnlyProperty<T>` structures which bundle a getter, a setter and an observable. Calling the `Set` method on a property sets the corresponind field and notifyies observers about the change. The `Changed` property returns an observable for the property which is a cached and reused, and no LINQ expressions allocated as it happens when `WhenAnyValue` is used from Reactive.
 
 ```csharp
-private sealed class Some : Object
+private sealed class Some : ObservableObject
 {
     private int _number;
     private string _text = string.Empty;
@@ -100,9 +100,38 @@ As an example, the `observer` variable can be seen in the debugger as a list of 
 
 ```csharp
 var source = new PublishSubject<int>();
-var observer = source   // + observable
-                        // ├ ObserverStateMachine
-    .Where(x => x > 0)  // ├ WhereStateMachind
-    .Select(x => x + 1) // ├ SelectStateMachineelectStateMachine
-    .ToObservable();    // └ ObservableStateMachine
+var observer = source   // observable
+                        // ├ [0] ObserverStateMachine
+    .Where(x => x > 0)  // ├ [1] WhereStateMachind
+    .Select(x => x + 1) // ├ [2] SelectStateMachineelectStateMachine
+    .ToObservable();    // └ [3] ObservableStateMachine
+```
+
+Properties are also have debugger views allowing to explore a value and observers subscribed for changes:
+
+```csharp
+var person = new Person("John Doe", "Somewhere in the Universe");
+var addressChange = person.Address.Subscribe(a => Console.WriteLine(a));
+
+class Person : ObservableObject
+{
+    private string _name;
+    private string _address;
+
+    public Person(string name, string address) =>
+        (_name, _address) = (name, address);
+
+    public Property<string> Name => Property(ref _name);
+
+    public Property<string> Address => Property(ref _address);
+}
+
+// person
+// ├ Address
+// │ ├ Observers    Observers = 1
+//   │ └ [0] SubscribeBox
+// │ └ Value        "Somewhere in the Universe"
+// └ Name
+//   ├ Observers    Observers = 0
+//   └ Value        "John Doe"
 ```

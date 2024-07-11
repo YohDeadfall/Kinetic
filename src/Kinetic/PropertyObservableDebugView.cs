@@ -13,5 +13,5 @@ internal sealed class PropertyObservableDebugView<T>
 
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
     public IReadOnlyList<IObserver<T>> Items =>
-        _observable.Subscriptions.GetDebugObservers();
+        _observable.Subscriptions.GetObserversForDebugger();
 }

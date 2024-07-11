@@ -17,6 +17,7 @@ internal abstract class PropertyObservable
     public abstract void Changed();
 }
 
+[DebuggerDisplay("Observers = {Subscriptions.GetObserversCountForDebugger()}")]
 [DebuggerTypeProxy(typeof(PropertyObservableDebugView<>))]
 internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>
 {

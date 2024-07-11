@@ -104,7 +104,20 @@ internal struct ObservableSubscriptions<T>
         }
     }
 
-    public IObserver<T>[] GetDebugObservers()
+    public int GetObserversCountForDebugger()
+    {
+        var observers = 0;
+        var current = Head;
+        while (current is { })
+        {
+            observers += 1;
+            current = current.Next;
+        }
+
+        return observers;
+    }
+
+    public IObserver<T>[] GetObserversForDebugger()
     {
         var observers = new List<IObserver<T>>();
         var current = Head;

@@ -85,11 +85,12 @@ internal struct ObservableSubscriptions<T>
 
     public void OnError(Exception error)
     {
-        var current = Head;
-        while (current is not null)
+        while (Head is { } head)
         {
-            current.OnError(error);
-            current = current.Next;
+            Head = head.Next;
+
+            head.Next = null;
+            head.OnError(error);
         }
     }
 

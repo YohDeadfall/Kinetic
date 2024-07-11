@@ -52,7 +52,7 @@ public readonly struct ObserverBuilder<T>
     }
 }
 
-public ref struct ObserverStateMachine<TResult>
+public readonly ref struct ObserverStateMachine<TResult>
 {
     private readonly ObserverBuilderStep<TResult> _builder;
 

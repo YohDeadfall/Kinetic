@@ -1,4 +1,3 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
 using Avalonia.Headless.XUnit;
@@ -16,12 +15,12 @@ public class KineticBindingTests
         var parent = new Parent(child);
         var target = new TextBox { DataContext = parent };
 
-        target.Bind(
+        target.BindTwoWay(
             TextBox.TextProperty,
-            KineticBinding.TwoWay(source => source
+            source => source
                 .Select(source => source as Parent)
                 .Property(source => source?.Child)
-                .Property(source => source?.Text)));
+                .Property(source => source?.Text));
 
         Assert.Equal("foo", target.Text);
 
@@ -55,11 +54,11 @@ public class KineticBindingTests
         var window = new Window { Content = target };
 
         window.Show();
-        target.Bind(
+        target.BindOneWay(
             ItemsControl.ItemsSourceProperty,
-            KineticBinding.OneWay(source => source
+            source => source
                 .Select(source => (Container?) source)
-                .Property(source => source?.Items)));
+                .Property(source => source?.Items));
 
         Assert.Null(target.ItemsSource);
 

@@ -40,6 +40,25 @@ public class ObservableObjectTests
     }
 
     [Fact]
+    public void PropertyChange()
+    {
+        var test = new TestObject();
+        var numbers = new List<int>();
+
+        using (test.Number.Changed.Subscribe(
+            value => numbers.Add(value)))
+        {
+            test.Number.Change.OnNext(1);
+            test.Number.Change.OnNext(2);
+            test.Number.Change.OnNext(3);
+        }
+
+        test.Number.Set(4);
+
+        Assert.Equal(new[] { 0, 1, 2, 3 }, numbers);
+    }
+
+    [Fact]
     public void SuppressNotifications()
     {
         var test = new TestObject();

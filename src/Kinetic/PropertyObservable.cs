@@ -19,7 +19,7 @@ internal abstract class PropertyObservable
 
 [DebuggerDisplay("Observers = {Subscriptions.GetObserversCountForDebugger()}")]
 [DebuggerTypeProxy(typeof(PropertyObservableDebugView<>))]
-internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>
+internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>, IObserver<T>
 {
     internal ObservableSubscriptions<T> Subscriptions;
 
@@ -44,4 +44,13 @@ internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInt
 
     public void Unsubscribe(ObservableSubscription<T> subscription) =>
         Subscriptions.Unsubscribe(subscription);
+
+    public void OnCompleted()
+    { }
+
+    public void OnError(Exception error)
+    { }
+
+    public void OnNext(T value) =>
+        Owner.Set(Offset, value);
 }

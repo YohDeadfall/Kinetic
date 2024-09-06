@@ -19,6 +19,9 @@ public readonly struct Property<T>
     public void Set(T value) =>
         Owner.Set(Offset, value);
 
+    public IObserver<T> Change =>
+        Owner.EnsureObservableFor<T>(Offset);
+
     public IObservable<T> Changed =>
         Owner.EnsureObservableFor<T>(Offset);
 

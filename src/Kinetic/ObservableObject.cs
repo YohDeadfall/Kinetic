@@ -5,6 +5,9 @@ using System.Runtime.CompilerServices;
 
 namespace Kinetic;
 
+/// <summary>
+/// An object with observable properties.
+/// </summary>
 public abstract class ObservableObject
 {
     private PropertyObservable? _observables;
@@ -67,10 +70,22 @@ public abstract class ObservableObject
         return observable;
     }
 
+    /// <summary>
+    /// Sets a value of the specified property and notifies the observers.
+    /// </summary>
+    /// <typeparam name="T">The type of the value.</typeparam>
+    /// <param name="property">The property which value will be set.</param>
+    /// <param name="value">The value to be set.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void Set<T>(ReadOnlyProperty<T> property, T value) =>
         property.Owner.Set(property.Offset, value);
 
+    /// <summary>
+    /// Creates an observable property for the specified field.
+    /// </summary>
+    /// <typeparam name="T">The type of the field.</typeparam>
+    /// <param name="field">The field for which an observable propery will be created.</param>
+    /// <returns>Returns an observable property for the specified field.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected Property<T> Property<T>(ref T field)
     {
@@ -126,9 +141,19 @@ public abstract class ObservableObject
         }
     }
 
+    /// <summary>
+    /// Suppresses notifications for the current object and returns a
+    /// <see cref="SuppressNotificationsScope"/> controlling the time
+    /// for which notifications are disabled.
+    /// </summary>
+    /// <returns>An object serving as a scope of the notification suppression.</returns>
     public SuppressNotificationsScope SuppressNotifications() =>
         new SuppressNotificationsScope(this);
 
+    /// <summary>
+    /// A scope controlling the time during notifications are disabled for the object
+    /// for which the <see cref="SuppressNotifications"/> method was called.
+    /// <summary>
     public readonly struct SuppressNotificationsScope : IDisposable
     {
         private readonly ObservableObject? _owner;
@@ -144,6 +169,9 @@ public abstract class ObservableObject
             _owner._suppressions++;
         }
 
+        /// <summary>
+        /// Enables notifications for the object for which they were previously
+        /// suppressed by a call to the <see cref="SuppressNotifications"/> method.
         public void Dispose()
         {
             if (_owner is not null &&

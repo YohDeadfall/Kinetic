@@ -267,9 +267,6 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         }
     }
 
-    public IDisposable Subscribe(IObserver<ListChange<T>> observer) =>
-        EnsureChangeObservable().Subscribe(observer);
-
     private ItemsObservable EnsureChangeObservable() =>
         Unsafe.As<ItemsObservable>(EnsureObservable(GetOffsetOf(ref _items), static (self, offset, next) => new ItemsObservable(self, offset, next)));
 

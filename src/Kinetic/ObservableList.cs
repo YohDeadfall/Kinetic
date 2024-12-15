@@ -6,6 +6,8 @@ using System.Runtime.CompilerServices;
 
 namespace Kinetic;
 
+/// <summary>A read-only list with observable collection changes.<summary>
+/// <seealso cref="ObservableList{T}"/>
 [DebuggerDisplay("Count = {Count}")]
 public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyList<T>
 {
@@ -15,22 +17,40 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     private int _count;
     private int _version;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReadOnlyObservableList{T}"/> class
+    /// that is empty and has the default initial capacity.
+    /// </summary>
     protected ReadOnlyObservableList() =>
         _items = Array.Empty<T>();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReadOnlyObservableList{T}"/> class
+    /// that is empty and has the specified initial capacity.
+    /// </summary>
     protected ReadOnlyObservableList(int capacity) =>
         _items = capacity < 0
         ? throw new ArgumentOutOfRangeException(nameof(capacity))
         : capacity > 0 ? new T[capacity] : Array.Empty<T>();
 
+    /// <summary>Gets an <see cref="IObservable{T}"/> notifying about collection changes of this list.</summary>
+    /// <returns>An <see cref="IObservable{T}"/> notifying about collection changes of this list.</returns>
     public IObservable<ListChange<T>> Changed => EnsureChangeObservable();
 
+    /// <summary>Gets the number of elements contained in the list.</summary>
+    /// <returns>A <see cref="ReadOnlyProperty{Int32}"/> providing the number of elements contained in the list.</returns>
     public ReadOnlyProperty<int> Count => Property(ref _count);
 
     int IReadOnlyCollection<T>.Count => ItemCount;
 
+    /// <summary>Gets the number of elements contained in the list.</summary>
+    /// <returns>The number of elements contained in the list.</returns>
+    /// <seealso cref="Count"/>
     protected int ItemCount => _count;
 
+    /// <summary>Gets the element at the specified index.</summary>
+    /// <param name="index">The zero-based index of the element to get.</param>
+    /// <value>The element at the specified index.</value>
     public T this[int index]
     {
         get
@@ -44,6 +64,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         }
     }
 
+    /// <summary>Adds an object to the end of the list.</summary>
+    /// <param name="item">The object to be added to the end of the list.</param>
     protected void AddItem(T item)
     {
         var index = _count;
@@ -64,6 +86,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         }
     }
 
+    /// <summary>Removes all elements from the list.</summary>
     protected void ClearItems()
     {
         if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
@@ -81,12 +104,25 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         }
     }
 
+    /// <summary>Determines whether an element is in the list.</summary>
+    /// <param name="item">The object to locate in the list.</param>
+    /// <returns><see langword="true"/> if item is found in the list; otherwise, <see langword="false"/>.</returns>
     public bool Contains(T item) =>
         _count != 0 && IndexOf(item) >= -1;
 
-    public void CopyTo(T[] array)
-        => CopyTo(array, 0);
+    /// <summary>
+    /// Copies the entire list to a compatible one-dimensional array,
+    /// starting at the beginning of the target array.</summary>
+    /// <param name="array">The one-dimensional array that is the destination of the elements copied from list.</param>
+    public void CopyTo(T[] array) =>
+        CopyTo(array, 0);
 
+    /// <summary>
+    /// Copies the entire list to a compatible one-dimensional array,
+    /// starting at the specified index of the target array.
+    /// </summary>
+    /// <param name="array">The one-dimensional array that is the destination of the elements copied from list.</param>
+    /// <param name="arrayIndex">The zero-based index in <paramref name="array"/> at which copying begins.</param>
     public void CopyTo(T[] array, int arrayIndex) =>
         Array.Copy(_items, 0, array, arrayIndex, _count);
 
@@ -114,6 +150,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         }
     }
 
+    /// <summary>Returns an enumerator that iterates through the list.</summary>
+    /// <returns>A <see cref="ReadOnlyObservableList{T}.Enumerator"/> for the list.</returns>
     public Enumerator GetEnumerator() =>
         new Enumerator(this);
 
@@ -123,18 +161,54 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     IEnumerator IEnumerable.GetEnumerator() =>
         GetEnumerator();
 
+    /// <summary>
+    /// Searches for the specified object and returns the zero-based index
+    /// of the first occurrence within the entire list.
+    /// </summary>
+    /// <param name="item">The object to locate in the list.</param>
+    /// <returns>
+    /// The zero-based index of the first occurrence of <paramref name="item"/>
+    /// within the entire list, if found; otherwise, -1.
+    /// <returns>
     public int IndexOf(T item) =>
         Array.IndexOf(_items, item, 0, _count);
 
+    /// <summary>
+    /// Searches for the specified object and returns the zero-based index
+    /// of the first occurrence within the range of elements in the list
+    /// that extends from the specified index to the last element.
+    /// </summary>
+    /// <param name="item">The object to locate in the list.</param>
+    /// <param name="index">The zero-based starting index of the search.</param>
+    /// <returns>
+    /// The zero-based index of the first occurrence of <paramref name="item"/>
+    /// within the range of elements in the list that extends from <paramref name="index"/>
+    /// to the last element, if found; otherwise, -1.
+    /// </returns>
     public int IndexOf(T item, int index) =>
         index > _count ? throw new ArgumentOutOfRangeException(nameof(index)) :
         Array.IndexOf(_items, item, index, _count - index);
 
+    /// <summary>
+    /// Searches for the specified object and returns the zero-based index
+    /// of the first occurrence within the range of elements in the list
+    /// that starts at the specified index and contains the specified number of elements.
+    /// </summary>
+    /// <param name="item">The object to locate in the list.</param>
+    /// <param name="index">The zero-based starting index of the search.</param>
+    /// <returns>
+    /// The zero-based index of the first occurrence of <paramref name="item"/>
+    /// within the range of elements in the list that starts at <paramref name="index"/>
+    /// and contains <paramref name="count"/> number of elements, if found; otherwise, -1.
+    /// </returns>
     public int IndexOf(T item, int index, int count) =>
         index > _count ? throw new ArgumentOutOfRangeException(nameof(index)) :
         index > _count - count || count < 0 ? throw new ArgumentOutOfRangeException(nameof(count)) :
         Array.IndexOf(_items, item, index, count);
 
+    /// <summary>Inserts an element into the list at the specified index.</summary>
+    /// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
+    /// <param name="item">The object to insert.</param>
     protected void InsertItem(int index, T item)
     {
         if ((uint) index > (uint) _count)
@@ -168,6 +242,11 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         }
     }
 
+    /// <summary>Removes the first occurrence of a specific object from the list.</summary>
+    /// <param name="item">The object to remove.</param>
+    /// <returns>
+    /// <see langword="true"/> if item is found and removed; otherwise, <see langword="false".
+    /// </returns>
     protected bool RemoveItem(T item)
     {
         var index = IndexOf(item);
@@ -181,6 +260,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         return false;
     }
 
+    /// <summary>Removes the element at the specified index of the list.</summary>
+    /// <param name="index">The zero-based index of the element to remove.</param>
     protected void RemoveItemAt(int index)
     {
         if ((uint) index >= (uint) _count)
@@ -213,6 +294,9 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         }
     }
 
+    /// <summary>Replaces the element at the specified index of the list by the provided one.</summary>
+    /// <param name="index">The zero-based index of the element to replace.</param>
+    /// <param name="item">The item to set at the specified index.</param>
     protected void ReplaceItem(int index, T item)
     {
         if ((uint) index >= (uint) _count)
@@ -229,6 +313,9 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         }
     }
 
+    /// <summary>Moves the item at the specified index to a new location in the collection.</summary>
+    /// <param name="oldIndex">The zero-based index specifying the location of the item to be moved.</param>
+    /// <param name="newIndex">The zero-based index specifying the new location of the item.</param>
     protected void MoveItem(int oldIndex, int newIndex)
     {
         if ((uint) oldIndex >= (uint) _count)
@@ -276,6 +363,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     private PropertyObservable<int>? GetCountObservable() =>
         Unsafe.As<PropertyObservable<int>?>(GetObservable(GetOffsetOf(ref _count)));
 
+    /// <summary>Enumerates the elements of a list.</summary>
     public struct Enumerator : IEnumerator<T>
     {
         private readonly ReadOnlyObservableList<T> _items;
@@ -291,10 +379,12 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
             _current = default;
         }
 
+        /// <inheritdoc/>
         public void Dispose()
         {
         }
 
+        /// <inheritdoc/>
         public bool MoveNext()
         {
             var items = _items;
@@ -322,6 +412,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
             return false;
         }
 
+        /// <inheritdoc/>
         public T Current => _current!;
 
         object? IEnumerator.Current =>
@@ -393,37 +484,69 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     }
 }
 
+/// <summary>
+/// A list with observable collection changes.
+/// </summary>
 public sealed class ObservableList<T> : ReadOnlyObservableList<T>, IList<T>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ObservableList{T}"/> class
+    /// that is empty and has the default initial capacity.
+    /// </summary>
     public ObservableList() : base() { }
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ObservableList{T}"/> class
+    /// that is empty and has the specified initial capacity.
+    /// </summary>
     public ObservableList(int capacity) : base(capacity) { }
 
     int ICollection<T>.Count => ItemCount;
 
     bool ICollection<T>.IsReadOnly => false;
 
+    /// <summary>
+    /// Gets or sets the element at the specified index.
+    /// </summary>
+    /// <param name="index">The zero-based index of the element to get.</param>
+    /// <value>The element at the specified index.</value>
     public new T this[int index]
     {
         get => base[index];
         set => ReplaceItem(index, value);
     }
 
+    /// <summary>Adds an object to the end of the list.</summary>
+    /// <param name="item">The object to be added to the end of the list.</param>
     public void Add(T item) =>
         AddItem(item);
 
+    /// <summary>Removes all elements from the list.</summary>
     public void Clear() =>
         ClearItems();
 
+    /// <summary>Inserts an element into the list at the specified index.</summary>
+    /// <param name="index">The zero-based index at which <paramref name="item"/> should be inserted.</param>
+    /// <param name="item">The object to insert.</param>
     public void Insert(int index, T item) =>
         InsertItem(index, item);
 
+    /// <summary>Removes the first occurrence of a specific object from the list.</summary>
+    /// <param name="item">The object to remove.</param>
+    /// <returns>
+    /// <see langword="true"/> if item is found and removed; otherwise, <see langword="false".
+    /// </returns>
     public bool Remove(T item) =>
         RemoveItem(item);
 
+    /// <summary>Removes the element at the specified index of the list.</summary>
+    /// <param name="index">The zero-based index of the element to remove.</param>
     public void RemoveAt(int index) =>
         RemoveItemAt(index);
 
+    /// <summary>Moves the item at the specified index to a new location in the collection.</summary>
+    /// <param name="oldIndex">The zero-based index specifying the location of the item to be moved.</param>
+    /// <param name="newIndex">The zero-based index specifying the new location of the item.</param>
     public void Move(int oldIndex, int newIndex) =>
         MoveItem(oldIndex, newIndex);
 }

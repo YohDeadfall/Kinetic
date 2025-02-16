@@ -342,7 +342,7 @@ public class LinqTests
     {
         var source = new PublishSubject<Task<int>>();
         var values = source
-            .SelectAsync(value => value)
+            .SelectAwait(value => value)
             .ToArray()
             .ToValueTask();
 
@@ -357,7 +357,7 @@ public class LinqTests
     {
         var source = new PublishSubject<ValueTask<int>>();
         var values = source
-            .SelectAsync(value => value)
+            .SelectAwait(value => value)
             .ToArray()
             .ToValueTask();
 

@@ -6,26 +6,26 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TResult> SelectAsync<TSource, TResult>(this ObserverBuilder<TSource> source, Func<TSource, Task<TResult>> selector) =>
-        source.ContinueWith<SelectAsyncStateMachineFactory<TSource, TResult>, TResult>(new(selector));
+    public static ObserverBuilder<TResult> SelectAwait<TSource, TResult>(this ObserverBuilder<TSource> source, Func<TSource, Task<TResult>> selector) =>
+        source.ContinueWith<SelectAwaitStateMachineFactory<TSource, TResult>, TResult>(new(selector));
 
-    public static ObserverBuilder<TResult> SelectAsync<TSource, TResult>(this IObservable<TSource> source, Func<TSource, Task<TResult>> selector) =>
-        source.ToBuilder().SelectAsync(selector);
+    public static ObserverBuilder<TResult> SelectAwait<TSource, TResult>(this IObservable<TSource> source, Func<TSource, Task<TResult>> selector) =>
+        source.ToBuilder().SelectAwait(selector);
 
-    public static ObserverBuilder<TResult> SelectAsync<TSource, TResult>(this ObserverBuilder<TSource> source, Func<TSource, ValueTask<TResult>> selector) =>
-        source.ContinueWith<SelectAsyncStateMachineFactory<TSource, TResult>, TResult>(new(selector));
+    public static ObserverBuilder<TResult> SelectAwait<TSource, TResult>(this ObserverBuilder<TSource> source, Func<TSource, ValueTask<TResult>> selector) =>
+        source.ContinueWith<SelectAwaitStateMachineFactory<TSource, TResult>, TResult>(new(selector));
 
-    public static ObserverBuilder<TResult> SelectAsync<TSource, TResult>(this IObservable<TSource> source, Func<TSource, ValueTask<TResult>> selector) =>
-        source.ToBuilder().SelectAsync(selector);
+    public static ObserverBuilder<TResult> SelectAwait<TSource, TResult>(this IObservable<TSource> source, Func<TSource, ValueTask<TResult>> selector) =>
+        source.ToBuilder().SelectAwait(selector);
 
-    private readonly struct SelectAsyncStateMachineFactory<TSource, TResult> : IStateMachineFactory<TSource, TResult>
+    private readonly struct SelectAwaitStateMachineFactory<TSource, TResult> : IStateMachineFactory<TSource, TResult>
     {
         private readonly Delegate _selector;
 
-        public SelectAsyncStateMachineFactory(Func<TSource, Task<TResult>> selector) =>
+        public SelectAwaitStateMachineFactory(Func<TSource, Task<TResult>> selector) =>
             _selector = selector;
 
-        public SelectAsyncStateMachineFactory(Func<TSource, ValueTask<TResult>> selector) =>
+        public SelectAwaitStateMachineFactory(Func<TSource, ValueTask<TResult>> selector) =>
             _selector = selector;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
@@ -34,7 +34,7 @@ public static partial class Observable
             if (_selector is Func<TSource, Task<TResult>> taskSelector)
             {
                 source.ContinueWith(
-                    new SelectAsyncStateMachine<
+                    new SelectAwaitStateMachine<
                         TSource,
                         TResult,
                         TContinuation,
@@ -48,7 +48,7 @@ public static partial class Observable
             if (_selector is Func<TSource, ValueTask<TResult>> valueTaskSelector)
             {
                 source.ContinueWith(
-                    new SelectAsyncStateMachine<
+                    new SelectAwaitStateMachine<
                         TSource,
                         TResult,
                         TContinuation,
@@ -63,7 +63,7 @@ public static partial class Observable
         }
     }
 
-    private struct SelectAsyncStateMachine<TSource, TResult, TContinuation, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
+    private struct SelectAwaitStateMachine<TSource, TResult, TContinuation, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TResult>
         where TAwaiter : struct, IAwaiter<TResult>
         where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, TSource, TResult>
@@ -71,7 +71,7 @@ public static partial class Observable
         private TContinuation _continuation;
         private readonly TAwaiterFactory _selector;
 
-        public SelectAsyncStateMachine(in TContinuation continuation, TAwaiterFactory selector)
+        public SelectAwaitStateMachine(in TContinuation continuation, TAwaiterFactory selector)
         {
             _continuation = continuation;
             _selector = selector;

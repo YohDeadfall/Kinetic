@@ -6,31 +6,31 @@ namespace Kinetic.Linq;
 
 public static partial class ObservableView
 {
-    public static ObserverBuilder<ListChange<T>> Where<T>(this ObserverBuilder<ListChange<T>> source, Func<T, ObserverBuilder<bool>> predicate) =>
-        source.ContinueWith<WhereAsyncStateMachineFactory<T>, ListChange<T>>(new(predicate));
+    public static ObserverBuilder<ListChange<T>> WhereAwait<T>(this ObserverBuilder<ListChange<T>> source, Func<T, ObserverBuilder<bool>> predicate) =>
+        source.ContinueWith<WhereAwaitStateMachineFactory<T>, ListChange<T>>(new(predicate));
 
-    public static ObserverBuilder<ListChange<T>> Where<T>(this ObserverBuilder<ListChange<T>> source, Func<T, Property<bool>> predicate) =>
-        source.Where((item) => predicate(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<T>> WhereAwait<T>(this ObserverBuilder<ListChange<T>> source, Func<T, Property<bool>> predicate) =>
+        source.WhereAwait((item) => predicate(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<T>> Where<T>(this ObserverBuilder<ListChange<T>> source, Func<T, ReadOnlyProperty<bool>> predicate) =>
-        source.Where((item) => predicate(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<T>> WhereAwait<T>(this ObserverBuilder<ListChange<T>> source, Func<T, ReadOnlyProperty<bool>> predicate) =>
+        source.WhereAwait((item) => predicate(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<T>> Where<T>(this ObserverBuilder<ListChange<T>> source, Func<T, IObservable<bool>> predicate) =>
-        source.Where((item) => predicate(item).ToBuilder());
+    public static ObserverBuilder<ListChange<T>> WhereAwait<T>(this ObserverBuilder<ListChange<T>> source, Func<T, IObservable<bool>> predicate) =>
+        source.WhereAwait((item) => predicate(item).ToBuilder());
 
-    public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, Func<T, ObserverBuilder<bool>> predicate) =>
-        source.Changed.ToBuilder().Where(predicate);
+    public static ObserverBuilder<ListChange<T>> WhereAwait<T>(this ReadOnlyObservableList<T> source, Func<T, ObserverBuilder<bool>> predicate) =>
+        source.Changed.ToBuilder().WhereAwait(predicate);
 
-    public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, Func<T, Property<bool>> predicate) =>
-        source.Changed.ToBuilder().Where((item) => predicate(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<T>> WhereAwait<T>(this ReadOnlyObservableList<T> source, Func<T, Property<bool>> predicate) =>
+        source.Changed.ToBuilder().WhereAwait((item) => predicate(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, Func<T, ReadOnlyProperty<bool>> predicate) =>
-        source.Changed.ToBuilder().Where((item) => predicate(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<T>> WhereAwait<T>(this ReadOnlyObservableList<T> source, Func<T, ReadOnlyProperty<bool>> predicate) =>
+        source.Changed.ToBuilder().WhereAwait((item) => predicate(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<T>> Where<T>(this ReadOnlyObservableList<T> source, Func<T, IObservable<bool>> predicate) =>
-        source.Changed.ToBuilder().Where((item) => predicate(item).ToBuilder());
+    public static ObserverBuilder<ListChange<T>> WhereAwait<T>(this ReadOnlyObservableList<T> source, Func<T, IObservable<bool>> predicate) =>
+        source.Changed.ToBuilder().WhereAwait((item) => predicate(item).ToBuilder());
 
-    private struct WhereAsyncStateMachine<T, TContinuation> :
+    private struct WhereAwaitStateMachine<T, TContinuation> :
         IStateMachine<ListChange<T>>,
         IStateMachine<ObservableViewItem<T>>
         where TContinuation : struct, IStateMachine<ListChange<T>>
@@ -39,7 +39,7 @@ public static partial class ObservableView
         private Func<T, ObserverBuilder<bool>> _predicate;
         private List<ObservableViewItem<T>> _items = new();
 
-        public WhereAsyncStateMachine(in TContinuation continuation, Func<T, ObserverBuilder<bool>> predicate)
+        public WhereAwaitStateMachine(in TContinuation continuation, Func<T, ObserverBuilder<bool>> predicate)
         {
             _continuation = continuation;
             _predicate = predicate;
@@ -232,16 +232,16 @@ public static partial class ObservableView
         }
     }
 
-    private readonly struct WhereAsyncStateMachineFactory<T> : IStateMachineFactory<ListChange<T>, ListChange<T>>
+    private readonly struct WhereAwaitStateMachineFactory<T> : IStateMachineFactory<ListChange<T>, ListChange<T>>
     {
         private readonly Func<T, ObserverBuilder<bool>> _predicate;
 
-        public WhereAsyncStateMachineFactory(Func<T, ObserverBuilder<bool>> predicate) =>
+        public WhereAwaitStateMachineFactory(Func<T, ObserverBuilder<bool>> predicate) =>
             _predicate = predicate;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<T>> source)
             where TContinuation : struct, IStateMachine<ListChange<T>> =>
-            source.ContinueWith(new WhereAsyncStateMachine<T, TContinuation>(continuation, _predicate));
+            source.ContinueWith(new WhereAwaitStateMachine<T, TContinuation>(continuation, _predicate));
     }
 
     private struct PredicateStateMachine<T, TContinuation> : IStateMachine<bool>

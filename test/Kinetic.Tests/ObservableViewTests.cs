@@ -629,7 +629,7 @@ public class ObservableViewTests
     public void WhereDynamic()
     {
         var list = new ObservableList<Item>();
-        var view = list.Where(item => item.Number.Changed.Select(static number => number % 2 == 0)).ToView();
+        var view = list.WhereAwait(item => item.Number.Changed.Select(static number => number % 2 == 0)).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");

@@ -6,26 +6,26 @@ namespace Kinetic.Linq;
 
 public static partial class Observable
 {
-    public static ObserverBuilder<TSource> WhereAsync<TSource>(this ObserverBuilder<TSource> source, Func<TSource, Task<bool>> predicate) =>
-        source.ContinueWith<WhereAsyncStateMachineFactory<TSource>, TSource>(new(predicate));
+    public static ObserverBuilder<TSource> WhereAwait<TSource>(this ObserverBuilder<TSource> source, Func<TSource, Task<bool>> predicate) =>
+        source.ContinueWith<WhereAwaitStateMachineFactory<TSource>, TSource>(new(predicate));
 
-    public static ObserverBuilder<TSource> WhereAsync<TSource>(this IObservable<TSource> source, Func<TSource, Task<bool>> predicate) =>
-        source.ToBuilder().WhereAsync(predicate);
+    public static ObserverBuilder<TSource> WhereAwait<TSource>(this IObservable<TSource> source, Func<TSource, Task<bool>> predicate) =>
+        source.ToBuilder().WhereAwait(predicate);
 
-    public static ObserverBuilder<TSource> WhereAsync<TSource>(this ObserverBuilder<TSource> source, Func<TSource, ValueTask<bool>> predicate) =>
-        source.ContinueWith<WhereAsyncStateMachineFactory<TSource>, TSource>(new(predicate));
+    public static ObserverBuilder<TSource> WhereAwait<TSource>(this ObserverBuilder<TSource> source, Func<TSource, ValueTask<bool>> predicate) =>
+        source.ContinueWith<WhereAwaitStateMachineFactory<TSource>, TSource>(new(predicate));
 
-    public static ObserverBuilder<TSource> WhereAsync<TSource>(this IObservable<TSource> source, Func<TSource, ValueTask<bool>> predicate) =>
-        source.ToBuilder().WhereAsync(predicate);
+    public static ObserverBuilder<TSource> WhereAwait<TSource>(this IObservable<TSource> source, Func<TSource, ValueTask<bool>> predicate) =>
+        source.ToBuilder().WhereAwait(predicate);
 
-    private readonly struct WhereAsyncStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
+    private readonly struct WhereAwaitStateMachineFactory<TSource> : IStateMachineFactory<TSource, TSource>
     {
         private readonly Delegate _predicate;
 
-        public WhereAsyncStateMachineFactory(Func<TSource, Task<bool>> predicate) =>
+        public WhereAwaitStateMachineFactory(Func<TSource, Task<bool>> predicate) =>
             _predicate = predicate;
 
-        public WhereAsyncStateMachineFactory(Func<TSource, ValueTask<bool>> predicate) =>
+        public WhereAwaitStateMachineFactory(Func<TSource, ValueTask<bool>> predicate) =>
             _predicate = predicate;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<TSource> source)
@@ -34,7 +34,7 @@ public static partial class Observable
             if (_predicate is Func<TSource, Task<bool>> taskPredicate)
             {
                 source.ContinueWith(
-                    new WhereAsyncStateMachine<
+                    new WhereAwaitStateMachine<
                         TSource,
                         TContinuation,
                         AwaiterForTask<bool>,
@@ -47,7 +47,7 @@ public static partial class Observable
             if (_predicate is Func<TSource, ValueTask<bool>> valueTaskPredicate)
             {
                 source.ContinueWith(
-                    new WhereAsyncStateMachine<
+                    new WhereAwaitStateMachine<
                         TSource,
                         TContinuation,
                         AwaiterForValueTask<bool>,
@@ -61,7 +61,7 @@ public static partial class Observable
         }
     }
 
-    private struct WhereAsyncStateMachine<TSource, TContinuation, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
+    private struct WhereAwaitStateMachine<TSource, TContinuation, TAwaiter, TAwaiterFactory> : IStateMachine<TSource>
         where TContinuation : struct, IStateMachine<TSource>
         where TAwaiter : struct, IAwaiter<bool>
         where TAwaiterFactory : struct, IAwaiterFactory<TAwaiter, TSource, bool>
@@ -69,7 +69,7 @@ public static partial class Observable
         private TContinuation _continuation;
         private readonly TAwaiterFactory _predicate;
 
-        public WhereAsyncStateMachine(in TContinuation continuation, TAwaiterFactory predicate)
+        public WhereAwaitStateMachine(in TContinuation continuation, TAwaiterFactory predicate)
         {
             _continuation = continuation;
             _predicate = predicate;

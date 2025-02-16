@@ -663,7 +663,7 @@ public class LinqTests
     {
         var source = new PublishSubject<int>();
         var values = source
-            .WhereAsync(value =>
+            .WhereAwait(value =>
                 value > 2 is var result &&
                 value % 2 == 0
                 ? Task.FromResult(result)
@@ -684,7 +684,7 @@ public class LinqTests
     {
         var source = new PublishSubject<int>();
         var values = source
-            .WhereAsync(value =>
+            .WhereAwait(value =>
                 value > 2 is var result &&
                 value % 2 == 0
                 ? ValueTask.FromResult(result)

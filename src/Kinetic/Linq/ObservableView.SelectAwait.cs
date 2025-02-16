@@ -6,31 +6,31 @@ namespace Kinetic.Linq;
 
 public static partial class ObservableView
 {
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, ObserverBuilder<TResult>> selector) =>
-        source.ContinueWith<SelectAsyncStateMachineFactory<TSource, TResult>, ListChange<TResult>>(new(selector));
+    public static ObserverBuilder<ListChange<TResult>> SelectAwait<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, ObserverBuilder<TResult>> selector) =>
+        source.ContinueWith<SelectAwaitStateMachineFactory<TSource, TResult>, ListChange<TResult>>(new(selector));
 
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, Property<TResult>> selector) =>
-        source.Select((item) => selector(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<TResult>> SelectAwait<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, Property<TResult>> selector) =>
+        source.SelectAwait((item) => selector(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, ReadOnlyProperty<TResult>> selector) =>
-        source.Select((item) => selector(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<TResult>> SelectAwait<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, ReadOnlyProperty<TResult>> selector) =>
+        source.SelectAwait((item) => selector(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, IObservable<TResult>> selector) =>
-        source.Select((item) => selector(item).ToBuilder());
+    public static ObserverBuilder<ListChange<TResult>> SelectAwait<TSource, TResult>(this ObserverBuilder<ListChange<TSource>> source, Func<TSource, IObservable<TResult>> selector) =>
+        source.SelectAwait((item) => selector(item).ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, ObserverBuilder<TResult>> selector) =>
-        source.Changed.ToBuilder().Select(selector);
+    public static ObserverBuilder<ListChange<TResult>> SelectAwait<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, ObserverBuilder<TResult>> selector) =>
+        source.Changed.ToBuilder().SelectAwait(selector);
 
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, Property<TResult>> selector) =>
-        source.Changed.ToBuilder().Select((item) => selector(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<TResult>> SelectAwait<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, Property<TResult>> selector) =>
+        source.Changed.ToBuilder().SelectAwait((item) => selector(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, ReadOnlyProperty<TResult>> selector) =>
-        source.Changed.ToBuilder().Select((item) => selector(item).Changed.ToBuilder());
+    public static ObserverBuilder<ListChange<TResult>> SelectAwait<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, ReadOnlyProperty<TResult>> selector) =>
+        source.Changed.ToBuilder().SelectAwait((item) => selector(item).Changed.ToBuilder());
 
-    public static ObserverBuilder<ListChange<TResult>> Select<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TResult>> selector) =>
-        source.Changed.ToBuilder().Select((item) => selector(item).ToBuilder());
+    public static ObserverBuilder<ListChange<TResult>> SelectAwait<TSource, TResult>(this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TResult>> selector) =>
+        source.Changed.ToBuilder().SelectAwait((item) => selector(item).ToBuilder());
 
-    private struct SelectAsyncStateMachine<TSource, TResult, TContinuation> :
+    private struct SelectAwaitStateMachine<TSource, TResult, TContinuation> :
         IStateMachine<ListChange<TSource>>,
         IStateMachine<ObservableViewItem<TResult>>
         where TContinuation : struct, IStateMachine<ListChange<TResult>>
@@ -39,7 +39,7 @@ public static partial class ObservableView
         private readonly List<ObservableViewItem<TResult>> _items = new();
         private TContinuation _continuation;
 
-        public SelectAsyncStateMachine(in TContinuation continuation, Func<TSource, ObserverBuilder<TResult>> selector)
+        public SelectAwaitStateMachine(in TContinuation continuation, Func<TSource, ObserverBuilder<TResult>> selector)
         {
             _continuation = continuation;
             _selector = selector;
@@ -243,16 +243,16 @@ public static partial class ObservableView
         }
     }
 
-    private readonly struct SelectAsyncStateMachineFactory<TSource, TResult> : IStateMachineFactory<ListChange<TSource>, ListChange<TResult>>
+    private readonly struct SelectAwaitStateMachineFactory<TSource, TResult> : IStateMachineFactory<ListChange<TSource>, ListChange<TResult>>
     {
         private readonly Func<TSource, ObserverBuilder<TResult>> _selector;
 
-        public SelectAsyncStateMachineFactory(Func<TSource, ObserverBuilder<TResult>> selector) =>
+        public SelectAwaitStateMachineFactory(Func<TSource, ObserverBuilder<TResult>> selector) =>
             _selector = selector;
 
         public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<TSource>> source)
             where TContinuation : struct, IStateMachine<ListChange<TResult>> =>
-            source.ContinueWith(new SelectAsyncStateMachine<TSource, TResult, TContinuation>(continuation, _selector));
+            source.ContinueWith(new SelectAwaitStateMachine<TSource, TResult, TContinuation>(continuation, _selector));
     }
 
     private struct SelectorStateMachine<T, TContinuation> : IStateMachine<T>

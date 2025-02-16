@@ -547,7 +547,7 @@ public class ObservableViewTests
     public void SelectDynamic()
     {
         var list = new ObservableList<Item>();
-        var view = list.Select(item => item.Name).ToView();
+        var view = list.SelectAwait(item => item.Name).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");

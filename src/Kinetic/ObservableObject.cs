@@ -77,8 +77,15 @@ public abstract class ObservableObject
     /// <param name="property">The property which value will be set.</param>
     /// <param name="value">The value to be set.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected void Set<T>(ReadOnlyProperty<T> property, T value) =>
+    protected void Set<T>(ReadOnlyProperty<T> property, T value)
+    {
+        if (property.Owner != this)
+        {
+            throw new ArgumentException("The property belongs to a different object.", nameof(property));
+        }
+
         property.Owner.Set(property.Offset, value);
+    }
 
     /// <summary>
     /// Creates an observable property for the specified field.

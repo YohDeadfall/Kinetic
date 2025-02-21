@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Kinetic.Linq;
 using Xunit;
@@ -93,6 +94,15 @@ public class ObservableObjectTests
         Assert.Equal(new[] { 0, 1 }, numbers);
     }
 
+    [Fact]
+    public void SetterThrowsForAnotherObject()
+    {
+        var one = new TestObject();
+        var two = new TestObject();
+
+        Assert.Throws<ArgumentException>(() => two.SetProperty(one.Number, 1));
+    }
+
     private sealed class TestObject : ObservableObject
     {
         private int _number;
@@ -103,5 +113,8 @@ public class ObservableObjectTests
 
         public Property<int> Number => Property(ref _number);
         public ReadOnlyProperty<string> Text => Property(ref _text);
+
+        public void SetProperty<T>(ReadOnlyProperty<T> property, T value) =>
+            Set(property, value);
     }
 }

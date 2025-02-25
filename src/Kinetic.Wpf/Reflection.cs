@@ -45,14 +45,18 @@ internal static class Reflection
 
         Debug.Assert(method.DeclaringType != null);
 
-        try{
-        return GetGenericDefinition(Wrapper<object>)
-            .MakeGenericMethod(typeof(T), method.DeclaringType)
-            .CreateDelegate<Func<Func<MethodInfo, Func<object?, ReadOnlyProperty<T>>>>>()
-            .Invoke()
-            .Invoke(method);
-        }catch (Exception ex){
-        throw new Exception(ex.ToString() + "\n" + method.ToString());}
+        try
+        {
+            return GetGenericDefinition(Wrapper<object>)
+                .MakeGenericMethod(typeof(T), method.DeclaringType)
+                .CreateDelegate<Func<Func<MethodInfo, Func<object?, ReadOnlyProperty<T>>>>>()
+                .Invoke()
+                .Invoke(method);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception(ex.ToString() + "\n" + method.ToString());
+        }
     }
 
     public static T CreateDelegate<T>(this MethodInfo method)

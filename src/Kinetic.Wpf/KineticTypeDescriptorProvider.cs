@@ -10,7 +10,9 @@ public sealed class KineticTypeDescriptorProvider : TypeDescriptionProvider
         base(TypeDescriptor.GetProvider(typeof(ObservableObject)))
     { }
 
-    public override ICustomTypeDescriptor? GetTypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type objectType, object? instance) =>
+    public override ICustomTypeDescriptor? GetTypeDescriptor([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] Type objectType, object? instance)
+    {
         // SAFETY: The base implementation always returns a type descriptor.
-        new KineticTypeDescriptor(base.GetTypeDescriptor(objectType, instance)!);
+        return new KineticTypeDescriptor(base.GetTypeDescriptor(objectType, instance)!);
+    }
 }

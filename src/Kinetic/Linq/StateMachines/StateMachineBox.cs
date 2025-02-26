@@ -49,7 +49,8 @@ public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObse
             ref Unsafe.As<TStateMachine, byte>(ref _stateMachine),
             length: Unsafe.SizeOf<TStateMachine>());
 
-    protected internal ref TStateMachine StateMachine => ref _stateMachine;
+    protected internal ref TStateMachine StateMachine =>
+        ref _stateMachine;
 
     protected StateMachineBox(in TStateMachine stateMachine) =>
         _stateMachine = stateMachine;

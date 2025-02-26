@@ -16,6 +16,7 @@ public class ObservableObjectTests
         Assert.Equal("0", test.Text);
 
         test.Number.Set(42);
+        test.NumberClamped.Set(42);
 
         Assert.Equal(42, test.Number);
         Assert.Equal("42", test.Text);
@@ -57,6 +58,25 @@ public class ObservableObjectTests
         test.Number.Set(4);
 
         Assert.Equal(new[] { 0, 1, 2, 3 }, numbers);
+    }
+
+    [Fact]
+    public void PropertyChanging()
+    {
+        var test = new TestObject();
+        var numbers = new List<int>();
+
+        using (test.NumberClamped.Changed.Subscribe(
+            value => numbers.Add(value)))
+        {
+            test.NumberClamped.Change.OnNext(1);
+            test.NumberClamped.Change.OnNext(101);
+            test.NumberClamped.Change.OnNext(1);
+        }
+
+        test.Number.Set(4);
+
+        Assert.Equal(new[] { 0, 1, 100, 1 }, numbers);
     }
 
     [Fact]
@@ -106,12 +126,14 @@ public class ObservableObjectTests
     private sealed class TestObject : ObservableObject
     {
         private int _number;
+        private int _numberClamped;
         private string _text = string.Empty;
 
         public TestObject() =>
             Number.Changed.Subscribe(value => Set(Text, value.ToString()));
 
         public Property<int> Number => Property(ref _number);
+        public Property<int> NumberClamped => Property(ref _numberClamped, value => value.Select(x => Math.Clamp(x, 0, 100)));
         public ReadOnlyProperty<string> Text => Property(ref _text);
 
         public void SetProperty<T>(ReadOnlyProperty<T> property, T value) =>

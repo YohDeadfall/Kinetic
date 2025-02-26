@@ -1,36 +1,41 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using Kinetic.Linq.StateMachines;
 
 namespace Kinetic;
 
-internal abstract class PropertyObservable
+internal abstract class PropertyObservable : StateMachineBox
 {
+    internal readonly IntPtr Offset;
     internal readonly ObservableObject Owner;
     internal readonly PropertyObservable? Next;
-    internal readonly IntPtr Offset;
 
     internal uint Version;
 
-    protected PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next) =>
+    protected PropertyObservable(IntPtr offset, ObservableObject owner, PropertyObservable? next) =>
         (Owner, Offset, Next) = (owner, offset, next);
 
-    public abstract void Changed();
+    internal abstract void Changed();
 }
 
 [DebuggerDisplay("Observers = {Subscriptions.GetObserversCountForDebugger()}")]
 [DebuggerTypeProxy(typeof(PropertyObservableDebugView<>))]
-internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>, IObserver<T>
+internal abstract class PropertyObservable<T> : PropertyObservable, IObservableInternal<T>, IObserver<T>
 {
     internal ObservableSubscriptions<T> Subscriptions;
 
-    public PropertyObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next) :
-        base(owner, offset, next)
+    protected PropertyObservable(IntPtr offset, ObservableObject owner, PropertyObservable? next) :
+        base(offset, owner, next)
     { }
 
-    public override void Changed() =>
+    internal abstract void Changing(T value);
+
+    internal override void Changed() =>
         Changed(Owner.Get<T>(Offset));
 
-    public void Changed(T value) =>
+    internal void Changed(T value) =>
         Subscriptions.OnNext(value);
 
     public IDisposable Subscribe(IObserver<T> observer)
@@ -53,4 +58,51 @@ internal sealed class PropertyObservable<T> : PropertyObservable, IObservableInt
 
     public void OnNext(T value) =>
         Owner.Set(Offset, value);
+}
+
+internal class PropertyObservable<T, TStateMachine> : PropertyObservable<T>
+    where TStateMachine : struct, IStateMachine<T>
+{
+    private TStateMachine _stateMachine;
+
+    private protected sealed override ReadOnlySpan<byte> StateMachineData =>
+        MemoryMarshal.CreateSpan(
+            ref Unsafe.As<TStateMachine, byte>(ref _stateMachine),
+            length: Unsafe.SizeOf<TStateMachine>());
+
+    protected internal ref TStateMachine StateMachine =>
+        ref _stateMachine;
+
+    public PropertyObservable(IntPtr offset, ObservableObject owner, PropertyObservable? next, in TStateMachine stateMachine) :
+        base(offset, owner, next)
+    {
+        _stateMachine = stateMachine;
+        _stateMachine.Initialize(this);
+    }
+
+    internal sealed  override void Changing(T value) =>
+        _stateMachine.OnNext(value);
+}
+
+internal readonly struct PropertyObservableFactory : IStateMachineBoxFactory<PropertyObservable>
+{
+    private readonly IntPtr _offset;
+    private readonly ObservableObject _owner;
+    private readonly PropertyObservable? _next;
+
+    public PropertyObservableFactory(
+        IntPtr offset,
+        ObservableObject owner,
+        PropertyObservable? next)
+    {
+        _offset = offset;
+        _owner = owner;
+        _next = next;
+    }
+
+    public PropertyObservable Create<T, TStateMachine>(in TStateMachine stateMachine)
+        where TStateMachine : struct, IStateMachine<T>
+    {
+        return new PropertyObservable<T, TStateMachine>(_offset, _owner, _next, stateMachine);
+    }
 }

@@ -8,7 +8,10 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -18,28 +21,10 @@ jobs:
           dotnet-version: 8.0.x
       - name: Build
         run: |
-          dotnet build Kinetic.sln --configuration Release
+          dotnet build --configuration Release
       - name: Test
         run: |
-          dotnet test Kinetic.sln --configuration Release
+          dotnet test --configuration Release
       - name: Formatting
         run: |
-          dotnet format Kinetic.sln --verify-no-changes
-  build-windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v2
-        with:
-          dotnet-version: 8.0.x
-      - name: Build
-        run: |
-          dotnet build Kinetic.Windows.sln --configuration Release
-      - name: Test
-        run: |
-          dotnet test Kinetic.Windows.sln --configuration Release
-      - name: Formatting
-        run: |
-          dotnet format Kinetic.Windows.sln --verify-no-changes
+          dotnet format --verify-no-changes

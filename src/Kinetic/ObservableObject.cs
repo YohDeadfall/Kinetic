@@ -59,7 +59,7 @@ public abstract class ObservableObject
     [MethodImpl(MethodImplOptions.NoInlining)]
     private PropertyObservable<T> CreateObservableFor<T>(IntPtr offset)
     {
-        var observable = new PropertyObservable<T, SetValueStateMachine<T>>(offset, this, _observables, default);
+        var observable = new PropertyObservable<T, SetValueUnchecked<T>>(offset, this, _observables, default);
         _observables = observable;
         return observable;
     }
@@ -109,7 +109,7 @@ public abstract class ObservableObject
         if (observable is null)
         {
             EnsureObservable(offset, (owner, offset, next) => changing(default)
-                .Build<SetValueStateMachine<T>, PropertyObservableFactory, PropertyObservable>(new(), new(offset, owner, next)));
+                .Build<SetValueChecked<T>, PropertyObservableFactory, PropertyObservable>(new(), new(offset, owner, next)));
         }
 
         return new Property<T>(this, offset);
@@ -154,23 +154,6 @@ public abstract class ObservableObject
         else
         {
             GetReference<T>(offset) = value;
-        }
-    }
-
-    private static void SetCore<T>(PropertyObservable<T> observable, T value)
-    {
-        var owner = observable.Owner;
-
-        owner.GetReference<T>(observable.Offset) = value;
-
-        if (owner.NotificationsEnabled)
-        {
-            observable.Version = owner._version++;
-            observable.Changed(value);
-        }
-        else
-        {
-            observable.Version = owner._version;
         }
     }
 
@@ -224,30 +207,82 @@ public abstract class ObservableObject
         }
     }
 
-    private struct SetValueStateMachine<T> : IStateMachine<T>
+    private struct SetValueUnchecked<T> : IStateMachine<T>
     {
-        private PropertyObservable<T>? _observable;
+        public PropertyObservable<T>? Observable;
 
         public StateMachineBox Box =>
-            _observable ?? throw new InvalidOperationException();
+            Observable ?? throw new InvalidOperationException();
 
         public StateMachine<T> Reference =>
-            new StateMachine<T, SetValueStateMachine<T>>(ref this);
+            new StateMachine<T, SetValueUnchecked<T>>(ref this);
 
         public StateMachine? Continuation =>
             null;
 
         public void Dispose() =>
-            _observable = null;
+            Observable = null;
 
         public void Initialize(StateMachineBox box) =>
-            _observable = (PropertyObservable<T>) box;
+            Observable = (PropertyObservable<T>) box;
 
         public void OnCompleted() { }
 
         public void OnError(Exception error) { }
 
-        public void OnNext(T value) =>
-            SetCore(_observable!, value);
+        public void OnNext(T value)
+        {
+            var observable = Observable!;
+            var owner = observable.Owner;
+
+            owner.GetReference<T>(observable.Offset) = value;
+
+            if (owner.NotificationsEnabled)
+            {
+                observable.Version = owner._version++;
+                observable.Changed(value);
+            }
+            else
+            {
+                observable.Version = owner._version;
+            }
+        }
+    }
+
+    private struct SetValueChecked<T> : IStateMachine<T>
+    {
+        private SetValueUnchecked<T> _continuation;
+
+        public StateMachineBox Box =>
+            _continuation.Box;
+
+        public StateMachine<T> Reference =>
+            new StateMachine<T, SetValueChecked<T>>(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
+
+        public void Dispose() =>
+            _continuation.Dispose();
+
+        public void Initialize(StateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void OnCompleted() =>
+            _continuation.OnCompleted();
+
+        public void OnError(Exception error) =>
+            _continuation.OnError(error);
+
+        public void OnNext(T value)
+        {
+            var observable = _continuation.Observable!;
+            if (EqualityComparer<T>.Default.Equals(value, observable.Owner.Get<T>(observable.Offset)))
+            {
+                return;
+            }
+
+            _continuation.OnNext(value);
+        }
     }
 }

@@ -53,8 +53,16 @@ public abstract class ObjectBenchmarks
     protected class KineticTestObject : ObservableObject
     {
         private int _field;
-        public Property<int> Property => base.Property(ref _field);
-        public Property<int> PropertyWithHook => base.Property(ref _field, static changing => changing.Select(value => value));
+        private int _fieldWithHook;
+
+        public Property<int> Property =>
+            base.Property(ref _field);
+
+        public Property<int> PropertyWithHook =>
+            base.Property(ref _fieldWithHook);
+
+        public KineticTestObject() =>
+            base.Property(ref _fieldWithHook, static changing => changing.Select(value => value));
     }
 
     protected class ReactiveTestObject : ReactiveObject

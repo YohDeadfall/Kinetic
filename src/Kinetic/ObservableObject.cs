@@ -17,6 +17,7 @@ public abstract class ObservableObject
 
     protected bool NotificationsEnabled => _suppressions == 0;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected PropertyObservable? GetObservable(IntPtr offset)
     {
         for (var observable = _observables;
@@ -45,11 +46,23 @@ public abstract class ObservableObject
     }
 
     private protected PropertyObservable EnsureObservable(IntPtr offset, Func<ObservableObject, IntPtr, PropertyObservable?, PropertyObservable> factory) =>
-        GetObservable(offset) ?? (_observables = factory(this, offset, _observables));
+        GetObservable(offset) ?? CreateObservable(offset, factory);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal PropertyObservable<T> EnsureObservableFor<T>(IntPtr offset) =>
-        Unsafe.As<PropertyObservable<T>>(EnsureObservable(offset, (owner, offset, next) => new PropertyObservable<T, SetValueStateMachine<T>>(offset, owner, next, default)));
+        GetObservableFor<T>(offset) ?? CreateObservableFor<T>(offset);
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private PropertyObservable CreateObservable(IntPtr offset, Func<ObservableObject, IntPtr, PropertyObservable?, PropertyObservable> factory) =>
+        _observables = factory(this, offset, _observables);
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private PropertyObservable<T> CreateObservableFor<T>(IntPtr offset)
+    {
+        var observable = new PropertyObservable<T, SetValueStateMachine<T>>(offset, this, _observables, default);
+        _observables = observable;
+        return observable;
+    }
 
     /// <summary>
     /// Sets a value of the specified property and notifies the observers.
@@ -128,6 +141,11 @@ public abstract class ObservableObject
 
     internal void Set<T>(IntPtr offset, T value)
     {
+        if (EqualityComparer<T>.Default.Equals(value, Get<T>(offset)))
+        {
+            return;
+        }
+
         var observable = GetObservableFor<T>(offset);
         if (observable is { })
         {
@@ -143,14 +161,9 @@ public abstract class ObservableObject
     {
         var owner = observable.Owner;
 
-        if (EqualityComparer<T>.Default.Equals(value, owner.Get<T>(observable.Offset)))
-        {
-            return;
-        }
-
         owner.GetReference<T>(observable.Offset) = value;
 
-        if (observable.Owner.NotificationsEnabled)
+        if (owner.NotificationsEnabled)
         {
             observable.Version = owner._version++;
             observable.Changed(value);

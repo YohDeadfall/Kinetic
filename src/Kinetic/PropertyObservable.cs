@@ -60,7 +60,7 @@ internal abstract class PropertyObservable<T> : PropertyObservable, IObservableI
         Owner.Set(Offset, value);
 }
 
-internal class PropertyObservable<T, TStateMachine> : PropertyObservable<T>
+internal sealed class PropertyObservable<T, TStateMachine> : PropertyObservable<T>
     where TStateMachine : struct, IStateMachine<T>
 {
     private TStateMachine _stateMachine;
@@ -70,7 +70,7 @@ internal class PropertyObservable<T, TStateMachine> : PropertyObservable<T>
             ref Unsafe.As<TStateMachine, byte>(ref _stateMachine),
             length: Unsafe.SizeOf<TStateMachine>());
 
-    protected internal ref TStateMachine StateMachine =>
+    private ref TStateMachine StateMachine =>
         ref _stateMachine;
 
     public PropertyObservable(IntPtr offset, ObservableObject owner, PropertyObservable? next, in TStateMachine stateMachine) :
@@ -80,7 +80,7 @@ internal class PropertyObservable<T, TStateMachine> : PropertyObservable<T>
         _stateMachine.Initialize(this);
     }
 
-    internal sealed override void Changing(T value) =>
+    internal override void Changing(T value) =>
         _stateMachine.OnNext(value);
 }
 

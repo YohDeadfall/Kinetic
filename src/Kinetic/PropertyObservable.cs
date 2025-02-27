@@ -80,7 +80,7 @@ internal class PropertyObservable<T, TStateMachine> : PropertyObservable<T>
         _stateMachine.Initialize(this);
     }
 
-    internal sealed  override void Changing(T value) =>
+    internal sealed override void Changing(T value) =>
         _stateMachine.OnNext(value);
 }
 

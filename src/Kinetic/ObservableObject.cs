@@ -96,7 +96,7 @@ public abstract class ObservableObject
         if (observable is null)
         {
             EnsureObservable(offset, (owner, offset, next) => changing(default)
-                .Build<SetValueStateMachine<T>, PropertyObservableFactory, PropertyObservable>(new (), new (offset, owner, next)));
+                .Build<SetValueStateMachine<T>, PropertyObservableFactory, PropertyObservable>(new(), new(offset, owner, next)));
         }
 
         return new Property<T>(this, offset);
@@ -149,7 +149,7 @@ public abstract class ObservableObject
         }
 
         owner.GetReference<T>(observable.Offset) = value;
-        
+
         if (observable.Owner.NotificationsEnabled)
         {
             observable.Version = owner._version++;

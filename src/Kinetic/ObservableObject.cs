@@ -73,12 +73,38 @@ public abstract class ObservableObject
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void Set<T>(ReadOnlyProperty<T> property, T value)
     {
+        CheckOwner(property);
+        property.Owner.Set(property.Offset, value);
+    }
+
+    /// <summary>
+    /// Set a preview handler for the specified property.
+    /// </summary>
+    /// <typeparam name="T">The type of the value.</typeparam>
+    /// <param name="property">The property for which a preview handler should be set..</param>
+    /// <param name="preview">The value preview handler that is invoked before setting a new value.</param>
+    /// <returns>Returns an observable property for the specified field.</returns>
+    protected void Preview<T>(ReadOnlyProperty<T> property, Func<ObserverBuilder<T>, ObserverBuilder<T>> preview)
+    {
+        CheckOwner(property);
+
+        var observable = GetObservableFor<T>(property.Offset);
+        if (observable is { })
+        {
+            throw new InvalidOperationException("A preview handler cannot be set for an already initialized property.");
+        }
+
+        EnsureObservable(property.Offset, (owner, offset, next) => preview(default)
+            .Build<SetValueChecked<T>, PropertyObservableFactory, PropertyObservable>(new(), new(offset, owner, next)));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void CheckOwner<T>(ReadOnlyProperty<T> property)
+    {
         if (property.Owner != this)
         {
             throw new ArgumentException("The property belongs to a different object.", nameof(property));
         }
-
-        property.Owner.Set(property.Offset, value);
     }
 
     /// <summary>
@@ -91,27 +117,6 @@ public abstract class ObservableObject
     protected Property<T> Property<T>(ref T field)
     {
         var offset = GetOffsetOf(ref field);
-        return new Property<T>(this, offset);
-    }
-
-    /// <summary>
-    /// Creates an observable property for the specified field with a value changing handler.
-    /// </summary>
-    /// <typeparam name="T">The type of the field.</typeparam>
-    /// <param name="field">The field for which an observable propery will be created.</param>
-    /// <param name="changing">The value changing handler that is invoked before setting a new value.</param>
-    /// <returns>Returns an observable property for the specified field.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    protected Property<T> Property<T>(ref T field, Func<ObserverBuilder<T>, ObserverBuilder<T>> changing)
-    {
-        var offset = GetOffsetOf(ref field);
-        var observable = GetObservableFor<T>(offset);
-        if (observable is null)
-        {
-            EnsureObservable(offset, (owner, offset, next) => changing(default)
-                .Build<SetValueChecked<T>, PropertyObservableFactory, PropertyObservable>(new(), new(offset, owner, next)));
-        }
-
         return new Property<T>(this, offset);
     }
 

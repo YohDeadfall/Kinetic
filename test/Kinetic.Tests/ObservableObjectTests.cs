@@ -129,11 +129,14 @@ public class ObservableObjectTests
         private int _numberClamped;
         private string _text = string.Empty;
 
-        public TestObject() =>
+        public TestObject()
+        {
             Number.Changed.Subscribe(value => Set(Text, value.ToString()));
+            Preview<int>(NumberClamped, value => value.Select(x => Math.Clamp(x, 0, 100)));
+        }
 
         public Property<int> Number => Property(ref _number);
-        public Property<int> NumberClamped => Property(ref _numberClamped, value => value.Select(x => Math.Clamp(x, 0, 100)));
+        public Property<int> NumberClamped => Property(ref _numberClamped);
         public ReadOnlyProperty<string> Text => Property(ref _text);
 
         public void SetProperty<T>(ReadOnlyProperty<T> property, T value) =>

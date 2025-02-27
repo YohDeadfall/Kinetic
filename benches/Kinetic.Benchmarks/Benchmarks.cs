@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using Kinetic.Linq;
 using Kinetic.Linq.StateMachines;
 using Kinetic.Subjects;
 using ReactiveUI;
@@ -52,7 +53,16 @@ public abstract class ObjectBenchmarks
     protected class KineticTestObject : ObservableObject
     {
         private int _field;
-        public Property<int> Property => base.Property(ref _field);
+        private int _fieldWithHook;
+
+        public Property<int> Property =>
+            base.Property(ref _field);
+
+        public Property<int> PropertyWithHook =>
+            base.Property(ref _fieldWithHook);
+
+        public KineticTestObject() =>
+            Preview<int>(PropertyWithHook, static changing => changing.Select(value => value));
     }
 
     protected class ReactiveTestObject : ReactiveObject
@@ -70,6 +80,7 @@ public class GetterBenchmarks : ObjectBenchmarks
 {
     [Benchmark] public int NpcGetter() => NpcObject.Property;
     [Benchmark] public int KineticGetter() => KineticObject.Property;
+    [Benchmark] public int KineticGetteriWithHook() => KineticObject.PropertyWithHook;
     [Benchmark] public int ReactiveGetter() => ReactiveObject.Property;
 }
 
@@ -100,6 +111,7 @@ public class SetterBenchmarks : ObjectBenchmarks
     [Params(false, true)] public bool WithSameValue { get; set; }
     [Benchmark] public void NpcSetter() => NpcObject.Property = _value += _change;
     [Benchmark] public void KineticSetter() => KineticObject.Property.Set(_value += _change);
+    [Benchmark] public void KineticSetterWithHook() => KineticObject.PropertyWithHook.Set(_value += _change);
     [Benchmark] public void ReactiveSetter() => ReactiveObject.Property = _value += _change;
 
     private class Observer<T> : IObserver<T>

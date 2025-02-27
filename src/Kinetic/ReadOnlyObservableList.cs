@@ -355,7 +355,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     }
 
     private ItemsObservable EnsureChangeObservable() =>
-        Unsafe.As<ItemsObservable>(EnsureObservable(GetOffsetOf(ref _items), static (self, offset, next) => new ItemsObservable(self, offset, next)));
+        Unsafe.As<ItemsObservable>(EnsureObservable(GetOffsetOf(ref _items), static (self, offset, next) => new ItemsObservable(offset, self, next)));
 
     private ItemsObservable? GetChangeObservable() =>
         Unsafe.As<ItemsObservable?>(GetObservable(GetOffsetOf(ref _items)));
@@ -436,10 +436,13 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     {
         private ObservableSubscriptions<ListChange<T>> _subscriptions;
 
-        public ItemsObservable(ObservableObject owner, IntPtr offset, PropertyObservable? next)
-            : base(owner, offset, next) { }
+        private protected override ReadOnlySpan<byte> StateMachineData =>
+            throw new NotSupportedException();
 
-        public override void Changed()
+        public ItemsObservable(IntPtr offset, ObservableObject owner, PropertyObservable? next)
+            : base(offset, owner, next) { }
+
+        internal override void Changed()
         {
             _subscriptions.OnNext(ListChange.RemoveAll<T>());
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Kinetic.Linq.StateMachines;
 
 namespace Kinetic;
 
@@ -16,6 +17,7 @@ public abstract class ObservableObject
 
     protected bool NotificationsEnabled => _suppressions == 0;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private protected PropertyObservable? GetObservable(IntPtr offset)
     {
         for (var observable = _observables;
@@ -43,30 +45,22 @@ public abstract class ObservableObject
         return Unsafe.As<PropertyObservable<T>>(observable);
     }
 
-    private protected PropertyObservable EnsureObservable(IntPtr offset, Func<ObservableObject, IntPtr, PropertyObservable?, PropertyObservable> factory)
+    private protected PropertyObservable EnsureObservable(IntPtr offset, Func<ObservableObject, IntPtr, PropertyObservable?, PropertyObservable> factory) =>
+        GetObservable(offset) ?? CreateObservable(offset, factory);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal PropertyObservable<T> EnsureObservableFor<T>(IntPtr offset) =>
+        GetObservableFor<T>(offset) ?? CreateObservableFor<T>(offset);
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private PropertyObservable CreateObservable(IntPtr offset, Func<ObservableObject, IntPtr, PropertyObservable?, PropertyObservable> factory) =>
+        _observables = factory(this, offset, _observables);
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private PropertyObservable<T> CreateObservableFor<T>(IntPtr offset)
     {
-        var observable = GetObservable(offset);
-        if (observable is null)
-        {
-            observable = factory(this, offset, _observables);
-
-            _observables = observable;
-        }
-
-        return observable;
-    }
-
-    internal PropertyObservable<T> EnsureObservableFor<T>(IntPtr offset)
-    {
-        var observable = GetObservableFor<T>(offset);
-        if (observable is null)
-        {
-            observable = new PropertyObservable<T>(
-                this, offset, next: _observables);
-
-            _observables = observable;
-        }
-
+        var observable = new PropertyObservable<T, SetValueUnchecked<T>>(offset, this, _observables, default);
+        _observables = observable;
         return observable;
     }
 
@@ -79,12 +73,38 @@ public abstract class ObservableObject
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     protected void Set<T>(ReadOnlyProperty<T> property, T value)
     {
+        CheckOwner(property);
+        property.Owner.Set(property.Offset, value);
+    }
+
+    /// <summary>
+    /// Set a preview handler for the specified property.
+    /// </summary>
+    /// <typeparam name="T">The type of the value.</typeparam>
+    /// <param name="property">The property for which a preview handler should be set..</param>
+    /// <param name="preview">The value preview handler that is invoked before setting a new value.</param>
+    /// <returns>Returns an observable property for the specified field.</returns>
+    protected void Preview<T>(ReadOnlyProperty<T> property, Func<ObserverBuilder<T>, ObserverBuilder<T>> preview)
+    {
+        CheckOwner(property);
+
+        var observable = GetObservableFor<T>(property.Offset);
+        if (observable is { })
+        {
+            throw new InvalidOperationException("A preview handler cannot be set for an already initialized property.");
+        }
+
+        EnsureObservable(property.Offset, (owner, offset, next) => preview(default)
+            .Build<SetValueChecked<T>, PropertyObservableFactory, PropertyObservable>(new(), new(offset, owner, next)));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void CheckOwner<T>(ReadOnlyProperty<T> property)
+    {
         if (property.Owner != this)
         {
             throw new ArgumentException("The property belongs to a different object.", nameof(property));
         }
-
-        property.Owner.Set(property.Offset, value);
     }
 
     /// <summary>
@@ -131,20 +151,14 @@ public abstract class ObservableObject
             return;
         }
 
-        GetReference<T>(offset) = value;
-
         var observable = GetObservableFor<T>(offset);
-        if (observable is not null)
+        if (observable is { })
         {
-            if (_suppressions > 0)
-            {
-                observable.Version = _version;
-            }
-            else
-            {
-                observable.Version = _version++;
-                observable.Changed(value);
-            }
+            observable.Changing(value);
+        }
+        else
+        {
+            GetReference<T>(offset) = value;
         }
     }
 
@@ -195,6 +209,85 @@ public abstract class ObservableObject
                     }
                 }
             }
+        }
+    }
+
+    private struct SetValueUnchecked<T> : IStateMachine<T>
+    {
+        public PropertyObservable<T>? Observable;
+
+        public StateMachineBox Box =>
+            Observable ?? throw new InvalidOperationException();
+
+        public StateMachine<T> Reference =>
+            new StateMachine<T, SetValueUnchecked<T>>(ref this);
+
+        public StateMachine? Continuation =>
+            null;
+
+        public void Dispose() =>
+            Observable = null;
+
+        public void Initialize(StateMachineBox box) =>
+            Observable = (PropertyObservable<T>) box;
+
+        public void OnCompleted() { }
+
+        public void OnError(Exception error) { }
+
+        public void OnNext(T value)
+        {
+            var observable = Observable!;
+            var owner = observable.Owner;
+
+            owner.GetReference<T>(observable.Offset) = value;
+
+            if (owner.NotificationsEnabled)
+            {
+                observable.Version = owner._version++;
+                observable.Changed(value);
+            }
+            else
+            {
+                observable.Version = owner._version;
+            }
+        }
+    }
+
+    private struct SetValueChecked<T> : IStateMachine<T>
+    {
+        private SetValueUnchecked<T> _continuation;
+
+        public StateMachineBox Box =>
+            _continuation.Box;
+
+        public StateMachine<T> Reference =>
+            new StateMachine<T, SetValueChecked<T>>(ref this);
+
+        public StateMachine? Continuation =>
+            _continuation.Reference;
+
+        public void Dispose() =>
+            _continuation.Dispose();
+
+        public void Initialize(StateMachineBox box) =>
+            _continuation.Initialize(box);
+
+        public void OnCompleted() =>
+            _continuation.OnCompleted();
+
+        public void OnError(Exception error) =>
+            _continuation.OnError(error);
+
+        public void OnNext(T value)
+        {
+            var observable = _continuation.Observable!;
+            if (EqualityComparer<T>.Default.Equals(value, observable.Owner.Get<T>(observable.Offset)))
+            {
+                return;
+            }
+
+            _continuation.OnNext(value);
         }
     }
 }

@@ -57,22 +57,22 @@ public static class KineticBindingPath
         public StateMachineBox Box =>
             _continuation.Box;
 
-        StateMachine<Property<TSource>?> IStateMachine<Property<TSource>?>.Reference =>
-            new StateMachine<Property<TSource>?, PropertyStateMachine<TContinuation, TSource>>(ref this);
+        StateMachineReference<Property<TSource>?> IStateMachine<Property<TSource>?>.Reference =>
+            new StateMachineReference<Property<TSource>?, PropertyStateMachine<TContinuation, TSource>>(ref this);
 
-        StateMachine<ReadOnlyProperty<TSource>?> IStateMachine<ReadOnlyProperty<TSource>?>.Reference =>
-            new StateMachine<ReadOnlyProperty<TSource>?, PropertyStateMachine<TContinuation, TSource>>(ref this);
+        StateMachineReference<ReadOnlyProperty<TSource>?> IStateMachine<ReadOnlyProperty<TSource>?>.Reference =>
+            new StateMachineReference<ReadOnlyProperty<TSource>?, PropertyStateMachine<TContinuation, TSource>>(ref this);
 
-        StateMachine<TSource> IStateMachine<TSource>.Reference =>
-            new StateMachine<TSource, PropertyStateMachine<TContinuation, TSource>>(ref this);
+        StateMachineReference<TSource> IStateMachine<TSource>.Reference =>
+            new StateMachineReference<TSource, PropertyStateMachine<TContinuation, TSource>>(ref this);
 
-        StateMachine? IStateMachine<Property<TSource>?>.Continuation =>
+        StateMachineReference? IStateMachine<Property<TSource>?>.Continuation =>
             _continuation.Reference;
 
-        StateMachine? IStateMachine<ReadOnlyProperty<TSource>?>.Continuation =>
+        StateMachineReference? IStateMachine<ReadOnlyProperty<TSource>?>.Continuation =>
             _continuation.Reference;
 
-        StateMachine? IStateMachine<TSource>.Continuation =>
+        StateMachineReference? IStateMachine<TSource>.Continuation =>
             null;
 
         public void Initialize(StateMachineBox box) =>

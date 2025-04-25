@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Kinetic.Linq.StateMachines;
+using Kinetic.Runtime;
 
 namespace Kinetic;
 
@@ -41,11 +41,11 @@ internal abstract class PropertyObservable<T> : PropertyObservable, IObservableI
     public IDisposable Subscribe(IObserver<T> observer)
     {
         observer.OnNext(Owner.Get<T>(Offset));
-        return Subscriptions.Subscribe(this, observer);
+        return Subscriptions.Subscribe(observer, this);
     }
 
     public void Subscribe(ObservableSubscription<T> subscription) =>
-        Subscriptions.Subscribe(this, subscription);
+        Subscriptions.Subscribe(subscription, this);
 
     public void Unsubscribe(ObservableSubscription<T> subscription) =>
         Subscriptions.Unsubscribe(subscription);

@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Kinetic.Linq.StateMachines;
+using Kinetic.Linq;
+using Kinetic.Runtime;
 
 namespace Kinetic;
 
@@ -84,7 +85,7 @@ public abstract class ObservableObject
     /// <param name="property">The property for which a preview handler should be set..</param>
     /// <param name="preview">The value preview handler that is invoked before setting a new value.</param>
     /// <returns>Returns an observable property for the specified field.</returns>
-    protected void Preview<T>(ReadOnlyProperty<T> property, Func<ObserverBuilder<T>, ObserverBuilder<T>> preview)
+    protected void Preview<T>(ReadOnlyProperty<T> property, Func<IObservable<T>, IObservable<T>> preview)
     {
         CheckOwner(property);
 
@@ -219,10 +220,10 @@ public abstract class ObservableObject
         public StateMachineBox Box =>
             Observable ?? throw new InvalidOperationException();
 
-        public StateMachine<T> Reference =>
-            new StateMachine<T, SetValueUnchecked<T>>(ref this);
+        public StateMachineReference<T> Reference =>
+            new StateMachineReference<T, SetValueUnchecked<T>>(ref this);
 
-        public StateMachine? Continuation =>
+        public StateMachineReference? Continuation =>
             null;
 
         public void Dispose() =>
@@ -261,10 +262,10 @@ public abstract class ObservableObject
         public StateMachineBox Box =>
             _continuation.Box;
 
-        public StateMachine<T> Reference =>
-            new StateMachine<T, SetValueChecked<T>>(ref this);
+        public StateMachineReference<T> Reference =>
+            new StateMachineReference<T, SetValueChecked<T>>(ref this);
 
-        public StateMachine? Continuation =>
+        public StateMachineReference? Continuation =>
             _continuation.Reference;
 
         public void Dispose() =>

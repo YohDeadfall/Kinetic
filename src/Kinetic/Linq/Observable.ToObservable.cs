@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using Kinetic.Linq.StateMachines;
 
 namespace Kinetic.Linq;
@@ -16,27 +15,31 @@ internal static class Observable<TResult>
 {
     private interface IBox : IObservableInternal<TResult>
     {
-        ref ObservableSubscriptions<TResult> Subscriptions { get; }
+        void Initialize(ref ObservableStateMachine publisher);
     }
 
     private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IBox
         where TStateMachine : struct, IStateMachine<T>
     {
-        private ObservableSubscriptions<TResult> _subscriptions;
-
-        public ref ObservableSubscriptions<TResult> Subscriptions => ref _subscriptions;
+        private IntPtr _publisher;
 
         public Box(in TStateMachine stateMachine) :
             base(stateMachine) => StateMachine.Initialize(this);
 
         public IDisposable Subscribe(IObserver<TResult> observer) =>
-            _subscriptions.Subscribe(this, observer);
+            GetSubscriptions().Subscribe(this, observer);
 
         public void Subscribe(ObservableSubscription<TResult> subscription) =>
-            _subscriptions.Subscribe(this, subscription);
+            GetSubscriptions().Subscribe(this, subscription);
 
         public void Unsubscribe(ObservableSubscription<TResult> subscription) =>
-            _subscriptions.Unsubscribe(subscription);
+            GetSubscriptions().Unsubscribe(subscription);
+
+        public void Initialize(ref Observable<TResult>.ObservableStateMachine publisher) =>
+            _publisher = OffsetTo<TResult, ObservableStateMachine>(ref publisher);
+
+        private ref ObservableSubscriptions<TResult> GetSubscriptions() =>
+            ref ReferenceTo<TResult, ObservableStateMachine>(_publisher)._subscriptions;
     }
 
     internal readonly struct BoxFactory : IStateMachineBoxFactory<IObservable<TResult>>
@@ -49,7 +52,7 @@ internal static class Observable<TResult>
     internal struct ObservableStateMachine : IStateMachine<TResult>
     {
         private StateMachineBox _box;
-        private IntPtr _subscriptions;
+        internal ObservableSubscriptions<TResult> _subscriptions;
 
         public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
@@ -64,27 +67,18 @@ internal static class Observable<TResult>
 
         public void Initialize(StateMachineBox box)
         {
-            var boxTyped = (IBox) box;
+            ((IBox) box).Initialize(ref this);
 
             _box = box;
-            _subscriptions = Unsafe.ByteOffset(
-                ref Unsafe.As<ObservableStateMachine, IntPtr>(ref this),
-                ref Unsafe.As<ObservableSubscriptions<TResult>, IntPtr>(ref boxTyped.Subscriptions));
         }
 
         public void OnCompleted() =>
-            GetSubscriptions(ref this).OnCompleted();
+            _subscriptions.OnCompleted();
 
         public void OnError(Exception error) =>
-            GetSubscriptions(ref this).OnError(error);
+            _subscriptions.OnError(error);
 
         public void OnNext(TResult value) =>
-            GetSubscriptions(ref this).OnNext(value);
-
-        private static ref ObservableSubscriptions<TResult> GetSubscriptions(ref ObservableStateMachine self) =>
-            ref Unsafe.As<IntPtr, ObservableSubscriptions<TResult>>(
-                ref Unsafe.AddByteOffset(
-                    ref Unsafe.As<ObservableStateMachine, IntPtr>(ref self),
-                    self._subscriptions));
+            _subscriptions.OnNext(value);
     }
 }

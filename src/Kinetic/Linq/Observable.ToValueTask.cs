@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Threading.Tasks.Sources;
 using Kinetic.Linq.StateMachines;
@@ -30,26 +29,33 @@ internal static class ValueTaskSource<TResult>
 
     private interface IBox : IBoxExternal
     {
-        ref ManualResetValueTaskSourceCore<TResult> Core { get; }
+        void Initialize(ref ValueTaskStateMachine publisher);
     }
 
     private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IBox
         where TStateMachine : struct, IStateMachine<T>
     {
-        private ManualResetValueTaskSourceCore<TResult> _core;
+        private IntPtr _publisher;
 
-        public ref ManualResetValueTaskSourceCore<TResult> Core => ref _core;
-
-        public short Token => _core.Version;
+        public short Token => GetCore().Version;
 
         public Box(in TStateMachine stateMachine) :
             base(stateMachine) => StateMachine.Initialize(this);
 
-        public ValueTaskSourceStatus GetStatus(short token) => _core.GetStatus(token);
-        public TResult GetResult(short token) => _core.GetResult(token);
+        public ValueTaskSourceStatus GetStatus(short token) =>
+            GetCore().GetStatus(token);
+
+        public TResult GetResult(short token) =>
+            GetCore().GetResult(token);
 
         public void OnCompleted(Action<object?> continuation, object? state, short token, ValueTaskSourceOnCompletedFlags flags) =>
-            _core.OnCompleted(continuation, state, token, flags);
+            GetCore().OnCompleted(continuation, state, token, flags);
+
+        public void Initialize(ref ValueTaskStateMachine publisher) =>
+            _publisher = OffsetTo<TResult, ValueTaskStateMachine>(ref publisher);
+
+        private ref ManualResetValueTaskSourceCore<TResult> GetCore() =>
+            ref ReferenceTo<TResult, ValueTaskStateMachine>(_publisher)._core;
     }
 
     internal readonly struct BoxFactory : IStateMachineBoxFactory<IBoxExternal>
@@ -62,7 +68,7 @@ internal static class ValueTaskSource<TResult>
     internal struct ValueTaskStateMachine : IStateMachine<TResult>
     {
         private StateMachineBox? _box;
-        private IntPtr _core;
+        internal ManualResetValueTaskSourceCore<TResult> _core;
 
         public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
@@ -77,22 +83,13 @@ internal static class ValueTaskSource<TResult>
 
         public void Initialize(StateMachineBox box)
         {
-            var boxTyped = (IBox) box;
+            ((IBox) box).Initialize(ref this);
 
             _box = box;
-            _core = Unsafe.ByteOffset(
-                ref Unsafe.As<ValueTaskStateMachine, IntPtr>(ref this),
-                ref Unsafe.As<ManualResetValueTaskSourceCore<TResult>, IntPtr>(ref boxTyped.Core));
         }
 
         public void OnCompleted() { }
-        public void OnError(Exception error) => GetCore(ref this).SetException(error);
-        public void OnNext(TResult value) => GetCore(ref this).SetResult(value);
-
-        private static ref ManualResetValueTaskSourceCore<TResult> GetCore(ref ValueTaskStateMachine self) =>
-            ref Unsafe.As<IntPtr, ManualResetValueTaskSourceCore<TResult>>(
-                ref Unsafe.AddByteOffset(
-                    ref Unsafe.As<ValueTaskStateMachine, IntPtr>(ref self),
-                    self._core));
+        public void OnError(Exception error) => _core.SetException(error);
+        public void OnNext(TResult value) => _core.SetResult(value);
     }
 }

@@ -7,21 +7,21 @@ namespace Kinetic.Linq;
 
 public static class OperatorExtensions
 {
-    public static Operator<Aggregate<Cast<TOperator, TSource, TSource?>, TSource?, TSource?>, TSource?> Aggregate<TOperator, TSource>(
-        this Operator<TOperator, TSource> source, Func<TSource?, TSource, TSource> accumulator)
+    public static Operator<Aggregate<TOperator, TSource>, TSource> Aggregate<TOperator, TSource>(
+        this Operator<TOperator, TSource> source, Func<TSource, TSource, TSource> accumulator)
         where TOperator : IOperator<TSource>
     {
-        return source.Cast<TSource?>().Aggregate(seed: null, accumulator);
+        return new(new(source, accumulator));
     }
 
-    public static Operator<Aggregate<TOperator, TSource, TAccumulate>, TAccumulate> Aggregate<TOperator, TSource, TAccumulate>(
+    public static Operator<AggregateWithSeed<TOperator, TSource, TAccumulate>, TAccumulate> Aggregate<TOperator, TSource, TAccumulate>(
         this Operator<TOperator, TSource> source, TAccumulate seed, Func<TAccumulate, TSource, TAccumulate> accumulator)
         where TOperator : IOperator<TSource>
     {
         return new(new(source, seed, accumulator));
     }
 
-    public static Operator<Select<Aggregate<TOperator, TSource, TAccumulate>, TAccumulate, TResult>, TResult> Aggregate<TOperator, TSource, TAccumulate, TResult>(
+    public static Operator<Select<AggregateWithSeed<TOperator, TSource, TAccumulate>, TAccumulate, TResult>, TResult> Aggregate<TOperator, TSource, TAccumulate, TResult>(
         this Operator<TOperator, TSource> source, TAccumulate seed, Func<TAccumulate?, TSource, TAccumulate> accumulator, Func<TAccumulate, TResult> selector)
         where TOperator : IOperator<TSource>
     {
@@ -106,10 +106,10 @@ public static class OperatorExtensions
     }
 
     public static Operator<DistinctBy<TOperator, TSource, TKey>, TSource> DistinctBy<TOperator, TSource, TKey>(
-        this Operator<TOperator, TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TSource>? comparer)
+        this Operator<TOperator, TSource> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey>? comparer)
         where TOperator : IOperator<TSource>
     {
-        return new(new(source, comparer));
+        return new(new(source, keySelector, comparer));
     }
 
     public static Operator<First<TOperator, TSource>, TSource> First<TOperator, TSource>(
@@ -469,10 +469,10 @@ public static class OperatorExtensions
     }
 
     public static IObservable<TResult> ToObservable<TOperator, TResult>(
-        this Operator<TOperator, TResult> source, bool deferred = false)
+        this Operator<TOperator, TResult> source)
         where TOperator : IOperator<TResult>
     {
-        return ObservableFactory<TResult>.Create(source, deferred);
+        return ObservableFactory<TResult>.Create(source);
     }
 
     public static Task<TResult> ToTask<TOperator, TResult>(
@@ -494,12 +494,5 @@ public static class OperatorExtensions
         where TOperator : IOperator<TResult>
     {
         return source.ToValueTask().GetAwaiter();
-    }
-
-    public static IDisposable Subscribe<TOperator, TSource>(
-        this Operator<TOperator, TSource> source, IObserver<TSource> observer)
-        where TOperator : IOperator<TSource>
-    {
-        return source.ToObservable(deferred: true).Subscribe(observer);
     }
 }

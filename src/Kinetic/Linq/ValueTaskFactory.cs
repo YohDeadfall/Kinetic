@@ -7,7 +7,7 @@ namespace Kinetic.Linq;
 
 internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<ValueTask<TResult>>
 {
-    public static ValueTask<TResult> Create<TOperator>(Operator<TOperator, TResult> source)
+    public static ValueTask<TResult> Create<TOperator>(in Operator<TOperator, TResult> source)
         where TOperator : IOperator<TResult>
     {
         return source.Build<ValueTask<TResult>, ValueTaskFactory<TResult>, StateMachine>(
@@ -15,9 +15,9 @@ internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<Val
     }
 
     public ValueTask<TResult> Create<TSource, TStateMachine>(TStateMachine stateMachine)
-		where TStateMachine : struct, IStateMachine<TSource>
+        where TStateMachine : struct, IStateMachine<TSource>
     {
-        var box =new Box<TSource, TStateMachine>(stateMachine);
+        var box = new Box<TSource, TStateMachine>(stateMachine);
         return new(box, box.Token);
     }
 
@@ -92,7 +92,7 @@ internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<Val
 
         public void OnError(Exception error) =>
             _core.SetException(error);
-    
+
         public void OnNext(TResult value) =>
             _core.SetResult(value);
     }

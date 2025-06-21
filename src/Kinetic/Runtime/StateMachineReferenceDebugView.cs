@@ -12,5 +12,5 @@ internal sealed class StateMachineReferenceDebugView<T, TStateMachine>
         _stateMachine.Target;
 
     public StateMachineReferenceDebugView(StateMachineReference<T, TStateMachine> stateMachine) =>
-        _stateMachine = stateMachine.Ta;
+        _stateMachine = stateMachine;
 }

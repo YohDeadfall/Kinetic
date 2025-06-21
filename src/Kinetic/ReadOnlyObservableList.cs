@@ -390,8 +390,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     private ItemsObservable? GetChangeObservable() =>
         Unsafe.As<ItemsObservable?>(GetObservable(GetOffsetOf(ref _items)));
 
-    private PropertyObservable<int>? GetCountObservable() =>
-        Unsafe.As<PropertyObservable<int>?>(GetObservable(GetOffsetOf(ref _count)));
+    private ValueObservable<int>? GetCountObservable() =>
+        Unsafe.As<ValueObservable<int>?>(GetObservable(GetOffsetOf(ref _count)));
 
     private static bool IsCompatibleObject(object? value) =>
         value is T ||
@@ -520,9 +520,6 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     {
         private ObservableSubscriptions<ListChange<T>> _subscriptions;
 
-        private protected override ReadOnlySpan<byte> StateMachineData =>
-            throw new NotSupportedException();
-
         public ItemsObservable(IntPtr offset, ObservableObject owner, PropertyObservable? next)
             : base(offset, owner, next) { }
 
@@ -560,11 +557,11 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
             for (int index = 0, count = items.Count; index < count; index += 1)
                 observer.OnNext(ListChange.Insert(index, items[index]));
 
-            return _subscriptions.Subscribe(this, observer);
+            return _subscriptions.Subscribe(observer, this);
         }
 
         public void Subscribe(ObservableSubscription<ListChange<T>> subscription) =>
-            _subscriptions.Subscribe(this, subscription);
+            _subscriptions.Subscribe(subscription, this);
 
         public void Unsubscribe(ObservableSubscription<ListChange<T>> subscription) =>
             _subscriptions.Unsubscribe(subscription);

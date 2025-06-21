@@ -13,19 +13,19 @@ public static class ObservableExtensions
         return new(new(source));
     }
 
-    public static Operator<Aggregate<Cast<Subscribe<TSource>, TSource, TSource?>, TSource?, TSource?>, TSource?> Aggregate<TSource>(
+    public static Operator<Aggregate<Subscribe<TSource>, TSource>, TSource> Aggregate<TSource>(
         this IObservable<TSource> source, Func<TSource?, TSource, TSource> accumulator)
     {
         return source.Subscribe().Aggregate(accumulator);
     }
 
-    public static Operator<Aggregate<Subscribe<TSource>, TSource, TAccumulate>, TAccumulate> Aggregate<TSource, TAccumulate>(
+    public static Operator<AggregateWithSeed<Subscribe<TSource>, TSource, TAccumulate>, TAccumulate> Aggregate<TSource, TAccumulate>(
         this IObservable<TSource> source, TAccumulate seed, Func<TAccumulate, TSource, TAccumulate> accumulator)
     {
         return source.Subscribe().Aggregate(seed, accumulator);
     }
 
-    public static Operator<Select<Aggregate<Subscribe<TSource>, TSource, TAccumulate>, TAccumulate, TResult>, TResult> Aggregate<TSource, TAccumulate, TResult>(
+    public static Operator<Select<AggregateWithSeed<Subscribe<TSource>, TSource, TAccumulate>, TAccumulate, TResult>, TResult> Aggregate<TSource, TAccumulate, TResult>(
         this IObservable<TSource> source, TAccumulate seed, Func<TAccumulate?, TSource, TAccumulate> accumulator, Func<TAccumulate, TResult> selector)
     {
         return source.Subscribe().Aggregate(seed, accumulator, selector);

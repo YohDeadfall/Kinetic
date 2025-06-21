@@ -50,10 +50,10 @@ public abstract class Command<TParameter, TResult> : ICommand, IObservableIntern
     }
 
     public IDisposable Subscribe(IObserver<TResult> observer) =>
-        _subscriptions.Subscribe(this, observer);
+        _subscriptions.Subscribe(observer, this);
 
     void IObservableInternal<TResult>.Subscribe(ObservableSubscription<TResult> subscription) =>
-        _subscriptions.Subscribe(this, subscription);
+        _subscriptions.Subscribe(subscription, this);
 
     void IObservableInternal<TResult>.Unsubscribe(ObservableSubscription<TResult> subscription) =>
         _subscriptions.Unsubscribe(subscription);

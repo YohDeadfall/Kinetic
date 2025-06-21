@@ -42,4 +42,3 @@ internal struct SingleAccumulator<T> : IAccumulator<T, T>
         stateMachine.OnNext(_value);
     }
 }
-

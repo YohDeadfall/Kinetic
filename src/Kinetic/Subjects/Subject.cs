@@ -9,7 +9,7 @@ public abstract class Subject<T> : IObservableInternal<T>, IObserver<T>, IDispos
     private protected Exception? _error;
 
     public IDisposable Subscribe(IObserver<T> observer) =>
-        _subscriptions.Subscribe(this, observer);
+        _subscriptions.Subscribe(observer, this);
 
     void IObservableInternal<T>.Subscribe(ObservableSubscription<T> subscription)
     {
@@ -27,7 +27,7 @@ public abstract class Subject<T> : IObservableInternal<T>, IObserver<T>, IDispos
             }
         }
 
-        _subscriptions.Subscribe(this, subscription);
+        _subscriptions.Subscribe(subscription, this);
     }
 
     void IObservableInternal<T>.Unsubscribe(ObservableSubscription<T> subscription) =>
@@ -83,11 +83,4 @@ public abstract class Subject<T> : IObservableInternal<T>, IObserver<T>, IDispos
             _subscriptions.OnCompleted();
         }
     }
-}
-
-internal enum SubjectState
-{
-    Alive,
-    Completed,
-    Disposed
 }

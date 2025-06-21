@@ -5,21 +5,15 @@ namespace Kinetic.Linq;
 
 internal readonly struct ObservableFactory<TResult> : IStateMachineBoxFactory<IObservable<TResult>>
 {
-    public static IObservable<TResult> Create<TOperator>(Operator<TOperator, TResult> source)
+    public static IObservable<TResult> Create<TOperator>(in Operator<TOperator, TResult> source)
         where TOperator : IOperator<TResult>
     {
         return source.Build<IObservable<TResult>, ObservableFactory<TResult>, StateMachine>(
             new ObservableFactory<TResult>(), new StateMachine());
     }
 
-    public static IObservable<TResult> CreateDeferred<TOperator>(Operator<TOperator, TResult> source)
-        where TOperator : IOperator<TResult>
-    {
-        return new Deferred<TOperator>(source);
-    }
-
     public IObservable<TResult> Create<TSource, TStateMachine>(TStateMachine stateMachine)
-		where TStateMachine : struct, IStateMachine<TSource>
+        where TStateMachine : struct, IStateMachine<TSource>
     {
         return new Box<TSource, TStateMachine>(stateMachine);
     }
@@ -39,7 +33,7 @@ internal readonly struct ObservableFactory<TResult> : IStateMachineBoxFactory<IO
 
         public void Initialize(ref StateMachine publisher) =>
             _publisher = OffsetTo<TResult, StateMachine>(ref publisher);
-    
+
         public IDisposable Subscribe(IObserver<TResult> observer) =>
             GetSubscriptions().Subscribe(observer, this);
 
@@ -81,20 +75,8 @@ internal readonly struct ObservableFactory<TResult> : IStateMachineBoxFactory<IO
 
         public void OnError(Exception error) =>
             _subscriptions.OnError(error);
-    
+
         public void OnNext(TResult value) =>
             _subscriptions.OnNext(value);
-    }
-
-    private sealed class Deferred<TOperator> : IObservable<TResult>
-        where TOperator : IOperator<TResult>
-    {
-        private readonly Operator<TOperator, TResult> _op;
-
-        public Deferred(Operator<TOperator, TResult> op) =>
-            _op = op;
-
-        public IDisposable Subscribe(IObserver<TResult> observer) =>
-            Create(_op).Subscribe(observer);
     }
 }

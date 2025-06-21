@@ -13,7 +13,7 @@ public readonly struct Take<TOperator, TSource> : IOperator<TSource>
         _source = source.ThrowIfNull();
         _count = count.ThrowIfNegative();
     }
-    
+
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>
         where TContinuation : struct, IStateMachine<TSource>

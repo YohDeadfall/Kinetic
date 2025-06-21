@@ -16,10 +16,10 @@ internal sealed class ObservableBox<TSource, TResult, TStateMachine> : Publishin
         new(stateMachine);
 
     public void Subscribe(ObservableSubscription<TResult> subscription) =>
-        _subscriptions.Subscribe(this, subscription);
+        _subscriptions.Subscribe(subscription, this);
 
     public IDisposable Subscribe(IObserver<TResult> observer) =>
-        _subscriptions.Subscribe(this, observer);
+        _subscriptions.Subscribe(observer, this);
 
     public void Unsubscribe(ObservableSubscription<TResult> subscription) =>
         _subscriptions.Unsubscribe(subscription);

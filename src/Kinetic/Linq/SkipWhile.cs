@@ -23,4 +23,3 @@ public readonly struct SkipWhile<TOperator, TSource> : IOperator<TSource>
             boxFactory, new(continuation, new(_predicate)));
     }
 }
-

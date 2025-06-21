@@ -1,8 +1,9 @@
+using System;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-public readonly struct Operator<TOperator, T>
+public readonly struct Operator<TOperator, T> : IObservable<T>
     where TOperator : IOperator<T>
 {
     private readonly TOperator _op;
@@ -22,6 +23,9 @@ public readonly struct Operator<TOperator, T>
 
     public Operator<OfType<TOperator, T, TResult>, TResult> OfType<TResult>() =>
         new(new(_op));
+
+    public IDisposable Subscribe(IObserver<T> observer) =>
+        ObservableFactory<T>.Create(this).Subscribe(observer);
 
     public static implicit operator TOperator(Operator<TOperator, T> op) =>
         op._op;

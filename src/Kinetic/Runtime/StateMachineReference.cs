@@ -24,7 +24,7 @@ public abstract class StateMachineReference<T> : StateMachineReference, IObserve
 }
 
 [DebuggerTypeProxy(typeof(StateMachineReferenceDebugView<,>))]
-public sealed class StateMachineReference<T, TStateMachine> : StateMachineReference<T>
+public class StateMachineReference<T, TStateMachine> : StateMachineReference<T>
     where TStateMachine : struct, IStateMachine<T>
 {
     private readonly StateMachineValueReference<T, TStateMachine> _reference;
@@ -35,6 +35,9 @@ public sealed class StateMachineReference<T, TStateMachine> : StateMachineRefere
 
     public StateMachineReference(StateMachineValueReference<T, TStateMachine> stateMachine) =>
         _reference = stateMachine;
+
+    public ref TStateMachine Target =>
+        ref _reference.Target;
 
     internal override StateMachineReference? Continuation =>
         _reference.Target.Continuation;

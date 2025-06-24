@@ -25,7 +25,7 @@ public readonly struct Operator<TOperator, T> : IObservable<T>
         new(new(_op));
 
     public IDisposable Subscribe(IObserver<T> observer) =>
-        ObservableFactory<T>.Create(this).Subscribe(observer);
+        ObservableFactory<T>.Create<TOperator>(this).Subscribe(observer);
 
     public static implicit operator TOperator(Operator<TOperator, T> op) =>
         op._op;

@@ -1,0 +1,25 @@
+using System;
+using Kinetic.Runtime;
+
+namespace Kinetic.Linq;
+
+public readonly struct SelectItem<TOperator, TSource, TResult> : IOperator<ListChange<TResult>>
+    where TOperator : IOperator<ListChange<TSource>>
+{
+    private readonly TOperator _source;
+    private readonly Func<TSource, TResult> _selector;
+
+    public SelectItem(TOperator source, Func<TSource, TResult> selector)
+    {
+        _source = source.ThrowIfNull();
+        _selector = selector.ThrowIfNull();
+    }
+
+    public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
+        where TBoxFactory : struct, IStateMachineBoxFactory<TBox>
+        where TContinuation : struct, IStateMachine<ListChange<TResult>>
+    {
+        return _source.Build<TBox, TBoxFactory, TransformItemStateMachine<TContinuation, FuncTransform<TSource, TResult>, TSource, TResult>>(
+            boxFactory, new(continuation, new(_selector)));
+    }
+}

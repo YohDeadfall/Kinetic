@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Kinetic.Linq;
 
-public static class OperatorExtensions
+public static partial class OperatorExtensions
 {
     public static Operator<Aggregate<TOperator, TSource>, TSource> Aggregate<TOperator, TSource>(
         this Operator<TOperator, TSource> source, Func<TSource, TSource, TSource> accumulator)
@@ -472,7 +472,7 @@ public static class OperatorExtensions
         this Operator<TOperator, TResult> source)
         where TOperator : IOperator<TResult>
     {
-        return ObservableFactory<TResult>.Create(source);
+        return ObservableFactory<TResult>.Create<TOperator>(source);
     }
 
     public static Task<TResult> ToTask<TOperator, TResult>(
@@ -494,5 +494,12 @@ public static class OperatorExtensions
         where TOperator : IOperator<TResult>
     {
         return source.ToValueTask().GetAwaiter();
+    }
+
+    public static IDisposable Subscribe<TOperator, TResult>(
+        this Operator<TOperator, TResult> source)
+        where TOperator : IOperator<TResult>
+    {
+        return ObserverFactory<TResult>.Create<TOperator>(source);
     }
 }

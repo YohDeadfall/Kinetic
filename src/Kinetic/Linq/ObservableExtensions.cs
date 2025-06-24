@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Kinetic.Linq;
 
-public static class ObservableExtensions
+public static partial class ObservableExtensions
 {
     public static Operator<Subscribe<TSource>, TSource> Subscribe<TSource>(
         this IObservable<TSource> source)

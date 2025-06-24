@@ -5,7 +5,7 @@ namespace Kinetic.Linq;
 
 internal readonly struct ObservableFactory<TResult> : IStateMachineBoxFactory<IObservable<TResult>>
 {
-    public static IObservable<TResult> Create<TOperator>(in Operator<TOperator, TResult> source)
+    public static IObservable<TResult> Create<TOperator>(TOperator source)
         where TOperator : IOperator<TResult>
     {
         return source.Build<IObservable<TResult>, ObservableFactory<TResult>, StateMachine>(

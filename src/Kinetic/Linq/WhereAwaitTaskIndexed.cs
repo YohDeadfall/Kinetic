@@ -4,15 +4,15 @@ using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-public readonly struct WhereAwait<TOperator, TSource> : IOperator<TSource>
+public readonly struct WhereAwaitTaskIndexed<TOperator, TSource> : IOperator<TSource>
     where TOperator : IOperator<TSource>
 {
     private readonly TOperator _source;
-    private readonly Func<TSource, ValueTask<bool>> _predicate;
+    private readonly Func<TSource, int, Task<bool>> _predicate;
 
-    public WhereAwait(TOperator source, Func<TSource, ValueTask<bool>> predicate)
+    public WhereAwaitTaskIndexed(TOperator source, Func<TSource, int, Task<bool>> predicate)
     {
-        _source = source.ThrowIfArgumentNull();
+        _source = source;
         _predicate = predicate.ThrowIfArgumentNull();
     }
 
@@ -25,8 +25,8 @@ public readonly struct WhereAwait<TOperator, TSource> : IOperator<TSource>
             TBoxFactory,
             FilterAwaitStateMachine<
                 TContinuation,
-                AwaiterForValueTaskFactory<TSource, bool>,
-                AwaiterForValueTask<bool>, TSource>>(
-            boxFactory, new(continuation, new(_predicate)));
+                AwaiterForTaskFactory<TSource, bool, FuncIndexedTransform<TSource, Task<bool>>>,
+                AwaiterForTask<bool>, TSource>>(
+            boxFactory, new(continuation, new(new(_predicate))));
     }
 }

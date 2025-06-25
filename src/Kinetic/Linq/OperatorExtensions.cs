@@ -322,6 +322,20 @@ public static partial class OperatorExtensions
         return new(new(source, selector));
     }
 
+    public static Operator<SelectAwaitTask<TOperator, TSource, TResult>, TResult> SelectAwait<TOperator, TSource, TResult>(
+        this Operator<TOperator, TSource> source, Func<TSource, Task<TResult>> selector)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, selector));
+    }
+
+    public static Operator<SelectAwaitTaskIndexed<TOperator, TSource, TResult>, TResult> SelectAwait<TOperator, TSource, TResult>(
+        this Operator<TOperator, TSource> source, Func<TSource, int, Task<TResult>> selector)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, selector));
+    }
+
     public static Operator<Where<TOperator, TSource>, TSource> Where<TOperator, TSource>(
         this Operator<TOperator, TSource> source, Func<TSource, bool> predicate)
         where TOperator : IOperator<TSource>
@@ -337,20 +351,6 @@ public static partial class OperatorExtensions
     }
 
     public static Operator<WhereAwait<TOperator, TSource>, TSource> WhereAwait<TOperator, TSource>(
-        this Operator<TOperator, TSource> source, Func<TSource, Task<bool>> predicate)
-        where TOperator : IOperator<TSource>
-    {
-        return new(new(source, predicate));
-    }
-
-    public static Operator<WhereAwaitIndexed<TOperator, TSource>, TSource> WhereAwait<TOperator, TSource>(
-        this Operator<TOperator, TSource> source, Func<TSource, int, Task<bool>> predicate)
-        where TOperator : IOperator<TSource>
-    {
-        return new(new(source, predicate));
-    }
-
-    public static Operator<WhereAwait<TOperator, TSource>, TSource> WhereAwait<TOperator, TSource>(
         this Operator<TOperator, TSource> source, Func<TSource, ValueTask<bool>> predicate)
         where TOperator : IOperator<TSource>
     {
@@ -359,6 +359,20 @@ public static partial class OperatorExtensions
 
     public static Operator<WhereAwaitIndexed<TOperator, TSource>, TSource> WhereAwait<TOperator, TSource>(
         this Operator<TOperator, TSource> source, Func<TSource, int, ValueTask<bool>> predicate)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, predicate));
+    }
+
+    public static Operator<WhereAwaitTask<TOperator, TSource>, TSource> WhereAwait<TOperator, TSource>(
+        this Operator<TOperator, TSource> source, Func<TSource, Task<bool>> predicate)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, predicate));
+    }
+
+    public static Operator<WhereAwaitTaskIndexed<TOperator, TSource>, TSource> WhereAwait<TOperator, TSource>(
+        this Operator<TOperator, TSource> source, Func<TSource, int, Task<bool>> predicate)
         where TOperator : IOperator<TSource>
     {
         return new(new(source, predicate));

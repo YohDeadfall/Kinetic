@@ -277,6 +277,18 @@ public static partial class ObservableExtensions
         return source.Subscribe().SelectAwait(selector);
     }
 
+    public static Operator<SelectAwaitTask<Subscribe<TSource>, TSource, TResult>, TResult> SelectAwait<TSource, TResult>(
+        this IObservable<TSource> source, Func<TSource, Task<TResult>> selector)
+    {
+        return source.Subscribe().SelectAwait(selector);
+    }
+
+    public static Operator<SelectAwaitTaskIndexed<Subscribe<TSource>, TSource, TResult>, TResult> SelectAwait<TSource, TResult>(
+        this IObservable<TSource> source, Func<TSource, int, Task<TResult>> selector)
+    {
+        return source.Subscribe().SelectAwait(selector);
+    }
+
     public static Operator<Where<Subscribe<TSource>, TSource>, TSource> Where<TSource>(
         this IObservable<TSource> source, Func<TSource, bool> predicate)
     {
@@ -290,18 +302,6 @@ public static partial class ObservableExtensions
     }
 
     public static Operator<WhereAwait<Subscribe<TSource>, TSource>, TSource> WhereAwait<TSource>(
-        this IObservable<TSource> source, Func<TSource, Task<bool>> predicate)
-    {
-        return source.Subscribe().WhereAwait(predicate);
-    }
-
-    public static Operator<WhereAwaitIndexed<Subscribe<TSource>, TSource>, TSource> WhereAwait<TSource>(
-        this IObservable<TSource> source, Func<TSource, int, Task<bool>> predicate)
-    {
-        return source.Subscribe().WhereAwait(predicate);
-    }
-
-    public static Operator<WhereAwait<Subscribe<TSource>, TSource>, TSource> WhereAwait<TSource>(
         this IObservable<TSource> source, Func<TSource, ValueTask<bool>> predicate)
     {
         return source.Subscribe().WhereAwait(predicate);
@@ -309,6 +309,18 @@ public static partial class ObservableExtensions
 
     public static Operator<WhereAwaitIndexed<Subscribe<TSource>, TSource>, TSource> WhereAwait<TSource>(
         this IObservable<TSource> source, Func<TSource, int, ValueTask<bool>> predicate)
+    {
+        return source.Subscribe().WhereAwait(predicate);
+    }
+
+    public static Operator<WhereAwaitTask<Subscribe<TSource>, TSource>, TSource> WhereAwait<TSource>(
+        this IObservable<TSource> source, Func<TSource, Task<bool>> predicate)
+    {
+        return source.Subscribe().WhereAwait(predicate);
+    }
+
+    public static Operator<WhereAwaitTaskIndexed<Subscribe<TSource>, TSource>, TSource> WhereAwait<TSource>(
+        this IObservable<TSource> source, Func<TSource, int, Task<bool>> predicate)
     {
         return source.Subscribe().WhereAwait(predicate);
     }

@@ -46,3 +46,20 @@ internal readonly struct AwaiterForTaskFactory<T, TResult> :
     public AwaiterForTask<TResult> Transform(T value) =>
         GetAwaiter(value);
 }
+
+internal readonly struct AwaiterForTaskFactory<T, TResult, TTransform> :
+    IAwaiterFactory<AwaiterForTask<TResult>, T, TResult>,
+    ITransform<T, AwaiterForTask<TResult>>
+    where TTransform : struct, ITransform<T, Task<TResult>>
+{
+    private readonly TTransform _transfrom;
+
+    public AwaiterForTaskFactory(TTransform transform) =>
+        _transfrom = transform;
+
+    public AwaiterForTask<TResult> GetAwaiter(T value) =>
+        new(_transfrom.Transform(value).GetAwaiter());
+
+    public AwaiterForTask<TResult> Transform(T value) =>
+        GetAwaiter(value);
+}

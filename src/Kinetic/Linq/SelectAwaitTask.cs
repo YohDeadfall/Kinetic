@@ -4,13 +4,13 @@ using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-public readonly struct SelectAwait<TOperator, TSource, TResult> : IOperator<TResult>
+public readonly struct SelectAwaitTask<TOperator, TSource, TResult> : IOperator<TResult>
     where TOperator : IOperator<TSource>
 {
     private readonly TOperator _source;
-    private readonly Func<TSource, ValueTask<TResult>> _selector;
+    private readonly Func<TSource, Task<TResult>> _selector;
 
-    public SelectAwait(TOperator source, Func<TSource, ValueTask<TResult>> selector)
+    public SelectAwaitTask(TOperator source, Func<TSource, Task<TResult>> selector)
     {
         _source = source;
         _selector = selector.ThrowIfArgumentNull();
@@ -25,8 +25,8 @@ public readonly struct SelectAwait<TOperator, TSource, TResult> : IOperator<TRes
             TBoxFactory,
             TransformAwaitStateMachine<
                 TContinuation,
-                AwaiterForValueTaskFactory<TSource, TResult>,
-                AwaiterForValueTask<TResult>, TSource, TResult>>(
+                AwaiterForTaskFactory<TSource, TResult>,
+                AwaiterForTask<TResult>, TSource, TResult>>(
             boxFactory, new(continuation, new(_selector)));
     }
 }

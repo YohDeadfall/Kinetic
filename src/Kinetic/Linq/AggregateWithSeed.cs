@@ -12,9 +12,9 @@ public readonly struct AggregateWithSeed<TOperator, TSource, TResult> : IOperato
 
     public AggregateWithSeed(TOperator source, TResult seed, Func<TResult, TSource, TResult> accumulator)
     {
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
         _seed = seed;
-        _accumulator = accumulator.ThrowIfNull();
+        _accumulator = accumulator.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

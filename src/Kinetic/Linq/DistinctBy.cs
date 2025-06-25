@@ -13,8 +13,8 @@ public readonly struct DistinctBy<TOperator, TSource, TKey> : IOperator<TSource>
 
     public DistinctBy(TOperator source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey>? comparer)
     {
-        _source = source.ThrowIfNull();
-        _keySelector = keySelector.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _keySelector = keySelector.ThrowIfArgumentNull();
         _comparer = comparer;
     }
 

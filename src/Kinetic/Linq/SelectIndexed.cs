@@ -11,8 +11,8 @@ public readonly struct SelectIndexed<TOperator, TSource, TResult> : IOperator<TR
 
     public SelectIndexed(TOperator source, Func<TSource, int, TResult> selector)
     {
-        _source = source.ThrowIfNull();
-        _selector = selector.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _selector = selector.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

@@ -11,8 +11,8 @@ public readonly struct Where<TOperator, TSource> : IOperator<TSource>
 
     public Where(TOperator source, Func<TSource, bool> predicate)
     {
-        _source = source.ThrowIfNull();
-        _predicate = predicate.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _predicate = predicate.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

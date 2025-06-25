@@ -11,8 +11,8 @@ public readonly struct OnItemRemoved<TOperator, TSource> : IOperator<ListChange<
 
     public OnItemRemoved(TOperator source, Action<TSource> onRemoved)
     {
-        _source = source.ThrowIfNull();
-        _onRemoved = onRemoved.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _onRemoved = onRemoved.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

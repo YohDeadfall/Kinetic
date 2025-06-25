@@ -12,7 +12,7 @@ public readonly struct Select<TOperator, TSource, TResult> : IOperator<TResult>
     public Select(TOperator source, Func<TSource, TResult> selector)
     {
         _source = source;
-        _selector = selector.ThrowIfNull();
+        _selector = selector.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

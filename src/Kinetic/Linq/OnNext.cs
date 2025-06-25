@@ -11,8 +11,8 @@ public readonly struct OnNext<TOperator, TSource> : IOperator<TSource>
 
     public OnNext(TOperator source, Action<TSource> onNext)
     {
-        _source = source.ThrowIfNull();
-        _onNext = onNext.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _onNext = onNext.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

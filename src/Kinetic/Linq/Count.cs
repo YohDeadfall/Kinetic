@@ -8,7 +8,7 @@ public readonly struct Count<TOperator, TSource> : IOperator<int>
     private readonly TOperator _source;
 
     public Count(TOperator source) =>
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>

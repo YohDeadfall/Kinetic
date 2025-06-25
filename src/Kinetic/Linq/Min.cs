@@ -11,7 +11,7 @@ public readonly struct Min<TOperator, TSource> : IOperator<TSource>
 
     public Min(TOperator source, IComparer<TSource>? comparer)
     {
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
         _comparer = comparer;
     }
 

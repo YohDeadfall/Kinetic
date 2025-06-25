@@ -1,28 +1,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-public sealed class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
+public class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
 {
-    [AllowNull]
-    private IDisposable _stateMachineBox;
+    private readonly IDisposable _subscription;
 
-    private ObservableView() { }
-
-    internal static ObservableView<T> Create<TOperator>(Operator<TOperator, ListChange<T>> source)
-        where TOperator : IOperator<ListChange<T>>
-    {
-        var view = new ObservableView<T>();
-        view._stateMachineBox = ObserverFactory<ListChange<T>>.Create(new Bind<TOperator>(source, view));
-        return view;
-    }
+    public ObservableView(IObservable<ListChange<T>> source) =>
+        _subscription = ObserverFactory<ListChange<T>>.Create(
+            new Bind<Subscribe<ListChange<T>>>(source.Subscribe(), this));
 
     public void Dispose() =>
-        _stateMachineBox.Dispose();
+        _subscription.Dispose();
 
     private readonly struct Bind<TOperator> : IOperator<ListChange<T>>
         where TOperator : IOperator<ListChange<T>>

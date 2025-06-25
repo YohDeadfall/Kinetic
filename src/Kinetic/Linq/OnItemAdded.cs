@@ -11,8 +11,8 @@ public readonly struct OnItemAdded<TOperator, TSource> : IOperator<ListChange<TS
 
     public OnItemAdded(TOperator source, Action<TSource> onAdded)
     {
-        _source = source.ThrowIfNull();
-        _onAdded = onAdded.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _onAdded = onAdded.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

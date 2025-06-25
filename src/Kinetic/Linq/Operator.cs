@@ -9,7 +9,7 @@ public readonly struct Operator<TOperator, T> : IObservable<T>
     private readonly TOperator _op;
 
     public Operator(TOperator op) =>
-        _op = op.ThrowIfNull();
+        _op = op.ThrowIfArgumentNull();
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>

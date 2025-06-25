@@ -11,8 +11,8 @@ public readonly struct OnCompleted<TOperator, TSource> : IOperator<TSource>
 
     public OnCompleted(TOperator source, Action onCompleted)
     {
-        _source = source.ThrowIfNull();
-        _onCompleted = onCompleted.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _onCompleted = onCompleted.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

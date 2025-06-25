@@ -10,7 +10,7 @@ public readonly struct SingleOrDefault<TOperator, TSource> : IOperator<TSource>
 
     public SingleOrDefault(TOperator source, TSource defaultValue)
     {
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
         _defaultValue = defaultValue;
     }
 

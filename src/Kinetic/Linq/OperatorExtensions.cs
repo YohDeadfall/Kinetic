@@ -502,4 +502,11 @@ public static partial class OperatorExtensions
     {
         return ObserverFactory<TResult>.Create<TOperator>(source);
     }
+
+    public static IDisposable Subscribe<TOperator, TResult>(
+        this Operator<TOperator, TResult> source, Action<TResult> onNext)
+        where TOperator : IOperator<TResult>
+    {
+        return source.OnNext(onNext).Subscribe();
+    }
 }

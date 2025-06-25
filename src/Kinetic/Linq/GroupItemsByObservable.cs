@@ -4,17 +4,17 @@ using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-public readonly struct GroupItemsBy<TOperator, TSource, TKey, TResult> : IOperator<ListChange<TResult>>
+public readonly struct GroupItemsByObservable<TOperator, TSource, TKey, TResult> : IOperator<ListChange<TResult>>
     where TOperator : IOperator<ListChange<TSource>>
 {
     private readonly TOperator _source;
     private readonly IEqualityComparer<TKey>? _keyComparer;
-    private readonly Func<TSource, TKey> _keySelector;
+    private readonly Func<TSource, IObservable<TKey>> _keySelector;
     private readonly Func<IGrouping<TKey, ListChange<TSource>>, TResult> _resultSelector;
 
-    public GroupItemsBy(
+    public GroupItemsByObservable(
         TOperator source,
-        Func<TSource, TKey> keySelector,
+        Func<TSource, IObservable<TKey>> keySelector,
         Func<IGrouping<TKey, ListChange<TSource>>, TResult> resultSelector,
         IEqualityComparer<TKey>? comparer)
     {
@@ -23,7 +23,6 @@ public readonly struct GroupItemsBy<TOperator, TSource, TKey, TResult> : IOperat
         _keySelector = keySelector.ThrowIfArgumentNull();
         _resultSelector = resultSelector.ThrowIfArgumentNull();
     }
-
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>
@@ -38,8 +37,8 @@ public readonly struct GroupItemsBy<TOperator, TSource, TKey, TResult> : IOperat
                     FuncTransform<IGrouping<TKey, ListChange<TSource>>, TResult>,
                     IGrouping<TKey, ListChange<TSource>>,
                     TResult>,
-                GroupItemsByStaticState,
-                GroupItemsByStaticState.Manager<TSource, TKey>,
+                GroupItemsByDynamicState<TSource, TKey>,
+                GroupItemsByDynamicState<TSource, TKey>.Manager,
                 TSource,
                 TKey>>(
             boxFactory, new(new(continuation, new(_resultSelector)), new(_keySelector), _keyComparer));

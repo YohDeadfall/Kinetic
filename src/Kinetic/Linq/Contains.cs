@@ -12,7 +12,7 @@ public readonly struct Contains<TOperator, TSource> : IOperator<bool>
 
     public Contains(TOperator source, TSource value, IEqualityComparer<TSource>? comparer)
     {
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
         _value = value;
         _comparer = comparer;
     }

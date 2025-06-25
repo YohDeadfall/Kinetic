@@ -7,7 +7,7 @@ internal readonly struct FuncAggregator<T, TResult> : IAggregator<T, TResult>
     private readonly Func<TResult, T, TResult> _accumulator;
 
     public FuncAggregator(Func<TResult, T, TResult> accumulator) =>
-        _accumulator = accumulator.ThrowIfNull();
+        _accumulator = accumulator.ThrowIfArgumentNull();
 
     public static bool RequiresSeed => throw new NotImplementedException();
 

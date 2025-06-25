@@ -11,8 +11,8 @@ public readonly struct Aggregate<TOperator, TSource> : IOperator<TSource>
 
     public Aggregate(TOperator source, Func<TSource, TSource, TSource> accumulator)
     {
-        _source = source.ThrowIfNull();
-        _accumulator = accumulator.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _accumulator = accumulator.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

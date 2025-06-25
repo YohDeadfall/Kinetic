@@ -11,8 +11,8 @@ public readonly struct OnError<TOperator, TSource> : IOperator<TSource>
 
     public OnError(TOperator source, Action<Exception> onError)
     {
-        _source = source.ThrowIfNull();
-        _onError = onError.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _onError = onError.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

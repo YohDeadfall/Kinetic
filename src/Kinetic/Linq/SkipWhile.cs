@@ -11,8 +11,8 @@ public readonly struct SkipWhile<TOperator, TSource> : IOperator<TSource>
 
     public SkipWhile(TOperator source, Func<TSource, bool> predicate)
     {
-        _source = source.ThrowIfNull();
-        _predicate = predicate.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _predicate = predicate.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

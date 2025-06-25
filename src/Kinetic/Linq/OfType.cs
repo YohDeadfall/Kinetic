@@ -8,7 +8,7 @@ public readonly struct OfType<TOperator, TSource, TResult> : IOperator<TResult>
     private readonly TOperator _source;
 
     public OfType(TOperator source) =>
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>

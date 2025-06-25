@@ -11,7 +11,7 @@ public readonly struct Max<TOperator, TSource> : IOperator<TSource>
 
     public Max(TOperator source, IComparer<TSource>? comparer)
     {
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
         _comparer = comparer;
     }
 

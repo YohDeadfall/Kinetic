@@ -10,7 +10,7 @@ public readonly struct LastOrDefault<TOperator, TSource> : IOperator<TSource>
 
     public LastOrDefault(TOperator source, TSource defaultValue)
     {
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
         _defaultValue = defaultValue;
     }
 

@@ -13,8 +13,8 @@ public readonly struct MaxBy<TOperator, TSource, TKey> : IOperator<TSource>
 
     public MaxBy(TOperator source, Func<TSource, TKey> keySelector, IComparer<TKey>? comparer)
     {
-        _sourc = source.ThrowIfNull();
-        _keySelector = keySelector.ThrowIfNull();
+        _sourc = source.ThrowIfArgumentNull();
+        _keySelector = keySelector.ThrowIfArgumentNull();
         _comparer = comparer;
     }
 

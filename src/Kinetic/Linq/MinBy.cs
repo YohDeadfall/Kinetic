@@ -13,8 +13,8 @@ public readonly struct MinBy<TOperator, TSource, TKey> : IOperator<TSource>
 
     public MinBy(TOperator source, Func<TSource, TKey> keySelector, IComparer<TKey>? comparer)
     {
-        _source = source.ThrowIfNull();
-        _keySelector = keySelector.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _keySelector = keySelector.ThrowIfArgumentNull();
         _comparer = comparer;
     }
 

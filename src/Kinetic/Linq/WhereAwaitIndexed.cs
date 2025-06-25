@@ -13,7 +13,7 @@ public readonly struct WhereAwaitIndexed<TOperator, TSource> : IOperator<TSource
     public WhereAwaitIndexed(TOperator source, Func<TSource, int, ValueTask<bool>> predicate)
     {
         _source = source;
-        _predicate = predicate.ThrowIfNull();
+        _predicate = predicate.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

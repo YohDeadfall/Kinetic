@@ -9,7 +9,7 @@ public readonly struct ToList<TOperator, TSource> : IOperator<List<TSource>>
     private readonly TOperator _source;
 
     public ToList(TOperator source) =>
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>

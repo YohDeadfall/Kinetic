@@ -11,7 +11,7 @@ public readonly struct Distinct<TOperator, TSource> : IOperator<TSource>
 
     public Distinct(TOperator source, IEqualityComparer<TSource>? comparer)
     {
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
         _comparer = comparer;
     }
 

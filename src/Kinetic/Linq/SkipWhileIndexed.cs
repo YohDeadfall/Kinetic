@@ -11,8 +11,8 @@ public readonly struct SkipWhileIndexed<TOperator, TSource> : IOperator<TSource>
 
     public SkipWhileIndexed(TOperator source, Func<TSource, int, bool> predicate)
     {
-        _source = source.ThrowIfNull();
-        _predicate = predicate.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _predicate = predicate.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

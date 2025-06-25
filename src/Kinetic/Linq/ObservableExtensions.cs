@@ -7,12 +7,6 @@ namespace Kinetic.Linq;
 
 public static partial class ObservableExtensions
 {
-    public static Operator<Subscribe<TSource>, TSource> Subscribe<TSource>(
-        this IObservable<TSource> source)
-    {
-        return new(new(source));
-    }
-
     public static Operator<Aggregate<Subscribe<TSource>, TSource>, TSource> Aggregate<TSource>(
         this IObservable<TSource> source, Func<TSource?, TSource, TSource> accumulator)
     {
@@ -425,5 +419,17 @@ public static partial class ObservableExtensions
         this IObservable<TResult> source)
     {
         return source.Subscribe().GetAwaiter();
+    }
+
+    public static Operator<Subscribe<TSource>, TSource> Subscribe<TSource>(
+        this IObservable<TSource> source)
+    {
+        return new(new(source));
+    }
+
+    public static IDisposable Subscribe<TSource>(
+        this IObservable<TSource> source, Action<TSource> onNext)
+    {
+        return source.Subscribe().OnNext(onNext).Subscribe();
     }
 }

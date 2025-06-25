@@ -11,8 +11,8 @@ public readonly struct SelectItem<TOperator, TSource, TResult> : IOperator<ListC
 
     public SelectItem(TOperator source, Func<TSource, TResult> selector)
     {
-        _source = source.ThrowIfNull();
-        _selector = selector.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
+        _selector = selector.ThrowIfArgumentNull();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

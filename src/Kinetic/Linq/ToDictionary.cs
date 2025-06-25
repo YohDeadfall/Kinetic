@@ -12,7 +12,7 @@ public readonly struct ToDictionary<TOperator, TSource, TKey> : IOperator<Dictio
 
     public ToDictionary(TOperator source, IEqualityComparer<TKey>? comparer)
     {
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
         _comparer = comparer;
     }
 

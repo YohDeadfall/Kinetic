@@ -10,8 +10,8 @@ public readonly struct Take<TOperator, TSource> : IOperator<TSource>
 
     public Take(TOperator source, int count)
     {
-        _source = source.ThrowIfNull();
-        _count = count.ThrowIfNegative();
+        _source = source.ThrowIfArgumentNull();
+        _count = count.ThrowIfArgumentNegative();
     }
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)

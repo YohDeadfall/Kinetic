@@ -8,7 +8,7 @@ public readonly struct Single<TOperator, TSource> : IOperator<TSource>
     private readonly TOperator _source;
 
     public Single(TOperator source) =>
-        _source = source.ThrowIfNull();
+        _source = source.ThrowIfArgumentNull();
 
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>

@@ -420,6 +420,13 @@ public static partial class OperatorExtensions
         return new(new(source, predicate));
     }
 
+    public static Operator<Throttle<TOperator, TSource>, TSource> Throttle<TOperator, TSource>(
+        this Operator<TOperator, TSource> source, TimeSpan delay, bool continueOnCapturedContext = true)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, delay, continueOnCapturedContext));
+    }
+
     public static Operator<ToDictionary<TOperator, TSource, TKey>, Dictionary<TKey, TSource>> ToDictionary<TOperator, TSource, TKey>(
         this Operator<TOperator, KeyValuePair<TKey, TSource>> source)
         where TOperator : IOperator<KeyValuePair<TKey, TSource>>

@@ -38,7 +38,7 @@ public static partial class OperatorExtensions
         return new(new(source, keySelector, resultSelector, comparer));
     }
 
-    public static Operator<GroupItemsBy<TOperator, TSource, TKey, ObservableGrouping<TKey, TSource>>, ListChange<ObservableGrouping<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
+    public static Operator<GroupItemsByObservable<TOperator, TSource, TKey, ObservableGrouping<TKey, TSource>>, ListChange<ObservableGrouping<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector)
         where TOperator : IOperator<ListChange<TSource>>
     {
@@ -47,14 +47,14 @@ public static partial class OperatorExtensions
         return source.GroupBy(keySelector, grouping => new ObservableGrouping<TKey, TSource>(grouping.Key, grouping), comparer: null);
     }
 
-    public static Operator<GroupItemsBy<TOperator, TSource, TKey, ObservableGrouping<TKey, TSource>>, ListChange<ObservableGrouping<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
+    public static Operator<GroupItemsByObservable<TOperator, TSource, TKey, ObservableGrouping<TKey, TSource>>, ListChange<ObservableGrouping<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector, IEqualityComparer<TKey>? comparer)
         where TOperator : IOperator<ListChange<TSource>>
     {
         return source.GroupBy(keySelector, grouping => new ObservableGrouping<TKey, TSource>(grouping.Key, grouping), comparer);
     }
 
-    public static Operator<GroupItemsBy<TOperator, TSource, TKey, TResult>, ListChange<TResult>> GroupBy<TOperator, TSource, TKey, TResult>(
+    public static Operator<GroupItemsByObservable<TOperator, TSource, TKey, TResult>, ListChange<TResult>> GroupBy<TOperator, TSource, TKey, TResult>(
         this Operator<TOperator, ListChange<TSource>> source,
         Func<TSource, IObservable<TKey>> keySelector,
         Func<IGrouping<TKey, ListChange<TSource>>, TResult> resultSelector)
@@ -63,7 +63,7 @@ public static partial class OperatorExtensions
         return source.GroupBy(keySelector, resultSelector, comparer: null);
     }
 
-    public static Operator<GroupItemsBy<TOperator, TSource, TKey, TResult>, ListChange<TResult>> GroupBy<TOperator, TSource, TKey, TResult>(
+    public static Operator<GroupItemsByObservable<TOperator, TSource, TKey, TResult>, ListChange<TResult>> GroupBy<TOperator, TSource, TKey, TResult>(
         this Operator<TOperator, ListChange<TSource>> source,
         Func<TSource, IObservable<TKey>> keySelector,
         Func<IGrouping<TKey, ListChange<TSource>>, TResult> resultSelector,

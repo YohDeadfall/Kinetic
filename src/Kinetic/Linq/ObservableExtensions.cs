@@ -361,6 +361,12 @@ public static partial class ObservableExtensions
         return source.Subscribe().TakeWhile(predicate);
     }
 
+    public static Operator<Throttle<Subscribe<TSource>, TSource>, TSource> Throttle<TSource>(
+        this IObservable<TSource> source, TimeSpan delay, bool continueOnCapturedContext = true)
+    {
+        return source.Subscribe().Throttle(delay, continueOnCapturedContext);
+    }
+
     public static Operator<ToDictionary<Subscribe<KeyValuePair<TKey, TSource>>, TSource, TKey>, Dictionary<TKey, TSource>> ToDictionary<TSource, TKey>(
         this IObservable<KeyValuePair<TKey, TSource>> source)
         where TKey : notnull

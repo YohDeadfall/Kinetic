@@ -337,6 +337,20 @@ public static partial class OperatorExtensions
     }
 
     public static Operator<WhereAwait<TOperator, TSource>, TSource> WhereAwait<TOperator, TSource>(
+        this Operator<TOperator, TSource> source, Func<TSource, Task<bool>> predicate)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, predicate));
+    }
+
+    public static Operator<WhereAwaitIndexed<TOperator, TSource>, TSource> WhereAwait<TOperator, TSource>(
+        this Operator<TOperator, TSource> source, Func<TSource, int, Task<bool>> predicate)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, predicate));
+    }
+
+    public static Operator<WhereAwait<TOperator, TSource>, TSource> WhereAwait<TOperator, TSource>(
         this Operator<TOperator, TSource> source, Func<TSource, ValueTask<bool>> predicate)
         where TOperator : IOperator<TSource>
     {

@@ -290,6 +290,18 @@ public static partial class ObservableExtensions
     }
 
     public static Operator<WhereAwait<Subscribe<TSource>, TSource>, TSource> WhereAwait<TSource>(
+        this IObservable<TSource> source, Func<TSource, Task<bool>> predicate)
+    {
+        return source.Subscribe().WhereAwait(predicate);
+    }
+
+    public static Operator<WhereAwaitIndexed<Subscribe<TSource>, TSource>, TSource> WhereAwait<TSource>(
+        this IObservable<TSource> source, Func<TSource, int, Task<bool>> predicate)
+    {
+        return source.Subscribe().WhereAwait(predicate);
+    }
+
+    public static Operator<WhereAwait<Subscribe<TSource>, TSource>, TSource> WhereAwait<TSource>(
         this IObservable<TSource> source, Func<TSource, ValueTask<bool>> predicate)
     {
         return source.Subscribe().WhereAwait(predicate);

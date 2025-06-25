@@ -385,6 +385,12 @@ public static partial class ObservableExtensions
         return source.Subscribe().ToList();
     }
 
+    public static Operator<ToArray<Subscribe<TSource>, TSource>, TSource[]> ToArray<TSource>(
+        this IObservable<TSource> source)
+    {
+        return source.Subscribe().ToArray();
+    }
+
     public static Operator<OnCompleted<Subscribe<TSource>, TSource>, TSource> OnCompleted<TSource>(
         this IObservable<TSource> source, Action onCompleted)
     {

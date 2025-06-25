@@ -447,6 +447,13 @@ public static partial class OperatorExtensions
         return new(new(source));
     }
 
+    public static Operator<ToArray<TOperator, TSource>, TSource[]> ToArray<TOperator, TSource>(
+        this Operator<TOperator, TSource> source)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source));
+    }
+
     public static Operator<OnCompleted<TOperator, TSource>, TSource> OnCompleted<TOperator, TSource>(
         this Operator<TOperator, TSource> source, Action onCompleted)
         where TOperator : IOperator<TSource>

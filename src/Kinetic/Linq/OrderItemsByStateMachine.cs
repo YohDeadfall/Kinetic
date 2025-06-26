@@ -106,9 +106,18 @@ internal struct OrderItemsByStateMachine<TContinuation, TState, TStateManager, T
             case ListChangeAction.Insert
             when value.NewIndex is var originalIndex:
                 {
-                    var item = _itemManager.CreateItem(originalIndex, value.NewItem, ref this);
-                    var index = _items.BinarySearch(item, _itemComparer);
+                    TState item;
+                    try
+                    {
+                        item = _itemManager.CreateItem(originalIndex, value.NewItem, ref this);
+                    }
+                    catch (Exception error)
+                    {
+                        _continuation.OnError(error);
+                        return;
+                    }
 
+                    var index = _items.BinarySearch(item, _itemComparer);
                     if (index < 0)
                         index = ~index;
 
@@ -138,9 +147,18 @@ internal struct OrderItemsByStateMachine<TContinuation, TState, TStateManager, T
 
                     _itemManager.DisposeItem(oldItem);
 
-                    var newItem = _itemManager.CreateItem(originalIndex, value.NewItem, ref this);
-                    var newIndex = _items.BinarySearch(newItem, _itemComparer);
+                    TState newItem;
+                    try
+                    {
+                        newItem = _itemManager.CreateItem(originalIndex, value.NewItem, ref this);
+                    }
+                    catch (Exception error)
+                    {
+                        _continuation.OnError(error);
+                        return;
+                    }
 
+                    var newIndex = _items.BinarySearch(newItem, _itemComparer);
                     if (newIndex < 0)
                         newIndex = ~newIndex;
 

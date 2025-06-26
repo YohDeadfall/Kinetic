@@ -19,7 +19,7 @@ public readonly struct WhereItem<TOperator, TSource> : IOperator<ListChange<TSou
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>
         where TContinuation : struct, IStateMachine<ListChange<TSource>>
     {
-        return _source.Build<TBox, TBoxFactory, FilterItemStateMachine<TContinuation, FuncTransform<TSource, bool>, TSource>>(
+        return _source.Build<TBox, TBoxFactory, FilterItemsStateMachine<TContinuation, FuncTransform<TSource, bool>, TSource>>(
             boxFactory, new(continuation, new(_predicate)));
     }
 }

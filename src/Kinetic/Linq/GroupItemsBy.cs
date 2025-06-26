@@ -33,7 +33,7 @@ public readonly struct GroupItemsBy<TOperator, TSource, TKey, TResult> : IOperat
             TBox,
             TBoxFactory,
             GroupItemsByStateMachine<
-                TransformItemStateMachine<
+                TransformItemsStateMachine<
                     TContinuation,
                     FuncTransform<IGrouping<TKey, ListChange<TSource>>, TResult>,
                     IGrouping<TKey, ListChange<TSource>>,

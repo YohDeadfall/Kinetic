@@ -3,7 +3,7 @@ using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-internal struct FilterItemStateMachine<TContinuation, TFilter, TSource> : IStateMachine<ListChange<TSource>>
+internal struct FilterItemsStateMachine<TContinuation, TFilter, TSource> : IStateMachine<ListChange<TSource>>
     where TContinuation : struct, IStateMachine<ListChange<TSource>>
     where TFilter : struct, ITransform<TSource, bool>
 {
@@ -11,7 +11,7 @@ internal struct FilterItemStateMachine<TContinuation, TFilter, TSource> : IState
     private TFilter _filter;
     private ValueBitmap _bitmap;
 
-    public FilterItemStateMachine(TContinuation continuation, TFilter filter)
+    public FilterItemsStateMachine(TContinuation continuation, TFilter filter)
     {
         _continuation = continuation;
         _filter = filter;

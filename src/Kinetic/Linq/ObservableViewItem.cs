@@ -3,15 +3,16 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace Kinetic.Linq;
 
-internal sealed class ObservableViewItem<T> : IDisposable
+internal sealed class ObservableViewItem<T> : IObserver<T>, IDisposable
 {
     private const int PresentMask = 1 << 31;
 
-    private IDisposable? _subscription;
+    private readonly IObservableItemStateMachine<T> _stateMachine;
+    private readonly IDisposable _subscription;
     private int _index;
 
     [AllowNull]
-    public T Item { get; set; }
+    public T Value { get; set; }
 
     public int Index
     {
@@ -29,12 +30,22 @@ internal sealed class ObservableViewItem<T> : IDisposable
 
     public bool Initialized => _subscription is { };
 
-    public ObservableViewItem(int index) =>
-        Index = index;
+    public ObservableViewItem(int index, IObservable<T> source, IObservableItemStateMachine<T> stateMachine)
+    {
+        _index = index;
+        _stateMachine = stateMachine;
+        _subscription = source.Subscribe(this);
+    }
 
     public void Dispose() =>
-        _subscription?.Dispose();
+        _subscription.Dispose();
 
-    public void Initialize(IDisposable subscription) =>
-        _subscription = subscription;
+    public void OnCompleted() =>
+        _stateMachine.OnItemCompleted(this, null);
+
+    public void OnError(Exception error) =>
+        _stateMachine.OnItemCompleted(this, error);
+
+    public void OnNext(T value) =>
+        _stateMachine.OnItemUpdated(this);
 }

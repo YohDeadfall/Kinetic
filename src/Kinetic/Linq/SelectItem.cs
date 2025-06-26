@@ -19,7 +19,7 @@ public readonly struct SelectItem<TOperator, TSource, TResult> : IOperator<ListC
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>
         where TContinuation : struct, IStateMachine<ListChange<TResult>>
     {
-        return _source.Build<TBox, TBoxFactory, TransformItemStateMachine<TContinuation, FuncTransform<TSource, TResult>, TSource, TResult>>(
+        return _source.Build<TBox, TBoxFactory, TransformItemsStateMachine<TContinuation, FuncTransform<TSource, TResult>, TSource, TResult>>(
             boxFactory, new(continuation, new(_selector)));
     }
 }

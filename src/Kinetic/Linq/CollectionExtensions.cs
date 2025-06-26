@@ -93,6 +93,12 @@ public static class CollectionExtensions
         return source.Changed.Select(selector);
     }
 
+    public static Operator<SelectObservableItems<Subscribe<ListChange<TSource>>, TSource, TResult>, ListChange<TResult>> SelectObservable<TSource, TResult>(
+        this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TResult>> selector)
+    {
+        return source.Changed.SelectObservable(selector);
+    }
+
     public static Operator<WhereItem<Subscribe<ListChange<TSource>>, TSource>, ListChange<TSource>> Where<TSource>(
         this ReadOnlyObservableList<TSource> source, Func<TSource, bool> predicate)
     {

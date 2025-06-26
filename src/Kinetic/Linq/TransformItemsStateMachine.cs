@@ -4,7 +4,7 @@ using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-internal struct TransformItemStateMachine<TContinuation, TTransform, TSource, TResult> : IStateMachine<ListChange<TSource>>
+internal struct TransformItemsStateMachine<TContinuation, TTransform, TSource, TResult> : IStateMachine<ListChange<TSource>>
     where TContinuation : struct, IStateMachine<ListChange<TResult>>
     where TTransform : struct, ITransform<TSource, TResult>
 {
@@ -12,7 +12,7 @@ internal struct TransformItemStateMachine<TContinuation, TTransform, TSource, TR
     private TTransform _transform;
     private readonly List<TResult> _items = new();
 
-    public TransformItemStateMachine(TContinuation continuation, TTransform transform)
+    public TransformItemsStateMachine(TContinuation continuation, TTransform transform)
     {
         _continuation = continuation;
         _transform = transform;

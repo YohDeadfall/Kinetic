@@ -367,6 +367,24 @@ public static partial class ObservableExtensions
         return source.Subscribe().Throttle(delay, continueOnCapturedContext);
     }
 
+    public static Operator<OnCompleted<Subscribe<TSource>, TSource>, TSource> OnCompleted<TSource>(
+        this IObservable<TSource> source, Action onCompleted)
+    {
+        return source.Subscribe().OnCompleted(onCompleted);
+    }
+
+    public static Operator<OnError<Subscribe<TSource>, TSource>, TSource> OnError<TSource>(
+        this IObservable<TSource> source, Action<Exception> onError)
+    {
+        return source.Subscribe().OnError(onError);
+    }
+
+    public static Operator<OnNext<Subscribe<TSource>, TSource>, TSource> OnNext<TSource>(
+        this IObservable<TSource> source, Action<TSource> onNext)
+    {
+        return source.Subscribe().OnNext(onNext);
+    }
+
     public static Operator<ToDictionary<Subscribe<KeyValuePair<TKey, TSource>>, TSource, TKey>, Dictionary<TKey, TSource>> ToDictionary<TSource, TKey>(
         this IObservable<KeyValuePair<TKey, TSource>> source)
         where TKey : notnull
@@ -419,24 +437,6 @@ public static partial class ObservableExtensions
         this IObservable<TSource> source)
     {
         return source.Subscribe().ToArray();
-    }
-
-    public static Operator<OnCompleted<Subscribe<TSource>, TSource>, TSource> OnCompleted<TSource>(
-        this IObservable<TSource> source, Action onCompleted)
-    {
-        return source.Subscribe().OnCompleted(onCompleted);
-    }
-
-    public static Operator<OnError<Subscribe<TSource>, TSource>, TSource> OnError<TSource>(
-        this IObservable<TSource> source, Action<Exception> onError)
-    {
-        return source.Subscribe().OnError(onError);
-    }
-
-    public static Operator<OnNext<Subscribe<TSource>, TSource>, TSource> OnNext<TSource>(
-        this IObservable<TSource> source, Action<TSource> onNext)
-    {
-        return source.Subscribe().OnNext(onNext);
     }
 
     public static Task<TResult> ToTask<TResult>(

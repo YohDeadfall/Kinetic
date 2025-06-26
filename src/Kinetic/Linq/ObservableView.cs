@@ -7,22 +7,28 @@ namespace Kinetic.Linq;
 
 public class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
 {
-    private readonly IDisposable _subscription;
+    private IDisposable? _subscription;
 
-    public ObservableView(IObservable<ListChange<T>> source) =>
+    protected internal ObservableView() { }
+
+    protected internal void Bind<TOperator>(Operator<TOperator, ListChange<T>> source)
+        where TOperator : IOperator<ListChange<T>>
+    {
+        _subscription?.Dispose();
         _subscription = ObserverFactory<ListChange<T>>.Create(
-            new Bind<Subscribe<ListChange<T>>>(source.Subscribe(), this));
+            new BindOperator<TOperator>(source, this));
+    }
 
     public void Dispose() =>
-        _subscription.Dispose();
+        _subscription?.Dispose();
 
-    private readonly struct Bind<TOperator> : IOperator<ListChange<T>>
+    private readonly struct BindOperator<TOperator> : IOperator<ListChange<T>>
         where TOperator : IOperator<ListChange<T>>
     {
         private readonly TOperator _source;
         private readonly ObservableView<T> _view;
 
-        public Bind(TOperator source, ObservableView<T> view)
+        public BindOperator(TOperator source, ObservableView<T> view)
         {
             _source = source;
             _view = view;

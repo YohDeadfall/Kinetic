@@ -427,6 +427,27 @@ public static partial class OperatorExtensions
         return new(new(source, delay, continueOnCapturedContext));
     }
 
+    public static Operator<OnCompleted<TOperator, TSource>, TSource> OnCompleted<TOperator, TSource>(
+        this Operator<TOperator, TSource> source, Action onCompleted)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, onCompleted));
+    }
+
+    public static Operator<OnError<TOperator, TSource>, TSource> OnError<TOperator, TSource>(
+        this Operator<TOperator, TSource> source, Action<Exception> onError)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, onError));
+    }
+
+    public static Operator<OnNext<TOperator, TSource>, TSource> OnNext<TOperator, TSource>(
+        this Operator<TOperator, TSource> source, Action<TSource> onNext)
+        where TOperator : IOperator<TSource>
+    {
+        return new(new(source, onNext));
+    }
+
     public static Operator<ToDictionary<TOperator, TSource, TKey>, Dictionary<TKey, TSource>> ToDictionary<TOperator, TSource, TKey>(
         this Operator<TOperator, KeyValuePair<TKey, TSource>> source)
         where TOperator : IOperator<KeyValuePair<TKey, TSource>>
@@ -487,27 +508,6 @@ public static partial class OperatorExtensions
         where TOperator : IOperator<TSource>
     {
         return new(new(source));
-    }
-
-    public static Operator<OnCompleted<TOperator, TSource>, TSource> OnCompleted<TOperator, TSource>(
-        this Operator<TOperator, TSource> source, Action onCompleted)
-        where TOperator : IOperator<TSource>
-    {
-        return new(new(source, onCompleted));
-    }
-
-    public static Operator<OnError<TOperator, TSource>, TSource> OnError<TOperator, TSource>(
-        this Operator<TOperator, TSource> source, Action<Exception> onError)
-        where TOperator : IOperator<TSource>
-    {
-        return new(new(source, onError));
-    }
-
-    public static Operator<OnNext<TOperator, TSource>, TSource> OnNext<TOperator, TSource>(
-        this Operator<TOperator, TSource> source, Action<TSource> onNext)
-        where TOperator : IOperator<TSource>
-    {
-        return new(new(source, onNext));
     }
 
     public static IObservable<TResult> ToObservable<TOperator, TResult>(

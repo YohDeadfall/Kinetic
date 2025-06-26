@@ -5,18 +5,18 @@ namespace Kinetic.Linq;
 
 public static partial class OperatorExtensions
 {
-    public static Operator<GroupItemsBy<TOperator, TSource, TKey, ObservableGrouping<TKey, TSource>>, ListChange<ObservableGrouping<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
+    public static Operator<GroupItemsBy<TOperator, TSource, TKey, ObservableGroup<TKey, TSource>>, ListChange<ObservableGroup<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, TKey> keySelector)
         where TOperator : IOperator<ListChange<TSource>>
     {
         return source.GroupBy(keySelector, comparer: null);
     }
 
-    public static Operator<GroupItemsBy<TOperator, TSource, TKey, ObservableGrouping<TKey, TSource>>, ListChange<ObservableGrouping<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
+    public static Operator<GroupItemsBy<TOperator, TSource, TKey, ObservableGroup<TKey, TSource>>, ListChange<ObservableGroup<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, TKey> keySelector, IEqualityComparer<TKey>? comparer)
         where TOperator : IOperator<ListChange<TSource>>
     {
-        return source.GroupBy(keySelector, grouping => new ObservableGrouping<TKey, TSource>(grouping.Key, grouping), comparer);
+        return source.GroupBy(keySelector, grouping => grouping.Subscribe().ToGroup(grouping.Key), comparer);
     }
 
     public static Operator<GroupItemsBy<TOperator, TSource, TKey, TResult>, ListChange<TResult>> GroupBy<TOperator, TSource, TKey, TResult>(
@@ -38,20 +38,20 @@ public static partial class OperatorExtensions
         return new(new(source, keySelector, resultSelector, comparer));
     }
 
-    public static Operator<GroupItemsByObservable<TOperator, TSource, TKey, ObservableGrouping<TKey, TSource>>, ListChange<ObservableGrouping<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
+    public static Operator<GroupItemsByObservable<TOperator, TSource, TKey, ObservableGroup<TKey, TSource>>, ListChange<ObservableGroup<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector)
         where TOperator : IOperator<ListChange<TSource>>
     {
         // FIXME: It could be a call of the follow up method, but the compiler CS0121.
         // It's clear that there's only one possible resolution as TKey isn't an observable.
-        return source.GroupBy(keySelector, grouping => new ObservableGrouping<TKey, TSource>(grouping.Key, grouping), comparer: null);
+        return new(new(source, keySelector, grouping => grouping.Subscribe().ToGroup(grouping.Key), comparer: null));
     }
 
-    public static Operator<GroupItemsByObservable<TOperator, TSource, TKey, ObservableGrouping<TKey, TSource>>, ListChange<ObservableGrouping<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
+    public static Operator<GroupItemsByObservable<TOperator, TSource, TKey, ObservableGroup<TKey, TSource>>, ListChange<ObservableGroup<TKey, TSource>>> GroupBy<TOperator, TSource, TKey>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector, IEqualityComparer<TKey>? comparer)
         where TOperator : IOperator<ListChange<TSource>>
     {
-        return source.GroupBy(keySelector, grouping => new ObservableGrouping<TKey, TSource>(grouping.Key, grouping), comparer);
+        return source.GroupBy(keySelector, grouping => grouping.Subscribe().ToGroup(grouping.Key), comparer);
     }
 
     public static Operator<GroupItemsByObservable<TOperator, TSource, TKey, TResult>, ListChange<TResult>> GroupBy<TOperator, TSource, TKey, TResult>(
@@ -139,10 +139,21 @@ public static partial class OperatorExtensions
         return source.OnItemRemoved(item => item?.Dispose());
     }
 
-    public static ObservableView<TResult> ToView<TOperator, TResult>(
-        this Operator<TOperator, ListChange<TResult>> source)
-        where TOperator : IOperator<ListChange<TResult>>
+    public static ObservableView<TElement> ToView<TOperator, TElement>(
+        this Operator<TOperator, ListChange<TElement>> source)
+        where TOperator : IOperator<ListChange<TElement>>
     {
-        return new ObservableView<TResult>(source.ToObservable());
+        var view = new ObservableView<TElement>();
+        view.Bind(source);
+        return view;
+    }
+
+    public static ObservableGroup<TKey, TElement> ToGroup<TOperator, TElement, TKey>(
+        this Operator<TOperator, ListChange<TElement>> source, TKey key)
+        where TOperator : IOperator<ListChange<TElement>>
+    {
+        var group = new ObservableGroup<TKey, TElement>(key);
+        group.Bind(source);
+        return group;
     }
 }

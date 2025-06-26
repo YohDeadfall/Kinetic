@@ -11,7 +11,11 @@ public class ObservableViewTests
     {
         var list = new ObservableList<Item>();
         var groupings = list.GroupBy(item => item.Name.Get()).ToView();
-        var groupingsOrdered = list.GroupBy(item => item.Name.Get(), items => items.OrderBy(item => item.Number)).ToView();
+        var groupingsOrdered = list
+            .GroupBy(
+                item => item.Name.Get(),
+                items => items.OrderBy(item => item.Number).ToGroup(items.Key))
+            .ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -87,7 +91,11 @@ public class ObservableViewTests
     {
         var list = new ObservableList<Item>();
         var groupings = list.GroupBy(item => item.Name.Get(), StringComparer.OrdinalIgnoreCase).ToView();
-        var groupingsOrdered = list.GroupBy(item => item.Name.Get(), items => items.OrderBy(item => item.Number), StringComparer.OrdinalIgnoreCase).ToView();
+        var groupingsOrdered = list
+            .GroupBy(
+                item => item.Name.Get(),
+                items => items.OrderBy(item => item.Number).ToGroup(items.Key),
+                StringComparer.OrdinalIgnoreCase).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -163,7 +171,11 @@ public class ObservableViewTests
     {
         var list = new ObservableList<Item>();
         var groupings = list.GroupBy(item => item.Name).ToView();
-        var groupingsOrdered = list.GroupBy(item => item.Name, items => items.OrderBy(item => item.Number)).ToView();
+        var groupingsOrdered = list
+            .GroupBy(
+                item => item.Name,
+                items => items.OrderBy(item => item.Number).ToGroup(items.Key))
+            .ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -252,7 +264,11 @@ public class ObservableViewTests
     {
         var list = new ObservableList<Item>();
         var groupings = list.GroupBy(item => item.Name, StringComparer.OrdinalIgnoreCase).ToView();
-        var groupingsOrdered = list.GroupBy(item => item.Name, items => items.OrderBy(item => item.Number), StringComparer.OrdinalIgnoreCase).ToView();
+        var groupingsOrdered = list
+            .GroupBy(
+                item => item.Name,
+                items => items.OrderBy(item => item.Number).ToGroup(items.Key), StringComparer.OrdinalIgnoreCase)
+            .ToView();
 
         var itemA = new Item(0, "a");
         var itemB = new Item(1, "B");

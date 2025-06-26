@@ -14,7 +14,7 @@ public class ObservableViewTests
         var groupingsOrdered = list
             .GroupBy(
                 item => item.Name.Get(),
-                items => items.OrderBy(item => item.Number).ToGroup(items.Key))
+                items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key))
             .ToView();
 
         var itemA = new Item(0, "A");
@@ -94,7 +94,7 @@ public class ObservableViewTests
         var groupingsOrdered = list
             .GroupBy(
                 item => item.Name.Get(),
-                items => items.OrderBy(item => item.Number).ToGroup(items.Key),
+                items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key),
                 StringComparer.OrdinalIgnoreCase).ToView();
 
         var itemA = new Item(0, "A");
@@ -174,7 +174,7 @@ public class ObservableViewTests
         var groupingsOrdered = list
             .GroupBy(
                 item => item.Name,
-                items => items.OrderBy(item => item.Number).ToGroup(items.Key))
+                items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key))
             .ToView();
 
         var itemA = new Item(0, "A");
@@ -267,7 +267,7 @@ public class ObservableViewTests
         var groupingsOrdered = list
             .GroupBy(
                 item => item.Name,
-                items => items.OrderBy(item => item.Number).ToGroup(items.Key), StringComparer.OrdinalIgnoreCase)
+                items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key), StringComparer.OrdinalIgnoreCase)
             .ToView();
 
         var itemA = new Item(0, "a");

@@ -1,27 +1,28 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-internal struct TransformObservableItemsStateMachine<TContinuation, TSource, TResult> : IStateMachine<ListChange<TSource>>
-    where TContinuation : struct, IStateMachine<ListChange<TResult>>
+internal struct FilterObservableItemsStateMachine<TContinuation, TSource> : IStateMachine<ListChange<TSource>>, IReadOnlyList<TSource>
+    where TContinuation : struct, IStateMachine<ListChange<TSource>>
 {
     private TContinuation _continuation;
-    private StateMachineReference<ListChange<TSource>, TransformObservableItemsStateMachine<TContinuation, TSource, TResult>>? _reference;
-    private readonly Func<TSource, IObservable<TResult>> _selector;
+    private ListStateMachineReference<TSource, FilterObservableItemsStateMachine<TContinuation, TSource>>? _reference;
+    private readonly Func<TSource, IObservable<bool>> _predicate;
     private readonly List<Item> _items = new();
 
-    public TransformObservableItemsStateMachine(TContinuation continuation, Func<TSource, IObservable<TResult>> selector)
+    public FilterObservableItemsStateMachine(TContinuation continuation, Func<TSource, IObservable<bool>> predicate)
     {
         _continuation = continuation;
-        _selector = selector;
+        _predicate = predicate;
     }
 
     public StateMachineBox Box =>
         _continuation.Box;
 
-    private StateMachineReference<ListChange<TSource>, TransformObservableItemsStateMachine<TContinuation, TSource, TResult>> Reference =>
+    private ListStateMachineReference<TSource, FilterObservableItemsStateMachine<TContinuation, TSource>> Reference =>
         _reference ??= new(ref this);
 
     StateMachineReference<ListChange<TSource>> IStateMachine<ListChange<TSource>>.Reference =>
@@ -29,6 +30,12 @@ internal struct TransformObservableItemsStateMachine<TContinuation, TSource, TRe
 
     public StateMachineReference? Continuation =>
         _continuation.Reference;
+
+    int IReadOnlyCollection<TSource>.Count =>
+        _items.Count;
+
+    TSource IReadOnlyList<TSource>.this[int index] =>
+        _items[index].Value;
 
     public void Dispose()
     {
@@ -41,8 +48,10 @@ internal struct TransformObservableItemsStateMachine<TContinuation, TSource, TRe
     public void Initialize(StateMachineBox box) =>
         _continuation.Initialize(box);
 
-    public void OnCompleted() =>
-        _continuation.OnCompleted();
+    public void OnCompleted()
+    {
+        throw new NotImplementedException();
+    }
 
     public void OnError(Exception error) =>
         _continuation.OnError(error);
@@ -57,8 +66,7 @@ internal struct TransformObservableItemsStateMachine<TContinuation, TSource, TRe
                         item.Dispose();
 
                     _items.Clear();
-                    _continuation.OnNext(
-                        ListChange.RemoveAll<TResult>());
+                    _continuation.OnNext(value);
 
                     break;
                 }
@@ -68,7 +76,7 @@ internal struct TransformObservableItemsStateMachine<TContinuation, TSource, TRe
                     if (item.Present)
                     {
                         _continuation.OnNext(
-                            ListChange.Remove<TResult>(
+                            ListChange.Remove<TSource>(
                                 Item.GetAdjustedIndex(_items, item.Index)));
                     }
 
@@ -99,7 +107,7 @@ internal struct TransformObservableItemsStateMachine<TContinuation, TSource, TRe
                             newAdjustedIndex -= 1;
 
                         _continuation.OnNext(
-                            ListChange.Move<TResult>(
+                            ListChange.Move<TSource>(
                                 oldAdjustedIndex,
                                 newAdjustedIndex));
                     }
@@ -109,21 +117,33 @@ internal struct TransformObservableItemsStateMachine<TContinuation, TSource, TRe
         }
     }
 
-    private sealed class Item : ObservableViewItem, IObserver<TResult>
+    public IEnumerator<TSource> GetEnumerator()
     {
-        private readonly StateMachineReference<ListChange<TSource>, TransformObservableItemsStateMachine<TContinuation, TSource, TResult>> _stateMachine;
+        foreach (var item in _items)
+            yield return item.Value;
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() =>
+        GetEnumerator();
+
+    private sealed class Item : ObservableViewItem, IObserver<bool>
+    {
+        private readonly ListStateMachineReference<TSource, FilterObservableItemsStateMachine<TContinuation, TSource>> _stateMachine;
         private readonly IDisposable _subscription;
 
-        private Item(int index, TSource item, ref TransformObservableItemsStateMachine<TContinuation, TSource, TResult> stateMachine, bool replace) :
+        public TSource Value { get; }
+
+        private Item(int index, TSource item, ref FilterObservableItemsStateMachine<TContinuation, TSource> stateMachine, bool replace) :
             base(index)
         {
             Present = replace;
+            Value = item;
 
             _stateMachine = stateMachine.Reference;
-            _subscription = stateMachine._selector(item).Subscribe(this);
+            _subscription = stateMachine._predicate(item).Subscribe(this);
         }
 
-        public static Item? TryCreate(int index, TSource item, ref TransformObservableItemsStateMachine<TContinuation, TSource, TResult> stateMachine, bool replace)
+        public static Item? TryCreate(int index, TSource item, ref FilterObservableItemsStateMachine<TContinuation, TSource> stateMachine, bool replace)
         {
             try
             {
@@ -142,52 +162,53 @@ internal struct TransformObservableItemsStateMachine<TContinuation, TSource, TRe
         public void OnCompleted() { }
 
         public void OnError(Exception error) =>
-            _stateMachine.OnError(error);
+            _stateMachine.Target.Dispose();
 
-        public void OnNext(TResult value)
+        public void OnNext(bool value)
         {
-            ref var stateMachine = ref _stateMachine.Target;
             if (_subscription is { })
             {
-                // Change notification handling.
-                var adjustedIndex = Item.GetAdjustedIndex(stateMachine._items, Index);
-                if (Present)
-                {
-                    stateMachine._continuation.OnNext(
-                        ListChange.Replace(adjustedIndex, value));
-                }
-                else
-                {
-                    Present = true;
+                if (Present == value)
+                    return;
 
-                    stateMachine._continuation.OnNext(
-                        ListChange.Insert(adjustedIndex, value));
-                }
+                Present = value;
+
+                ref var stateMachine = ref _stateMachine.Target;
+                var adjustedIndex = Item.GetAdjustedIndex(stateMachine._items, Index);
+
+                stateMachine._continuation.OnNext(
+                    Present
+                        ? ListChange.Insert(adjustedIndex, Value)
+                        : ListChange.Remove<TSource>(adjustedIndex));
             }
             else
             {
                 // The result was immediately provided by the observer
                 // as the constructor hasn't finished yet.
-                var index = Index;
-                var adjustedIndex = Item.GetAdjustedIndex(stateMachine._items, index);
+                ref var stateMachine = ref _stateMachine.Target;
+                var adjustedIndex = Item.GetAdjustedIndex(stateMachine._items, Index);
 
-                if (Present)
+                // Presence at this point just tells that it's a replacement.
+                // Therefore, the value must be updated before anything else.
+                Present = value;
+
+                if (value)
                 {
                     // Replacement initiated by the parent state machine.
-                    var oldItem = Item.Replace(stateMachine._items, index, this);
-                    if (oldItem.Present)
-                    {
-                        stateMachine._continuation.OnNext(
-                            ListChange.Replace(adjustedIndex, item: value));
-                        return;
-                    }
+                    var oldItem = Item.Replace(stateMachine._items, Index, this);
+                    stateMachine._continuation.OnNext(
+                        oldItem.Present
+                            ? ListChange.Replace(adjustedIndex, Value)
+                            : ListChange.Remove<TSource>(adjustedIndex));
                 }
+                else
+                {
+                    // First time insertion.
+                    Item.Insert(stateMachine._items, Index, this);
 
-                Present = true;
-                Item.Insert(stateMachine._items, index, this);
-
-                stateMachine._continuation.OnNext(
-                    ListChange.Insert(adjustedIndex, item: value));
+                    stateMachine._continuation.OnNext(
+                        ListChange.Insert(adjustedIndex, Value));
+                }
             }
         }
     }

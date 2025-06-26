@@ -93,7 +93,7 @@ public static partial class ObservableExtensions
         return source.Subscribe().Select(selector);
     }
 
-    public static Operator<SelectObservableItems<Subscribe<ListChange<TSource>>, TSource, TResult>, ListChange<TResult>> SelectObservable<TSource, TResult>(
+    public static Operator<SelectObservableItem<Subscribe<ListChange<TSource>>, TSource, TResult>, ListChange<TResult>> SelectObservable<TSource, TResult>(
         this IObservable<ListChange<TSource>> source, Func<TSource, IObservable<TResult>> selector)
     {
         return source.Subscribe().SelectObservable(selector);
@@ -103,6 +103,12 @@ public static partial class ObservableExtensions
         this IObservable<ListChange<TSource>> source, Func<TSource, bool> predicate)
     {
         return source.Subscribe().Where(predicate);
+    }
+
+    public static Operator<WhereObservableItem<Subscribe<ListChange<TSource>>, TSource>, ListChange<TSource>> WhereObservable<TSource>(
+        this IObservable<ListChange<TSource>> source, Func<TSource, IObservable<bool>> predicate)
+    {
+        return source.Subscribe().WhereObservable(predicate);
     }
 
     public static Operator<OnItemAdded<Subscribe<ListChange<TSource>>, TSource>, ListChange<TSource>> OnItemAdded<TSource>(

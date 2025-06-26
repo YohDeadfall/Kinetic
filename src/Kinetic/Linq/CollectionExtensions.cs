@@ -75,16 +75,16 @@ public static class CollectionExtensions
         return source.Changed.OrderBy(keySelector, comparer);
     }
 
-    public static Operator<OrderItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey>, ListChange<TSource>> OrderBy<TSource, TKey>(
+    public static Operator<OrderItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey>, ListChange<TSource>> OrderByObservable<TSource, TKey>(
         this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TKey>> keySelector)
     {
-        return source.Changed.OrderBy(keySelector);
+        return source.Changed.OrderByObservable(keySelector);
     }
 
-    public static Operator<OrderItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey>, ListChange<TSource>> OrderBy<TSource, TKey>(
+    public static Operator<OrderItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey>, ListChange<TSource>> OrderByObservable<TSource, TKey>(
         this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TKey>> keySelector, IComparer<TKey>? comparer)
     {
-        return source.Changed.OrderBy(keySelector, comparer);
+        return source.Changed.OrderByObservable(keySelector, comparer);
     }
 
     public static Operator<SelectItem<Subscribe<ListChange<TSource>>, TSource, TResult>, ListChange<TResult>> Select<TSource, TResult>(

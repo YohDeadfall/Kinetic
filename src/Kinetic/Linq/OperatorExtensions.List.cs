@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
@@ -88,16 +87,14 @@ public static partial class OperatorExtensions
         return new(new(source, keySelector, comparer));
     }
 
-    public static Operator<OrderItemsByObservable<TOperator, TSource, TKey>, ListChange<TSource>> OrderBy<TOperator, TSource, TKey>(
+    public static Operator<OrderItemsByObservable<TOperator, TSource, TKey>, ListChange<TSource>> OrderByObservable<TOperator, TSource, TKey>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector)
         where TOperator : IOperator<ListChange<TSource>>
     {
-        // FIXME: It could be a call of the follow up method, but the compiler CS0121.
-        // It's clear that there's only one possible resolution as TKey isn't an observable.
-        return new(new(source, keySelector, comparer: null));
+        return source.OrderByObservable(keySelector, comparer: null);
     }
 
-    public static Operator<OrderItemsByObservable<TOperator, TSource, TKey>, ListChange<TSource>> OrderBy<TOperator, TSource, TKey>(
+    public static Operator<OrderItemsByObservable<TOperator, TSource, TKey>, ListChange<TSource>> OrderByObservable<TOperator, TSource, TKey>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector, IComparer<TKey>? comparer)
         where TOperator : IOperator<ListChange<TSource>>
     {
@@ -106,6 +103,13 @@ public static partial class OperatorExtensions
 
     public static Operator<SelectItem<TOperator, TSource, TResult>, ListChange<TResult>> Select<TOperator, TSource, TResult>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, TResult> selector)
+        where TOperator : IOperator<ListChange<TSource>>
+    {
+        return new(new(source, selector));
+    }
+
+    public static Operator<SelectObservableItems<TOperator, TSource, TResult>, ListChange<TResult>> SelectObservable<TOperator, TSource, TResult>(
+        this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TResult>> selector)
         where TOperator : IOperator<ListChange<TSource>>
     {
         return new(new(source, selector));
@@ -156,26 +160,5 @@ public static partial class OperatorExtensions
         var group = new ObservableGroup<TKey, TElement>(key);
         group.Bind(source);
         return group;
-    }
-}
-
-public readonly struct SelectObservableItems<TOperator, TSource, TResult> : IOperator<ListChange<TResult>>
-    where TOperator : IOperator<ListChange<TSource>>
-{
-    private readonly TOperator _source;
-    private readonly Func<TSource, IObservable<TResult>> _selector;
-
-    public SelectObservableItems(TOperator source, Func<TSource, IObservable<TResult>> selector)
-    {
-        _source = source.ThrowIfArgumentNull();
-        _selector = selector.ThrowIfArgumentNull();
-    }
-
-    public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
-        where TBoxFactory : struct, IStateMachineBoxFactory<TBox>
-        where TContinuation : struct, IStateMachine<ListChange<TResult>>
-    {
-        return _source.Build<TBox, TBoxFactory, TransformObservableItemsStateMachine<TContinuation, TSource, TResult>>(
-            boxFactory, new(continuation, _selector));
     }
 }

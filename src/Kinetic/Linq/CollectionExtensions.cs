@@ -34,33 +34,33 @@ public static class CollectionExtensions
         return source.Changed.GroupBy(keySelector, resultSelector, comparer);
     }
 
-    public static Operator<GroupItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey, ObservableGroup<TKey, TSource>>, ListChange<ObservableGroup<TKey, TSource>>> GroupBy<TSource, TKey>(
+    public static Operator<GroupItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey, ObservableGroup<TKey, TSource>>, ListChange<ObservableGroup<TKey, TSource>>> GroupByObservable<TSource, TKey>(
         this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TKey>> keySelector)
     {
-        return source.Changed.GroupBy(keySelector);
+        return source.Changed.GroupByObservable(keySelector);
     }
 
-    public static Operator<GroupItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey, ObservableGroup<TKey, TSource>>, ListChange<ObservableGroup<TKey, TSource>>> GroupBy<TSource, TKey>(
+    public static Operator<GroupItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey, ObservableGroup<TKey, TSource>>, ListChange<ObservableGroup<TKey, TSource>>> GroupByObservable<TSource, TKey>(
         this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TKey>> keySelector, IEqualityComparer<TKey>? comparer)
     {
-        return source.Changed.GroupBy(keySelector, comparer);
+        return source.Changed.GroupByObservable(keySelector, comparer);
     }
 
-    public static Operator<GroupItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey, TResult>, ListChange<TResult>> GroupBy<TSource, TKey, TResult>(
+    public static Operator<GroupItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey, TResult>, ListChange<TResult>> GroupByObservable<TSource, TKey, TResult>(
         this ReadOnlyObservableList<TSource> source,
         Func<TSource, IObservable<TKey>> keySelector,
         Func<IGrouping<TKey, ListChange<TSource>>, TResult> resultSelector)
     {
-        return source.Changed.GroupBy(keySelector, resultSelector);
+        return source.Changed.GroupByObservable(keySelector, resultSelector);
     }
 
-    public static Operator<GroupItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey, TResult>, ListChange<TResult>> GroupBy<TSource, TKey, TResult>(
+    public static Operator<GroupItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey, TResult>, ListChange<TResult>> GroupByObservable<TSource, TKey, TResult>(
         this ReadOnlyObservableList<TSource> source,
         Func<TSource, IObservable<TKey>> keySelector,
         Func<IGrouping<TKey, ListChange<TSource>>, TResult> resultSelector,
         IEqualityComparer<TKey>? comparer)
     {
-        return source.Changed.GroupBy(keySelector, resultSelector, comparer);
+        return source.Changed.GroupByObservable(keySelector, resultSelector, comparer);
     }
 
     public static Operator<OrderItemsBy<Subscribe<ListChange<TSource>>, TSource, TKey>, ListChange<TSource>> OrderBy<TSource, TKey>(

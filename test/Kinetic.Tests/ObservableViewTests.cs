@@ -10,7 +10,9 @@ public class ObservableViewTests
     public void GroupByStaticWithoutComparer()
     {
         var list = new ObservableList<Item>();
-        var groupings = list.GroupBy(item => item.Name.Get()).ToView();
+        var groupings = list
+            .GroupBy(item => item.Name.Get())
+            .ToView();
         var groupingsOrdered = list
             .GroupBy(
                 item => item.Name.Get(),
@@ -90,7 +92,9 @@ public class ObservableViewTests
     public void GroupByStaticWithComparer()
     {
         var list = new ObservableList<Item>();
-        var groupings = list.GroupBy(item => item.Name.Get(), StringComparer.OrdinalIgnoreCase).ToView();
+        var groupings = list
+            .GroupBy(item => item.Name.Get(), StringComparer.OrdinalIgnoreCase)
+            .ToView();
         var groupingsOrdered = list
             .GroupBy(
                 item => item.Name.Get(),
@@ -170,10 +174,12 @@ public class ObservableViewTests
     public void GroupByDynamicWithoutComparer()
     {
         var list = new ObservableList<Item>();
-        var groupings = list.GroupBy(item => item.Name).ToView();
+        var groupings = list
+            .GroupByObservable(item => item.Name.Changed)
+            .ToView();
         var groupingsOrdered = list
-            .GroupBy(
-                item => item.Name,
+            .GroupByObservable(
+                item => item.Name.Changed,
                 items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key))
             .ToView();
 
@@ -263,7 +269,9 @@ public class ObservableViewTests
     public void GroupByDynamicWithComparer()
     {
         var list = new ObservableList<Item>();
-        var groupings = list.GroupBy(item => item.Name, StringComparer.OrdinalIgnoreCase).ToView();
+        var groupings = list
+            .GroupByObservable(item => item.Name.Changed, StringComparer.OrdinalIgnoreCase)
+            .ToView();
         var groupingsOrdered = list
             .GroupBy(
                 item => item.Name,

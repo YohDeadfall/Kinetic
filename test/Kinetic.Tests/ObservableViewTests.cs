@@ -369,13 +369,13 @@ public class ObservableViewTests
 
         using var changes = list
             .Changed
-            .Do(change => SetWhenAdded(change, ref handledBefore))
+            .OnNext(change => SetWhenAdded(change, ref handledBefore))
             .OnItemAdded(item =>
             {
                 Assert.True(handledBefore);
                 Assert.False(handledAfter);
             })
-            .Do(change => SetWhenAdded(change, ref handledAfter))
+            .OnNext(change => SetWhenAdded(change, ref handledAfter))
             .Subscribe();
 
         list.Add(0);
@@ -399,13 +399,13 @@ public class ObservableViewTests
 
         using var changes = list
             .Changed
-            .Do(change => SetWhenRemoved(change, ref handledBefore))
+            .OnNext(change => SetWhenRemoved(change, ref handledBefore))
             .OnItemRemoved(item =>
             {
                 Assert.True(handledBefore);
                 Assert.True(handledAfter);
             })
-            .Do(change => SetWhenRemoved(change, ref handledAfter))
+            .OnNext(change => SetWhenRemoved(change, ref handledAfter))
             .Subscribe();
 
         list.Add(0);

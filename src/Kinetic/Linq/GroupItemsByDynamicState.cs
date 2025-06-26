@@ -27,15 +27,10 @@ internal sealed class GroupItemsByDynamicState<TSource, TKey> : IGroupItemsBySta
         _subscription = keySelector(source).Subscribe(this);
     }
 
-    public void OnCompleted()
-    {
-        throw new NotImplementedException();
-    }
+    public void OnCompleted() { }
 
-    public void OnError(Exception error)
-    {
-        throw new NotImplementedException();
-    }
+    public void OnError(Exception error) =>
+        _groupBy.OnError(error);
 
     public void OnNext(TKey value)
     {

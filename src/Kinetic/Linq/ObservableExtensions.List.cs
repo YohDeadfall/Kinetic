@@ -63,6 +63,30 @@ public static partial class ObservableExtensions
         return source.Subscribe().GroupBy(keySelector, resultSelector, comparer);
     }
 
+    public static Operator<OrderItemsBy<Subscribe<ListChange<TSource>>, TSource, TKey>, ListChange<TSource>> OrderBy<TSource, TKey>(
+        this IObservable<ListChange<TSource>> source, Func<TSource, TKey> keySelector)
+    {
+        return source.Subscribe().OrderBy(keySelector);
+    }
+
+    public static Operator<OrderItemsBy<Subscribe<ListChange<TSource>>, TSource, TKey>, ListChange<TSource>> OrderBy<TSource, TKey>(
+        this IObservable<ListChange<TSource>> source, Func<TSource, TKey> keySelector, IComparer<TKey>? comparer)
+    {
+        return source.Subscribe().OrderBy(keySelector, comparer);
+    }
+
+    public static Operator<OrderItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey>, ListChange<TSource>> OrderBy<TSource, TKey>(
+        this IObservable<ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector)
+    {
+        return source.Subscribe().OrderBy(keySelector);
+    }
+
+    public static Operator<OrderItemsByObservable<Subscribe<ListChange<TSource>>, TSource, TKey>, ListChange<TSource>> OrderBy<TSource, TKey>(
+        this IObservable<ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector, IComparer<TKey>? comparer)
+    {
+        return source.Subscribe().OrderBy(keySelector, comparer);
+    }
+
     public static Operator<SelectItem<Subscribe<ListChange<TSource>>, TSource, TResult>, ListChange<TResult>> Select<TSource, TResult>(
         this IObservable<ListChange<TSource>> source, Func<TSource, TResult> selector)
     {

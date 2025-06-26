@@ -106,7 +106,7 @@ public static partial class OperatorExtensions
         return new(new(source, selector));
     }
 
-    public static Operator<SelectObservableItems<TOperator, TSource, TResult>, ListChange<TResult>> SelectObservable<TOperator, TSource, TResult>(
+    public static Operator<SelectObservableItem<TOperator, TSource, TResult>, ListChange<TResult>> SelectObservable<TOperator, TSource, TResult>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TResult>> selector)
         where TOperator : IOperator<ListChange<TSource>>
     {
@@ -115,6 +115,13 @@ public static partial class OperatorExtensions
 
     public static Operator<WhereItem<TOperator, TSource>, ListChange<TSource>> Where<TOperator, TSource>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, bool> predicate)
+        where TOperator : IOperator<ListChange<TSource>>
+    {
+        return new(new(source, predicate));
+    }
+
+    public static Operator<WhereObservableItem<TOperator, TSource>, ListChange<TSource>> WhereObservable<TOperator, TSource>(
+        this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<bool>> predicate)
         where TOperator : IOperator<ListChange<TSource>>
     {
         return new(new(source, predicate));

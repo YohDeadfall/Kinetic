@@ -1,3 +1,5 @@
+using System;
+
 namespace Kinetic.Linq;
 
 internal interface IGroupItemsByStateMachine<TState, TSource, TKey>
@@ -9,4 +11,6 @@ internal interface IGroupItemsByStateMachine<TState, TSource, TKey>
     void AddItem(int index, TState item, TSource source, TKey key);
     void UpdateItem(int index, TState item, TSource source, TKey key);
     void ReplaceItem(int index, TState item, TSource source, TKey key);
+
+    void OnError(Exception error);
 }

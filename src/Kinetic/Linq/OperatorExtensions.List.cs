@@ -73,6 +73,36 @@ public static partial class OperatorExtensions
         return new(new(source, keySelector, resultSelector, comparer));
     }
 
+    public static Operator<OrderItemsBy<TOperator, TSource, TKey>, ListChange<TSource>> OrderBy<TOperator, TSource, TKey>(
+        this Operator<TOperator, ListChange<TSource>> source, Func<TSource, TKey> keySelector)
+        where TOperator : IOperator<ListChange<TSource>>
+    {
+        return source.OrderBy(keySelector, comparer: null);
+    }
+
+    public static Operator<OrderItemsBy<TOperator, TSource, TKey>, ListChange<TSource>> OrderBy<TOperator, TSource, TKey>(
+        this Operator<TOperator, ListChange<TSource>> source, Func<TSource, TKey> keySelector, IComparer<TKey>? comparer)
+        where TOperator : IOperator<ListChange<TSource>>
+    {
+        return new(new(source, keySelector, comparer));
+    }
+
+    public static Operator<OrderItemsByObservable<TOperator, TSource, TKey>, ListChange<TSource>> OrderBy<TOperator, TSource, TKey>(
+        this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector)
+        where TOperator : IOperator<ListChange<TSource>>
+    {
+        // FIXME: It could be a call of the follow up method, but the compiler CS0121.
+        // It's clear that there's only one possible resolution as TKey isn't an observable.
+        return new(new(source, keySelector, comparer: null));
+    }
+
+    public static Operator<OrderItemsByObservable<TOperator, TSource, TKey>, ListChange<TSource>> OrderBy<TOperator, TSource, TKey>(
+        this Operator<TOperator, ListChange<TSource>> source, Func<TSource, IObservable<TKey>> keySelector, IComparer<TKey>? comparer)
+        where TOperator : IOperator<ListChange<TSource>>
+    {
+        return new(new(source, keySelector, comparer));
+    }
+
     public static Operator<SelectItem<TOperator, TSource, TResult>, ListChange<TResult>> Select<TOperator, TSource, TResult>(
         this Operator<TOperator, ListChange<TSource>> source, Func<TSource, TResult> selector)
         where TOperator : IOperator<ListChange<TSource>>

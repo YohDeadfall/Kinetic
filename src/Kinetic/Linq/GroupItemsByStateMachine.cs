@@ -89,7 +89,18 @@ internal struct GroupItemsByStateMachine<TContinuation, TState, TStateManager, T
             case ListChangeAction.Insert:
             case ListChangeAction.Replace:
                 {
-                    _itemManager.Create(value.NewIndex, value.NewItem, ref this, value.Action == ListChangeAction.Replace);
+                    try
+                    {
+                        _itemManager.Create(
+                            value.NewIndex,
+                            value.NewItem,
+                            ref this,
+                            value.Action == ListChangeAction.Replace);
+                    }
+                    catch (Exception error)
+                    {
+                        _continuation.OnError(error);
+                    }
                     break;
                 }
             case ListChangeAction.Move:

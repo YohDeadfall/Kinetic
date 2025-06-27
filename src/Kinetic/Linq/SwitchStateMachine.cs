@@ -25,8 +25,13 @@ internal struct SwitchStateMachine<TContinuation, TSource> : IStateMachine<IObse
 
     public void Dispose()
     {
-        _subscription?.Dispose();
-        _continuation.Dispose();
+        lock (_gate)
+        {
+            if (_subscription is { })
+                _subscription = null;
+            else
+                _continuation.Dispose();
+        }
     }
 
     public void Initialize(StateMachineBox box) =>
@@ -44,8 +49,13 @@ internal struct SwitchStateMachine<TContinuation, TSource> : IStateMachine<IObse
         }
     }
 
-    public void OnError(Exception error) =>
-        _continuation.OnError(error);
+    public void OnError(Exception error)
+    {
+        lock (_gate)
+        {
+            _continuation.OnError(error);
+        }
+    }
 
     public void OnNext(IObservable<TSource>? value)
     {
@@ -63,26 +73,21 @@ internal struct SwitchStateMachine<TContinuation, TSource> : IStateMachine<IObse
     {
         private readonly StateMachineReference<IObservable<TSource>?, SwitchStateMachine<TContinuation, TSource>> _outer;
 
-        public Inner(StateMachineReference<IObservable<TSource>?, SwitchStateMachine<TContinuation, TSource>> outer)
-        {
+        public Inner(StateMachineReference<IObservable<TSource>?, SwitchStateMachine<TContinuation, TSource>> outer) =>
             _outer = outer;
-        }
 
-        public StateMachineBox Box => throw new NotImplementedException();
+        public StateMachineBox Box =>
+            throw new NotSupportedException();
 
-        public StateMachineReference<TSource> Reference => throw new NotImplementedException();
+        public StateMachineReference<TSource> Reference =>
+            throw new NotSupportedException();
 
-        public StateMachineReference? Continuation => throw new NotImplementedException();
+        public StateMachineReference? Continuation =>
+            null;
 
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
+        public void Dispose() { }
 
-        public void Initialize(StateMachineBox box)
-        {
-            throw new NotImplementedException();
-        }
+        public void Initialize(StateMachineBox box) { }
 
         public void OnCompleted()
         {
@@ -90,7 +95,17 @@ internal struct SwitchStateMachine<TContinuation, TSource> : IStateMachine<IObse
             lock (outer._gate)
             {
                 if (outer._self == _outer)
-                    outer._continuation.OnCompleted();
+                    if (outer._subscription is null)
+                        try
+                        {
+                            outer._continuation.OnCompleted();
+                        }
+                        finally
+                        {
+                            outer._continuation.Dispose();
+                        }
+                    else
+                        outer._subscription = null;
             }
         }
 
@@ -100,7 +115,14 @@ internal struct SwitchStateMachine<TContinuation, TSource> : IStateMachine<IObse
             lock (outer._gate)
             {
                 if (outer._self == _outer)
-                    outer._continuation.OnError(error);
+                    try
+                    {
+                        outer._continuation.OnError(error);
+                    }
+                    finally
+                    {
+                        outer._continuation.Dispose();
+                    }
             }
         }
 

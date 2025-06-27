@@ -480,7 +480,7 @@ public class ObservableViewTests
     public void OrderByDynamic()
     {
         var list = new ObservableList<Item>();
-        var view = list.OrderBy(item => item.Number).ToView();
+        var view = list.OrderByObservable(item => item.Number.Changed).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");

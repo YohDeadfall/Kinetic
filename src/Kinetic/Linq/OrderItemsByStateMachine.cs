@@ -26,11 +26,9 @@ internal struct OrderItemsByStateMachine<TContinuation, TState, TStateManager, T
     {
         _continuation = continuation;
         _itemManager = itemManager;
-        _itemComparer = comparer is null
-            ? null
-            : typeof(TKey).IsValueType
-                ? comparer == Comparer<TKey>.Default ? null : new OrderItemsByStateComparer<TState, TKey>(comparer)
-                : new OrderItemsByStateComparer<TState, TKey>(comparer ?? Comparer<TKey>.Default);
+        _itemComparer = typeof(TState).IsValueType
+            ? comparer is null ? null : new OrderItemsByStateComparer<TState, TKey>(comparer)
+            : new OrderItemsByStateComparer<TState, TKey>(comparer);
     }
 
     public StateMachineBox Box =>

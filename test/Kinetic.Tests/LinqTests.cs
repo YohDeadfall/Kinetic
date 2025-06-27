@@ -492,11 +492,11 @@ public class LinqTests
     }
 
     [Fact]
-    public async ValueTask Then()
+    public async ValueTask Switch()
     {
         var container = new Container<int>();
         var values = container.PublishSubject.Changed
-            .Then(value => value)
+            .Switch()
             .ToArray()
             .ToValueTask();
 

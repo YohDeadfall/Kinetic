@@ -18,7 +18,7 @@ public abstract class StateMachineReference<T> : StateMachineReference, IObserve
     public abstract void OnError(Exception error);
     public abstract void OnNext(T value);
 
-    public static StateMachineReference<T> Create<TStateMachine>(ref TStateMachine stateMachine)
+    public static StateMachineReference<T, TStateMachine> Create<TStateMachine>(ref TStateMachine stateMachine)
         where TStateMachine : struct, IStateMachine<T> =>
         new StateMachineReference<T, TStateMachine>(ref stateMachine);
 }

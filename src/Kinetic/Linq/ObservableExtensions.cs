@@ -361,6 +361,12 @@ public static partial class ObservableExtensions
         return source.Subscribe().TakeWhile(predicate);
     }
 
+    public static Operator<Switch<Subscribe<IObservable<TSource>?>, TSource>, TSource> Switch<TSource>(
+        this IObservable<IObservable<TSource>?> source)
+    {
+        return source.Subscribe().Switch();
+    }
+
     public static Operator<Throttle<Subscribe<TSource>, TSource>, TSource> Throttle<TSource>(
         this IObservable<TSource> source, TimeSpan delay, bool continueOnCapturedContext = true)
     {

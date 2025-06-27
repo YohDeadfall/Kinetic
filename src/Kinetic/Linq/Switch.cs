@@ -15,6 +15,7 @@ public readonly struct Switch<TOperator, TSource> : IOperator<TSource>
         where TBoxFactory : struct, IStateMachineBoxFactory<TBox>
         where TContinuation : struct, IStateMachine<TSource>
     {
-        throw new NotImplementedException();
+        return _source.Build<TBox, TBoxFactory, SwitchStateMachine<TContinuation, TSource>>(
+            boxFactory, new(continuation));
     }
 }

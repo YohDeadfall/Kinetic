@@ -98,7 +98,8 @@ public abstract class ObservableObject
         EnsureObservable(property.Offset, (owner, offset, next) =>
         {
             var observable = new ValueObservable<T>(offset, owner, next);
-            preview(new(new(observable)));
+            preview(new(new(observable))).Subscribe(new ValueObservable<T>.PreviewObserver(observable));
+
             return observable;
         });
     }
@@ -243,10 +244,20 @@ public abstract class ObservableObject
         { }
 
         internal override void Changed() =>
-            Changed(Owner.Get<T>(Offset));
+            Subscriptions.OnNext(Owner.Get<T>(Offset));
 
-        internal void Changed(T value) =>
-            Subscriptions.OnNext(value);
+        internal void Changed(T value)
+        {
+            if (Owner.NotificationsEnabled)
+            {
+                Version = Owner._version++;
+                Subscriptions.OnNext(value);
+            }
+            else
+            {
+                Version = Owner._version;
+            }
+        }
 
         public IDisposable Subscribe(IObserver<T> observer)
         {
@@ -278,111 +289,68 @@ public abstract class ObservableObject
                 return;
             }
 
-            if (Owner.NotificationsEnabled)
-            {
-                Version = Owner._version++;
-
-                Owner.GetReference<T>(Offset) = value;
-                Changed(value);
-            }
-            else
-            {
-                Version = Owner._version;
-            }
+            Owner.GetReference<T>(Offset) = value;
+            Changed(value);
         }
 
         internal struct SetupStateMachine<TPreview> : IStateMachine<T>
             where TPreview : struct, IStateMachine<T>
         {
-            private UpdateStateMachine<TPreview> _update;
+            private TPreview _preview;
+            private readonly ValueObservable<T> _observable;
 
-            public SetupStateMachine(TPreview preview, ValueObservable<T> observable) =>
-                _update = new(preview, observable);
+            public SetupStateMachine(TPreview preview, ValueObservable<T> observable)
+            {
+                _preview = preview;
+                _observable = observable;
+            }
 
             public StateMachineBox Box =>
-                _update.Preview.Box;
+                _preview.Box;
 
             public StateMachineReference<T> Reference =>
-                _update.Preview.Reference;
+                _preview.Reference;
 
             public StateMachineReference? Continuation =>
-                _update.Preview.Continuation;
+                _preview.Continuation;
 
             public void Dispose()
             {
-                _update.Observable.Preview = null;
-                _update.Preview.Dispose();
+                _observable.Preview = null;
+                _preview.Dispose();
             }
 
             public void Initialize(StateMachineBox box)
             {
-                _update.Preview.Initialize(box);
-                _update.Observable.Preview ??= box as IObserver<T> ?? StateMachineReference<T>.Create(ref this);
-
-                ((IObservable<T>) box).Subscribe(_update.Reference);
+                _preview.Initialize(box);
+                _observable.Preview ??= box as IObserver<T> ?? StateMachineReference<T>.Create(ref this);
             }
 
             public void OnCompleted() =>
-                _update.Preview.OnCompleted();
+                _preview.OnCompleted();
 
             public void OnError(Exception error) =>
-                _update.Preview.OnError(error);
+                _preview.OnError(error);
 
             public void OnNext(T value) =>
-                _update.Preview.OnNext(value);
+                _preview.OnNext(value);
         }
 
-        internal struct UpdateStateMachine<TPreview> : IStateMachine<T>
-            where TPreview : struct, IStateMachine<T>
+        internal sealed class PreviewObserver : IObserver<T>
         {
-            internal TPreview Preview;
-            internal readonly ValueObservable<T> Observable;
+            private readonly ValueObservable<T> _observable;
 
-            public UpdateStateMachine(TPreview preview, ValueObservable<T> observable)
-            {
-                Preview = preview;
-                Observable = observable;
-            }
-
-            public StateMachineBox Box =>
-                Preview.Box;
-
-            public StateMachineReference<T> Reference =>
-                Preview.Reference;
-
-            public StateMachineReference? Continuation =>
-                Preview.Continuation;
-
-            public void Dispose() =>
-                throw new NotImplementedException();
-
-            public void Initialize(StateMachineBox box) =>
-                throw new NotImplementedException();
+            public PreviewObserver(ValueObservable<T> observable) =>
+                _observable = observable;
 
             public void OnCompleted() =>
-                Observable.OnPreviewCompleted();
+                _observable.OnPreviewCompleted();
 
             public void OnError(Exception error) =>
-                Observable.OnPreviewError(error);
+                _observable.OnPreviewError(error);
 
             public void OnNext(T value) =>
-                Observable.OnPreviewNext(value);
+                _observable.OnPreviewNext(value);
         }
-    }
-}
-
-public readonly struct PropertyPreview<T> : IOperator<T>
-{
-    private readonly ObservableObject.ValueObservable<T> _observable;
-
-    internal PropertyPreview(ObservableObject.ValueObservable<T> observable) =>
-        _observable = observable;
-
-    public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
-        where TBoxFactory : struct, IStateMachineBoxFactory<TBox>
-        where TContinuation : struct, IStateMachine<T>
-    {
-        return boxFactory.Create<T, ObservableObject.ValueObservable<T>.SetupStateMachine<TContinuation>>(
-            new(continuation, _observable ?? throw new InvalidOperationException()));
     }
 }

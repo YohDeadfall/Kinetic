@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
@@ -15,7 +17,9 @@ internal readonly struct ObservableFactory<TResult> : IStateMachineBoxFactory<IO
     public IObservable<TResult> Create<TSource, TStateMachine>(TStateMachine stateMachine)
         where TStateMachine : struct, IStateMachine<TSource>
     {
-        return new Box<TSource, TStateMachine>(stateMachine);
+        return stateMachine is ISubscribeStateMachine<TSource>
+            ? new Cold<TSource, TStateMachine>(stateMachine)
+            : new Hot<TSource, TStateMachine>(stateMachine);
     }
 
     private interface IBox : IObservableInternal<TResult>
@@ -23,28 +27,81 @@ internal readonly struct ObservableFactory<TResult> : IStateMachineBoxFactory<IO
         void Initialize(ref StateMachine publisher);
     }
 
-    private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IBox
+    private abstract class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IBox
         where TStateMachine : struct, IStateMachine<T>
     {
         private IntPtr _publisher;
 
-        public Box(in TStateMachine stateMachine) :
+        protected  Box(TStateMachine stateMachine) :
             base(stateMachine) => StateMachine.Initialize(this);
+
+        protected ref ObservableSubscriptions<TResult> GetSubscriptions() =>
+            ref ReferenceTo<TResult, StateMachine>(_publisher)._subscriptions;
 
         public void Initialize(ref StateMachine publisher) =>
             _publisher = OffsetTo<TResult, StateMachine>(ref publisher);
 
-        public IDisposable Subscribe(IObserver<TResult> observer) =>
-            GetSubscriptions().Subscribe(observer, this);
+        public abstract IDisposable Subscribe(IObserver<TResult> observer);
 
-        public void Subscribe(ObservableSubscription<TResult> subscription) =>
+        public abstract void Subscribe(ObservableSubscription<TResult> subscription);
+
+        public abstract void Unsubscribe(ObservableSubscription<TResult> subscription);
+    }
+
+    private sealed class Cold<T, TStateMachine> : Box<T, TStateMachine>
+        where TStateMachine : struct, IStateMachine<T>
+    {
+        private bool _cold = true;
+
+        public Cold(TStateMachine stateMachine) :
+            base(stateMachine) => throw new Exception("cold");
+
+        public override IDisposable Subscribe(IObserver<TResult> observer)
+        {
+            Initialize();
+            return GetSubscriptions().Subscribe(observer, this);
+        }
+
+        public override void Subscribe(ObservableSubscription<TResult> subscription)
+        {
+            Initialize();
             GetSubscriptions().Subscribe(subscription, this);
+        }
 
-        public void Unsubscribe(ObservableSubscription<TResult> subscription) =>
+        public override void Unsubscribe(ObservableSubscription<TResult> subscription) =>
             GetSubscriptions().Unsubscribe(subscription);
 
-        private ref ObservableSubscriptions<TResult> GetSubscriptions() =>
-            ref ReferenceTo<TResult, StateMachine>(_publisher)._subscriptions;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void Initialize()
+        {
+            if (_cold)
+                InitializeCore();
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void InitializeCore()
+        {
+            Debug.Assert(StateMachine is ISubscribeStateMachine<T>);
+            StateMachine.Initialize(this);
+
+            _cold = false;
+        }
+    }
+
+    private sealed class Hot<T, TStateMachine> : Box<T, TStateMachine>
+        where TStateMachine : struct, IStateMachine<T>
+    {
+        public Hot(TStateMachine stateMachine) :
+            base(stateMachine) { }
+
+        public override IDisposable Subscribe(IObserver<TResult> observer) =>
+            GetSubscriptions().Subscribe(observer, this);
+
+        public override void Subscribe(ObservableSubscription<TResult> subscription) =>
+            GetSubscriptions().Subscribe(subscription, this);
+
+        public override void Unsubscribe(ObservableSubscription<TResult> subscription) =>
+            GetSubscriptions().Unsubscribe(subscription);
     }
 
     internal struct StateMachine : IStateMachine<TResult>

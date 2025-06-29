@@ -160,7 +160,7 @@ internal struct FilterObservableItemsStateMachine<TContinuation, TSource> : ISta
         public void OnCompleted() { }
 
         public void OnError(Exception error) =>
-            _stateMachine.Target.Dispose();
+            _stateMachine.Target.OnError(error);
 
         public void OnNext(bool value)
         {

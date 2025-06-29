@@ -21,7 +21,7 @@ internal readonly struct ObserverFactory<TResult> : IStateMachineBoxFactory<IDis
     private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IDisposable
         where TStateMachine : struct, IStateMachine<T>
     {
-        public Box(in TStateMachine stateMachine) :
+        public Box(TStateMachine stateMachine) :
             base(stateMachine) =>
             StateMachine.Initialize(this);
 

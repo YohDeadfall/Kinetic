@@ -87,25 +87,25 @@ public static class CollectionExtensions
         return source.Changed.OrderByObservable(keySelector, comparer);
     }
 
-    public static Operator<SelectItem<Subscribe<ListChange<TSource>>, TSource, TResult>, ListChange<TResult>> Select<TSource, TResult>(
+    public static Operator<SelectItems<Subscribe<ListChange<TSource>>, TSource, TResult>, ListChange<TResult>> Select<TSource, TResult>(
         this ReadOnlyObservableList<TSource> source, Func<TSource, TResult> selector)
     {
         return source.Changed.Select(selector);
     }
 
-    public static Operator<SelectObservableItem<Subscribe<ListChange<TSource>>, TSource, TResult>, ListChange<TResult>> SelectObservable<TSource, TResult>(
+    public static Operator<SelectObservableItems<Subscribe<ListChange<TSource>>, TSource, TResult>, ListChange<TResult>> SelectObservable<TSource, TResult>(
         this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<TResult>> selector)
     {
         return source.Changed.SelectObservable(selector);
     }
 
-    public static Operator<WhereItem<Subscribe<ListChange<TSource>>, TSource>, ListChange<TSource>> Where<TSource>(
+    public static Operator<WhereItems<Subscribe<ListChange<TSource>>, TSource>, ListChange<TSource>> Where<TSource>(
         this ReadOnlyObservableList<TSource> source, Func<TSource, bool> predicate)
     {
         return source.Changed.Where(predicate);
     }
 
-    public static Operator<WhereObservableItem<Subscribe<ListChange<TSource>>, TSource>, ListChange<TSource>> WhereObservable<TSource>(
+    public static Operator<WhereObservableItems<Subscribe<ListChange<TSource>>, TSource>, ListChange<TSource>> WhereObservable<TSource>(
         this ReadOnlyObservableList<TSource> source, Func<TSource, IObservable<bool>> predicate)
     {
         return source.Changed.WhereObservable(predicate);

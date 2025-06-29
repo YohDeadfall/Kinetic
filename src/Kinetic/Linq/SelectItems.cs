@@ -3,13 +3,13 @@ using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-public readonly struct SelectItem<TOperator, TSource, TResult> : IOperator<ListChange<TResult>>
+public readonly struct SelectItems<TOperator, TSource, TResult> : IOperator<ListChange<TResult>>
     where TOperator : IOperator<ListChange<TSource>>
 {
     private readonly TOperator _source;
     private readonly Func<TSource, TResult> _selector;
 
-    public SelectItem(TOperator source, Func<TSource, TResult> selector)
+    public SelectItems(TOperator source, Func<TSource, TResult> selector)
     {
         _source = source.ThrowIfArgumentNull();
         _selector = selector.ThrowIfArgumentNull();

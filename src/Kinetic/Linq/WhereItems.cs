@@ -3,13 +3,13 @@ using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-public readonly struct WhereItem<TOperator, TSource> : IOperator<ListChange<TSource>>
+public readonly struct WhereItems<TOperator, TSource> : IOperator<ListChange<TSource>>
     where TOperator : IOperator<ListChange<TSource>>
 {
     private readonly TOperator _source;
     private readonly Func<TSource, bool> _predicate;
 
-    public WhereItem(TOperator source, Func<TSource, bool> predicate)
+    public WhereItems(TOperator source, Func<TSource, bool> predicate)
     {
         _source = source.ThrowIfArgumentNull();
         _predicate = predicate.ThrowIfArgumentNull();

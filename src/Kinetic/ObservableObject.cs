@@ -293,13 +293,13 @@ public abstract class ObservableObject
             Changed(value);
         }
 
-        internal struct SetupStateMachine<TPreview> : IStateMachine<T>
+        internal struct SubscribeStateMachine<TPreview> : IStateMachine<T>
             where TPreview : struct, IStateMachine<T>
         {
             private TPreview _preview;
             private readonly ValueObservable<T> _observable;
 
-            public SetupStateMachine(TPreview preview, ValueObservable<T> observable)
+            public SubscribeStateMachine(TPreview preview, ValueObservable<T> observable)
             {
                 _preview = preview;
                 _observable = observable;

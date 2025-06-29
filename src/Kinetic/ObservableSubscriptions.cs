@@ -6,7 +6,7 @@ namespace Kinetic;
 
 internal struct ObservableSubscriptions<T>
 {
-    internal ObservableSubscription<T>? Head;
+    private ObservableSubscription<T>? _head;
 
     public IDisposable Subscribe(IObserver<T> observer, IObservableInternal<T> observable)
     {
@@ -21,14 +21,14 @@ internal struct ObservableSubscriptions<T>
         subscription.Observable = observable;
         do
         {
-            subscription.Next = Head;
+            subscription.Next = _head;
         }
-        while (Interlocked.CompareExchange(ref Head, subscription, subscription.Next) != subscription.Next);
+        while (Interlocked.CompareExchange(ref _head, subscription, subscription.Next) != subscription.Next);
     }
 
     public void Unsubscribe(ObservableSubscription<T> subscription)
     {
-        ref var current = ref Head;
+        ref var current = ref _head;
         while (current is not null)
         {
             if (current == subscription)
@@ -47,7 +47,7 @@ internal struct ObservableSubscriptions<T>
 
     public void OnNext(T value)
     {
-        var current = Head;
+        var current = _head;
         while (current is not null)
         {
             current.OnNext(value);
@@ -57,9 +57,9 @@ internal struct ObservableSubscriptions<T>
 
     public void OnError(Exception error)
     {
-        while (Head is { } head)
+        while (_head is { } head)
         {
-            Head = head.Next;
+            _head = head.Next;
 
             head.Next = null;
             head.OnError(error);
@@ -68,9 +68,9 @@ internal struct ObservableSubscriptions<T>
 
     public void OnCompleted()
     {
-        while (Head is { } head)
+        while (_head is { } head)
         {
-            Head = head.Next;
+            _head = head.Next;
 
             head.Next = null;
             head.OnCompleted();
@@ -80,7 +80,7 @@ internal struct ObservableSubscriptions<T>
     public int GetObserversCountForDebugger()
     {
         var observers = 0;
-        var current = Head;
+        var current = _head;
         while (current is { })
         {
             observers += 1;
@@ -93,7 +93,7 @@ internal struct ObservableSubscriptions<T>
     public IObserver<T>[] GetObserversForDebugger()
     {
         var observers = new List<IObserver<T>>();
-        var current = Head;
+        var current = _head;
         while (current is { })
         {
             observers.Add(current.Observer);

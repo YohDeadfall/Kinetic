@@ -48,10 +48,8 @@ internal struct FilterObservableItemsStateMachine<TContinuation, TSource> : ISta
     public void Initialize(StateMachineBox box) =>
         _continuation.Initialize(box);
 
-    public void OnCompleted()
-    {
-        throw new NotImplementedException();
-    }
+    public void OnCompleted() =>
+        _continuation.OnCompleted();
 
     public void OnError(Exception error) =>
         _continuation.OnError(error);

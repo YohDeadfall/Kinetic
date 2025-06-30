@@ -18,16 +18,16 @@ public static class ListChange
         default;
 
     public static ListChange<T> Remove<T>(int index) =>
-        new(oldIndex: index);
+        new(oldIndex: index.ThrowIfArgumentNegative());
 
     public static ListChange<T> Insert<T>(int index, T item) =>
-        new(newIndex: index, newItem: item);
+        new(newIndex: index.ThrowIfArgumentNegative(), newItem: item);
 
     public static ListChange<T> Replace<T>(int index, T item) =>
-        new(oldIndex: index, newIndex: index, item);
+        new(oldIndex: index.ThrowIfArgumentNegative(), newIndex: index, item);
 
     public static ListChange<T> Move<T>(int oldIndex, int newIndex) =>
-        new(oldIndex, newIndex);
+        new(oldIndex.ThrowIfArgumentNegative(), newIndex.ThrowIfArgumentNegative());
 }
 
 public readonly struct ListChange<T> : IEquatable<ListChange<T>>

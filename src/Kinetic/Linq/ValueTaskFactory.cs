@@ -37,7 +37,7 @@ internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<Val
             base(stateMachine)
         {
             StateMachine.Initialize(this);
-            stateMachine.Start();
+            StateMachine.Start();
         }
 
         public ValueTaskSourceStatus GetStatus(short token) =>

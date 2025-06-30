@@ -72,22 +72,24 @@ internal struct SwitchStateMachine<TContinuation, TSource> : IStateMachine<IObse
     private struct Inner : IStateMachine<TSource>
     {
         private readonly StateMachineReference<IObservable<TSource>?, SwitchStateMachine<TContinuation, TSource>> _outer;
+        private StateMachineBox? _box;
 
         public Inner(StateMachineReference<IObservable<TSource>?, SwitchStateMachine<TContinuation, TSource>> outer) =>
             _outer = outer;
 
         public StateMachineBox Box =>
-            throw new NotSupportedException();
+            _box ?? throw new InvalidOperationException();
 
         public StateMachineReference<TSource> Reference =>
-            throw new NotSupportedException();
+            StateMachineReference<TSource>.Create(ref this);
 
         public StateMachineReference? Continuation =>
             null;
 
         public void Dispose() { }
 
-        public void Initialize(StateMachineBox box) { }
+        public void Initialize(StateMachineBox box) =>
+            _box = box;
 
         public void OnCompleted()
         {

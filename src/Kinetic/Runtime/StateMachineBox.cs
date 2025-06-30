@@ -40,7 +40,7 @@ public abstract class StateMachineBox
 
 [DebuggerTypeProxy(typeof(StateMachineBoxDebugView<,>))]
 public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObserver<T>
-    where TStateMachine : struct, IStateMachine<T>
+    where TStateMachine : struct, IEntryStateMachine<T>
 {
     private TStateMachine _stateMachine;
 

@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Kinetic.Runtime;
 
 internal sealed class StateMachineBoxDebugView<T, TStateMachine>
-    where TStateMachine : struct, IStateMachine<T>
+    where TStateMachine : struct, IEntryStateMachine<T>
 {
     [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
     public IReadOnlyList<StateMachineReference> Items { get; }

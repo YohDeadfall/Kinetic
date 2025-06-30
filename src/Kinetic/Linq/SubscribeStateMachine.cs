@@ -3,7 +3,7 @@ using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-internal struct SubscribeStateMachine<TContinuation, T> : ISubscribeStateMachine<T>
+internal struct SubscribeStateMachine<TContinuation, T> : IEntryStateMachine<T>
     where TContinuation : struct, IStateMachine<T>
 {
     private TContinuation _continuation;
@@ -33,24 +33,13 @@ internal struct SubscribeStateMachine<TContinuation, T> : ISubscribeStateMachine
 
     public void Initialize(StateMachineBox box)
     {
-        if (box is IObservable<T>)
-        {
-            if (_subscription is null)
-            {
-                _continuation.Initialize(box);
-                _subscription = Subscription.Cold;
-            }
-            else if (_subscription == Subscription.Cold)
-            {
-                _subscription = _observable.Subscribe(box as IObserver<T> ?? Reference);
-                throw new Exception("really cold");
-            }
-        }
-        else
-        {
-            _continuation.Initialize(box);
-            _subscription = _observable.Subscribe(box as IObserver<T> ?? Reference);
-        }
+        _continuation.Initialize(box);
+    }
+
+    public void Start()
+    {
+        _subscription?.Dispose();
+        _subscription = _observable.Subscribe(Box as IObserver<T> ?? Reference);
     }
 
     public void OnCompleted() =>
@@ -62,5 +51,3 @@ internal struct SubscribeStateMachine<TContinuation, T> : ISubscribeStateMachine
     public void OnNext(T value) =>
         _continuation.OnNext(value);
 }
-
-internal interface ISubscribeStateMachine<T> : IStateMachine<T> { }

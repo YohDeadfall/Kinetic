@@ -48,7 +48,7 @@ internal abstract class ObservableViewItem : IDisposable
         where TItem : ObservableViewItem
     {
         items.Insert(index, item);
-        foreach (var other in CollectionsMarshal.AsSpan(items).Slice(index))
+        foreach (var other in CollectionsMarshal.AsSpan(items).Slice(index + 1))
             other.Index += 1;
     }
 
@@ -71,7 +71,7 @@ internal abstract class ObservableViewItem : IDisposable
         item.Dispose();
         items.RemoveAt(index);
         foreach (var other in CollectionsMarshal.AsSpan(items).Slice(index))
-            other.Index += 1;
+            other.Index -= 1;
 
         return item;
     }

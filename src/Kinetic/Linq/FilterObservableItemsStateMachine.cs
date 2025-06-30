@@ -185,18 +185,22 @@ internal struct FilterObservableItemsStateMachine<TContinuation, TSource> : ISta
                 // as the constructor hasn't finished yet.
                 ref var stateMachine = ref _stateMachine.Target;
                 var adjustedIndex = Item.GetAdjustedIndex(stateMachine._items, Index);
+                var replacement = Present;
 
                 // Presence at this point just tells that it's a replacement.
                 // Therefore, the value must be updated before anything else.
                 Present = value;
 
-                if (value)
+                if (replacement)
                 {
                     // Replacement initiated by the parent state machine.
                     var oldItem = Item.Replace(stateMachine._items, Index, this);
-                    stateMachine._continuation.OnNext(
-                        oldItem.Present
-                            ? ListChange.Replace(adjustedIndex, Value)
+                    if (value || oldItem.Present)
+                        stateMachine._continuation.OnNext(
+                        value
+                            ? oldItem.Present
+                                ? ListChange.Replace(adjustedIndex, Value)
+                                : ListChange.Insert(adjustedIndex, Value)
                             : ListChange.Remove<TSource>(adjustedIndex));
                 }
                 else
@@ -204,8 +208,9 @@ internal struct FilterObservableItemsStateMachine<TContinuation, TSource> : ISta
                     // First time insertion.
                     Item.Insert(stateMachine._items, Index, this);
 
-                    stateMachine._continuation.OnNext(
-                        ListChange.Insert(adjustedIndex, Value));
+                    if (value)
+                        stateMachine._continuation.OnNext(
+                            ListChange.Insert(adjustedIndex, Value));
                 }
             }
         }

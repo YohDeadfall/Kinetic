@@ -32,7 +32,7 @@ internal readonly struct TaskFactory<TResult> : IStateMachineBoxFactory<Task<TRe
             base(stateMachine)
         {
             StateMachine.Initialize(this);
-            stateMachine.Start();
+            StateMachine.Start();
         }
 
         public TaskCompletionSource<TResult> TaskSource { get; } = new();

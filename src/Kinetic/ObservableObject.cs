@@ -293,7 +293,7 @@ public abstract class ObservableObject
             Changed(value);
         }
 
-        internal struct SubscribeStateMachine<TPreview> : IStateMachine<T>
+        internal struct SubscribeStateMachine<TPreview> : IEntryStateMachine<T>
             where TPreview : struct, IStateMachine<T>
         {
             private TPreview _preview;
@@ -324,6 +324,12 @@ public abstract class ObservableObject
             {
                 _preview.Initialize(box);
                 _observable.Preview ??= box as IObserver<T> ?? StateMachineReference<T>.Create(ref this);
+            }
+
+            public void Start()
+            {
+                // That state machine has no real subscription as it usually happens.
+                // Instead, all changes are sourced to it directly by the property setter.
             }
 
             public void OnCompleted() =>

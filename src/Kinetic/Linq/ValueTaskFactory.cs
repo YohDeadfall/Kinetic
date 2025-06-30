@@ -15,7 +15,7 @@ internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<Val
     }
 
     public ValueTask<TResult> Create<TSource, TStateMachine>(TStateMachine stateMachine)
-        where TStateMachine : struct, IStateMachine<TSource>
+        where TStateMachine : struct, IEntryStateMachine<TSource>
     {
         var box = new Box<TSource, TStateMachine>(stateMachine);
         return new(box, box.Token);
@@ -27,14 +27,18 @@ internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<Val
     }
 
     private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IBox
-        where TStateMachine : struct, IStateMachine<T>
+        where TStateMachine : struct, IEntryStateMachine<T>
     {
         private IntPtr _publisher;
 
         public short Token => GetCore().Version;
 
         public Box(in TStateMachine stateMachine) :
-            base(stateMachine) => StateMachine.Initialize(this);
+            base(stateMachine)
+        {
+            StateMachine.Initialize(this);
+            stateMachine.Start();
+        }
 
         public ValueTaskSourceStatus GetStatus(short token) =>
             GetCore().GetStatus(token);

@@ -14,7 +14,7 @@ internal readonly struct TaskFactory<TResult> : IStateMachineBoxFactory<Task<TRe
     }
 
     public Task<TResult> Create<TSource, TStateMachine>(TStateMachine stateMachine)
-        where TStateMachine : struct, IStateMachine<TSource>
+        where TStateMachine : struct, IEntryStateMachine<TSource>
     {
         var box = new Box<TSource, TStateMachine>(stateMachine);
         return box.TaskSource.Task; ;
@@ -26,10 +26,14 @@ internal readonly struct TaskFactory<TResult> : IStateMachineBoxFactory<Task<TRe
     }
 
     private sealed class Box<TSource, TStateMachine> : StateMachineBox<TSource, TStateMachine>, IBox
-        where TStateMachine : struct, IStateMachine<TSource>
+        where TStateMachine : struct, IEntryStateMachine<TSource>
     {
         public Box(TStateMachine stateMachine) :
-            base(stateMachine) => StateMachine.Initialize(this);
+            base(stateMachine)
+        {
+            StateMachine.Initialize(this);
+            stateMachine.Start();
+        }
 
         public TaskCompletionSource<TResult> TaskSource { get; } = new();
     }

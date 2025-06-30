@@ -13,17 +13,20 @@ internal readonly struct ObserverFactory<TResult> : IStateMachineBoxFactory<IDis
     }
 
     public IDisposable Create<TSource, TStateMachine>(TStateMachine stateMachine)
-        where TStateMachine : struct, IStateMachine<TSource>
+        where TStateMachine : struct, IEntryStateMachine<TSource>
     {
         return new Box<TSource, TStateMachine>(stateMachine);
     }
 
     private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IDisposable
-        where TStateMachine : struct, IStateMachine<T>
+        where TStateMachine : struct, IEntryStateMachine<T>
     {
         public Box(TStateMachine stateMachine) :
-            base(stateMachine) =>
+            base(stateMachine)
+        {
             StateMachine.Initialize(this);
+            StateMachine.Start();
+        }
 
         public void Dispose() =>
             StateMachine.Dispose();

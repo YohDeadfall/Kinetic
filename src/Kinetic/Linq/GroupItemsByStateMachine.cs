@@ -186,6 +186,7 @@ internal struct GroupItemsByStateMachine<TContinuation, TState, TStateManager, T
     private void RemoveItemFromGroup(int index, TState item)
     {
         var grouping = _groups[item.Group];
+        var groupingIndex = item.Group;
 
         Debug.Assert(grouping is { });
         grouping.Remove(item.Index);
@@ -197,8 +198,9 @@ internal struct GroupItemsByStateMachine<TContinuation, TState, TStateManager, T
 
         if (grouping.IsEmpty)
         {
-            _groups[item.Group] = null;
-            _continuation.OnNext(ListChange.Remove<IGrouping<TKey, ListChange<TSource>>>(item.Group));
+            _groups[groupingIndex] = null;
+            _continuation.OnNext(
+                ListChange.Remove<IGrouping<TKey, ListChange<TSource>>>(groupingIndex));
         }
     }
 

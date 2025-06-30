@@ -38,8 +38,8 @@ public readonly struct GroupItemsBy<TOperator, TSource, TKey, TResult> : IOperat
                     FuncTransform<IGrouping<TKey, ListChange<TSource>>, TResult>,
                     IGrouping<TKey, ListChange<TSource>>,
                     TResult>,
-                GroupItemsByStaticState,
-                GroupItemsByStaticState.Manager<TSource, TKey>,
+                GroupItemsByStaticState<TKey, TSource>,
+                GroupItemsByStaticState<TKey, TSource>.Manager,
                 TSource,
                 TKey>>(
             boxFactory, new(new(continuation, new(_resultSelector)), new(_keySelector), _keyComparer));

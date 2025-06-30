@@ -1,7 +1,7 @@
 namespace Kinetic.Linq;
 
-internal interface IGroupItemsByState
+internal interface IGroupItemsByState<TKey, TSource>
 {
-    int Group { get; set; }
+    ListGrouping<TKey, TSource>? Grouping { get; set; }
     int Index { get; set; }
 }

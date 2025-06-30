@@ -2,14 +2,14 @@ using System;
 
 namespace Kinetic.Linq;
 
-internal sealed class GroupItemsByDynamicState<TSource, TKey> : IGroupItemsByState, IObserver<TKey>
+internal sealed class GroupItemsByDynamicState<TKey, TSource> : IGroupItemsByState<TKey, TSource>, IObserver<TKey>
 {
     private int _sourceIndex;
     private readonly TSource _source;
     private readonly IDisposable _subscription;
-    private readonly IGroupItemsByStateMachine<GroupItemsByDynamicState<TSource, TKey>, TSource, TKey> _groupBy;
+    private readonly IGroupItemsByStateMachine<TKey, TSource, GroupItemsByDynamicState<TKey, TSource>> _groupBy;
 
-    public int Group { get; set; }
+    public ListGrouping<TKey, TSource>? Grouping { get; set; }
     public int Index { get; set; }
 
     private GroupItemsByDynamicState(
@@ -17,12 +17,13 @@ internal sealed class GroupItemsByDynamicState<TSource, TKey> : IGroupItemsBySta
         int sourceIndex,
         TSource source,
         Func<TSource, IObservable<TKey>> keySelector,
-        IGroupItemsByStateMachine<GroupItemsByDynamicState<TSource, TKey>, TSource, TKey> groupBy)
+        IGroupItemsByStateMachine<TKey, TSource, GroupItemsByDynamicState<TKey, TSource>> groupBy)
     {
-        Group = -1;
+        Grouping = null;
         Index = replacement ? 0 : -1;
 
         _source = source;
+        _sourceIndex = sourceIndex;
         _groupBy = groupBy;
         _subscription = keySelector(source).Subscribe(this);
     }
@@ -57,38 +58,38 @@ internal sealed class GroupItemsByDynamicState<TSource, TKey> : IGroupItemsBySta
     }
 
     public readonly struct Manager(Func<TSource, IObservable<TKey>> KeySelector) :
-        IGroupItemsByStateManager<GroupItemsByDynamicState<TSource, TKey>, TSource, TKey>
+        IGroupItemsByStateManager<TKey, TSource, GroupItemsByDynamicState<TKey, TSource>>
     {
         public void Create<TGroupBy>(int sourceIndex, TSource source, ref TGroupBy groupBy, bool replacement)
-            where TGroupBy : struct, IGroupItemsByStateMachine<GroupItemsByDynamicState<TSource, TKey>, TSource, TKey>
+            where TGroupBy : struct, IGroupItemsByStateMachine<TKey, TSource, GroupItemsByDynamicState<TKey, TSource>>
         {
-            var item = new GroupItemsByDynamicState<TSource, TKey>(
+            var item = new GroupItemsByDynamicState<TKey, TSource>(
                 replacement,
                 sourceIndex,
                 source,
                 KeySelector,
                 groupBy.Reference);
 
-            if (item.Group == -1)
+            if (item.Grouping is null)
             {
                 // The selector has an async code inside which hasn't finished yet.
                 groupBy.AddItemDeferred(sourceIndex, item);
             }
         }
 
-        public void Dispose(GroupItemsByDynamicState<TSource, TKey> item) =>
+        public void Dispose(GroupItemsByDynamicState<TKey, TSource> item) =>
             item._subscription.Dispose();
 
-        public void DisposeAll(ReadOnlySpan<GroupItemsByDynamicState<TSource, TKey>> items)
+        public void DisposeAll(ReadOnlySpan<GroupItemsByDynamicState<TKey, TSource>> items)
         {
             foreach (var item in items)
                 Dispose(item);
         }
 
-        public void SetOriginalIndex(GroupItemsByDynamicState<TSource, TKey> item, int index) =>
+        public void SetOriginalIndex(GroupItemsByDynamicState<TKey, TSource> item, int index) =>
             item._sourceIndex = index;
 
-        public void SetOriginalIndexes(ReadOnlySpan<GroupItemsByDynamicState<TSource, TKey>> items, int indexChange)
+        public void SetOriginalIndexes(ReadOnlySpan<GroupItemsByDynamicState<TKey, TSource>> items, int indexChange)
         {
             foreach (var item in items)
                 item._sourceIndex += indexChange;

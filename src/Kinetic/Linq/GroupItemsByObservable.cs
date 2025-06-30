@@ -37,8 +37,8 @@ public readonly struct GroupItemsByObservable<TOperator, TSource, TKey, TResult>
                     FuncTransform<IGrouping<TKey, ListChange<TSource>>, TResult>,
                     IGrouping<TKey, ListChange<TSource>>,
                     TResult>,
-                GroupItemsByDynamicState<TSource, TKey>,
-                GroupItemsByDynamicState<TSource, TKey>.Manager,
+                GroupItemsByDynamicState<TKey, TSource>,
+                GroupItemsByDynamicState<TKey, TSource>.Manager,
                 TSource,
                 TKey>>(
             boxFactory, new(new(continuation, new(_resultSelector)), new(_keySelector), _keyComparer));

@@ -7,18 +7,18 @@ using Kinetic.Runtime;
 namespace Kinetic.Linq;
 
 internal struct GroupItemsByStateMachine<TContinuation, TState, TStateManager, TSource, TKey> :
-    IGroupItemsByStateMachine<TState, TSource, TKey>,
+    IGroupItemsByStateMachine<TKey, TSource, TState>,
     IStateMachine<ListChange<TSource>>
     where TContinuation : IStateMachine<ListChange<IGrouping<TKey, ListChange<TSource>>>>
-    where TState : IGroupItemsByState
-    where TStateManager : IGroupItemsByStateManager<TState, TSource, TKey>
+    where TState : IGroupItemsByState<TKey, TSource>
+    where TStateManager : IGroupItemsByStateManager<TKey, TSource, TState>
 {
     private TContinuation _continuation;
     private TStateManager _itemManager;
     private TypedReference? _reference;
 
     private readonly List<TState> _items = new();
-    private readonly List<ListGrouping<TKey, TSource>?> _groups = new();
+    private readonly List<ListGrouping<TKey, TSource>> _groups = new();
     private readonly IEqualityComparer<TKey>? _comparer;
 
     public GroupItemsByStateMachine(TContinuation continuation, TStateManager itemManager, IEqualityComparer<TKey>? comparer)
@@ -39,7 +39,7 @@ internal struct GroupItemsByStateMachine<TContinuation, TState, TStateManager, T
     StateMachineReference<ListChange<TSource>> IStateMachine<ListChange<TSource>>.Reference =>
         Reference;
 
-    IGroupItemsByStateMachine<TState, TSource, TKey> IGroupItemsByStateMachine<TState, TSource, TKey>.Reference =>
+    IGroupItemsByStateMachine<TKey, TSource, TState> IGroupItemsByStateMachine<TKey, TSource, TState>.Reference =>
         Reference;
 
     public StateMachineReference? Continuation =>
@@ -130,9 +130,9 @@ internal struct GroupItemsByStateMachine<TContinuation, TState, TStateManager, T
 
     public void AddItem(int index, TState item, TSource source, TKey key)
     {
-        var (grouping, groupingIndex) = GetGrouping(key);
+        var grouping = GetGrouping(key);
 
-        item.Group = groupingIndex;
+        item.Grouping = grouping;
         item.Index = grouping.Add(source);
 
         _items.Insert(index, item);
@@ -143,13 +143,12 @@ internal struct GroupItemsByStateMachine<TContinuation, TState, TStateManager, T
 
     public void UpdateItem(int index, TState item, TSource source, TKey key)
     {
-        var (grouping, groupingIndex) = GetGrouping(key);
-
-        if (groupingIndex != item.Group)
+        var grouping = GetGrouping(key);
+        if (grouping != item.Grouping)
         {
             RemoveItemFromGroup(index, item);
 
-            item.Group = groupingIndex;
+            item.Grouping = grouping;
             item.Index = grouping.Add(source);
 
             if (typeof(TState).IsValueType)
@@ -160,23 +159,23 @@ internal struct GroupItemsByStateMachine<TContinuation, TState, TStateManager, T
     public void ReplaceItem(int index, TState item, TSource source, TKey key)
     {
         var oldItem = _items[index];
-        var (grouping, groupingIndex) = GetGrouping(key);
+        var grouping = GetGrouping(key);
 
-        if (groupingIndex == oldItem.Group)
+        if (grouping == oldItem.Grouping)
         {
-            item.Group = oldItem.Group;
+            item.Grouping = oldItem.Grouping;
             item.Index = oldItem.Index;
 
             _itemManager.Dispose(oldItem);
             _items[index] = item;
 
-            grouping.Replace(item.Group, source);
+            grouping.Replace(item.Index, source);
         }
         else
         {
             RemoveItemFromGroup(index, oldItem);
 
-            item.Group = groupingIndex;
+            item.Grouping = grouping;
             item.Index = grouping.Add(source);
 
             _items[index] = item;
@@ -185,92 +184,64 @@ internal struct GroupItemsByStateMachine<TContinuation, TState, TStateManager, T
 
     private void RemoveItemFromGroup(int index, TState item)
     {
-        var grouping = _groups[item.Group];
-        var groupingIndex = item.Group;
-
+        var grouping = item.Grouping;
         Debug.Assert(grouping is { });
-        grouping.Remove(item.Index);
-        item.Group = -1;
-        item.Index = -1;
 
-        if (typeof(TState).IsValueType)
-            _items[index] = item;
+        grouping.Remove(item.Index);
 
         if (grouping.IsEmpty)
         {
-            _groups[groupingIndex] = null;
+            var groupingIndex = _groups.IndexOf(grouping);
+
+            _groups.RemoveAt(groupingIndex);
             _continuation.OnNext(
                 ListChange.Remove<IGrouping<TKey, ListChange<TSource>>>(groupingIndex));
         }
     }
 
-    private (ListGrouping<TKey, TSource>, int) GetGrouping(TKey key)
+    private ListGrouping<TKey, TSource> GetGrouping(TKey key)
     {
-        var freeIndex = -1;
-        var currentIndex = 0;
-
         var comparer = _comparer;
         if (comparer is null && typeof(TKey).IsValueType)
         {
             foreach (var grouping in _groups)
             {
-                if (grouping is null)
-                    freeIndex = currentIndex;
-                else
                 if (EqualityComparer<TKey>.Default.Equals(grouping.Key, key))
-                    return (grouping, currentIndex);
-
-                currentIndex += 1;
+                    return grouping;
             }
         }
         else
         {
             Debug.Assert(comparer is { });
-
             foreach (var grouping in _groups)
             {
-                if (grouping is null)
-                    freeIndex = currentIndex;
-                else
                 if (comparer.Equals(grouping.Key, key))
-                    return (grouping, currentIndex);
-
-                currentIndex += 1;
+                    return grouping;
             }
         }
 
         {
-            var grouping = new ListGrouping<TKey, TSource>
-            {
-                Key = key,
-            };
+            var grouping = new ListGrouping<TKey, TSource> { Key = key };
+            var groupingIndex = _groups.Count;
 
-            if (freeIndex == -1)
-            {
-                freeIndex = _groups.Count;
-                _groups.Add(grouping);
-            }
-            else
-            {
-                _groups[freeIndex] = grouping;
-            }
+            _groups.Add(grouping);
+            _continuation.OnNext(
+                ListChange.Insert<IGrouping<TKey, ListChange<TSource>>>(groupingIndex, grouping));
 
-            _continuation.OnNext(ListChange.Insert<IGrouping<TKey, ListChange<TSource>>>(freeIndex, grouping));
-
-            return (grouping, freeIndex);
+            return grouping;
         }
     }
 
     private sealed class TypedReference :
         StateMachineReference<ListChange<TSource>, GroupItemsByStateMachine<TContinuation, TState, TStateManager, TSource, TKey>>,
-        IGroupItemsByStateMachine<TState, TSource, TKey>
+        IGroupItemsByStateMachine<TKey, TSource, TState>
     {
         public TypedReference(ref GroupItemsByStateMachine<TContinuation, TState, TStateManager, TSource, TKey> stateMachine) :
             base(ref stateMachine)
         {
         }
 
-        public IGroupItemsByStateMachine<TState, TSource, TKey> Reference =>
+        public IGroupItemsByStateMachine<TKey, TSource, TState> Reference =>
             this;
 
         public void AddItemDeferred(int index, TState item) =>

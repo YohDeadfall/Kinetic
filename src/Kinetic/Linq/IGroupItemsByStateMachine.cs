@@ -2,10 +2,10 @@ using System;
 
 namespace Kinetic.Linq;
 
-internal interface IGroupItemsByStateMachine<TState, TSource, TKey>
-    where TState : IGroupItemsByState
+internal interface IGroupItemsByStateMachine<TKey, TSource, TState>
+    where TState : IGroupItemsByState<TKey, TSource>
 {
-    IGroupItemsByStateMachine<TState, TSource, TKey> Reference { get; }
+    IGroupItemsByStateMachine<TKey, TSource, TState> Reference { get; }
 
     void AddItemDeferred(int index, TState item);
     void AddItem(int index, TState item, TSource source, TKey key);

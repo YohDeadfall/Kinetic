@@ -14,11 +14,12 @@ internal sealed class OrderItemsByDynamicState<TKey, TSource> : IOrderItemsBySta
         Func<TSource, IObservable<TKey>> keySelector,
         IOrderItemsByStateMachine<OrderItemsByDynamicState<TKey, TSource>, TSource, TKey> orderBy)
     {
+        Index = sourceIndex;
+        Key = default!;
+
         _source = source;
         _orderBy = orderBy;
         _subscription = keySelector(source).Subscribe(this);
-
-        Key = default!;
     }
 
     public int Index { get; set; }

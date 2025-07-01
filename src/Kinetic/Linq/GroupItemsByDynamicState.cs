@@ -35,12 +35,6 @@ internal sealed class GroupItemsByDynamicState<TKey, TSource> : IGroupItemsBySta
 
     public void OnNext(TKey value)
     {
-        // If there's no key changed subscription then it might be possible
-        // that the item was disposed while waiting to be processed. So,
-        // an additional check is required to see if the item was used.
-        if (_sourceIndex == -1)
-            return;
-
         if (_subscription is { })
         {
             if (Index != -1)

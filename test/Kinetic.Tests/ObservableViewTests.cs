@@ -273,8 +273,8 @@ public class ObservableViewTests
             .GroupByObservable(item => item.Name.Changed, StringComparer.OrdinalIgnoreCase)
             .ToView();
         var groupingsOrdered = list
-            .GroupBy(
-                item => item.Name,
+            .GroupByObservable(
+                item => item.Name.Changed,
                 items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key), StringComparer.OrdinalIgnoreCase)
             .ToView();
 

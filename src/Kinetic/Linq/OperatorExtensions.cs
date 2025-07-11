@@ -427,6 +427,20 @@ public static partial class OperatorExtensions
         return new(new(source));
     }
 
+    public static Operator<SwitchToProperty<TOperator, TSource>, TSource> Switch<TOperator, TSource>(
+        this Operator<TOperator, Property<TSource>?> source)
+        where TOperator : IOperator<Property<TSource>?>
+    {
+        return new(new(source));
+    }
+
+    public static Operator<SwitchToReadOnlyProperty<TOperator, TSource>, TSource> Switch<TOperator, TSource>(
+        this Operator<TOperator, ReadOnlyProperty<TSource>?> source)
+        where TOperator : IOperator<ReadOnlyProperty<TSource>?>
+    {
+        return new(new(source));
+    }
+
     public static Operator<Throttle<TOperator, TSource>, TSource> Throttle<TOperator, TSource>(
         this Operator<TOperator, TSource> source, TimeSpan delay, bool continueOnCapturedContext = true)
         where TOperator : IOperator<TSource>

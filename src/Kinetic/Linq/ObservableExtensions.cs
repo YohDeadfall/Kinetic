@@ -367,6 +367,18 @@ public static partial class ObservableExtensions
         return source.Subscribe().Switch();
     }
 
+    public static Operator<SwitchToProperty<Subscribe<Property<TSource>?>, TSource>, TSource> Switch<TSource>(
+        this IObservable<Property<TSource>?> source)
+    {
+        return source.Subscribe().Switch();
+    }
+
+    public static Operator<SwitchToReadOnlyProperty<Subscribe<ReadOnlyProperty<TSource>?>, TSource>, TSource> Switch<TSource>(
+        this IObservable<ReadOnlyProperty<TSource>?> source)
+    {
+        return source.Subscribe().Switch();
+    }
+
     public static Operator<Throttle<Subscribe<TSource>, TSource>, TSource> Throttle<TSource>(
         this IObservable<TSource> source, TimeSpan delay, bool continueOnCapturedContext = true)
     {

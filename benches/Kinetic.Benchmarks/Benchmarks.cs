@@ -5,11 +5,7 @@ using System.Runtime.CompilerServices;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using Kinetic.Linq;
-using Kinetic.Linq.StateMachines;
-using Kinetic.Subjects;
 using ReactiveUI;
-using KineticLinq = Kinetic.Linq.Observable;
-using ReactiveLinq = System.Reactive.Linq.Observable;
 
 namespace Kinetic.Benchmarks;
 
@@ -120,45 +116,4 @@ public class SetterBenchmarks : ObjectBenchmarks
         public void OnError(Exception error) { }
         public void OnCompleted() { }
     }
-}
-
-public abstract class LinqBenchmarks
-{
-    private PublishSubject<int> _kinetic = new();
-    private PublishSubject<int> _reactive = new();
-
-    protected abstract ObserverBuilder<int> SetupKinetic(ObserverBuilder<int> source);
-    protected abstract IObservable<int> SetupReactive(IObservable<int> source);
-
-    [GlobalSetup]
-    public void Setup()
-    {
-        var kineticBuilder = _kinetic.ToBuilder();
-        var reactiveBuilder = _reactive as IObservable<int>;
-
-        for (int index = 0; index < ChainLength; index += 1)
-        {
-            kineticBuilder = SetupKinetic(kineticBuilder);
-            reactiveBuilder = SetupReactive(reactiveBuilder);
-        }
-
-        KineticLinq.Subscribe(kineticBuilder, value => { });
-        System.ObservableExtensions.Subscribe<int>(reactiveBuilder, value => { });
-    }
-
-    [Params(1, 5, 10, 20, 30, 40, 50)] public int ChainLength { get; set; }
-    [Benchmark] public void Kinetic() => _kinetic.OnNext(42);
-    [Benchmark] public void Reactive() => _reactive.OnNext(42);
-}
-
-public class LinqSelectBenchmarks : LinqBenchmarks
-{
-    protected override ObserverBuilder<int> SetupKinetic(ObserverBuilder<int> source) => KineticLinq.Select(source, static value => value);
-    protected override IObservable<int> SetupReactive(IObservable<int> source) => ReactiveLinq.Select(source, static value => value);
-}
-
-public class LinqWhereBenchmarks : LinqBenchmarks
-{
-    protected override ObserverBuilder<int> SetupKinetic(ObserverBuilder<int> source) => KineticLinq.Where(source, static value => value > 0);
-    protected override IObservable<int> SetupReactive(IObservable<int> source) => ReactiveLinq.Where(source, static value => value > 0);
 }

@@ -19,8 +19,9 @@ public class KineticBindingTests
             TextBox.TextProperty,
             source => source
                 .Select(source => source as Parent)
-                .Property(source => source?.Child)
-                .Property(source => source?.Text));
+                .Select(source => source?.Child)
+                .Switch()
+                .Select(source => source?.Text));
 
         Assert.Equal("foo", target.Text);
 
@@ -58,7 +59,7 @@ public class KineticBindingTests
             ItemsControl.ItemsSourceProperty,
             source => source
                 .Select(source => (Container?) source)
-                .Property(source => source?.Items));
+                .Select(source => source?.Items));
 
         Assert.Null(target.ItemsSource);
 

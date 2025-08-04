@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Kinetic;
@@ -5,7 +6,7 @@ namespace Kinetic;
 /// <summary>
 /// A list with observable collection changes.
 /// </summary>
-public sealed class ObservableList<T> : ReadOnlyObservableList<T>, IList<T>
+public sealed class ObservableList<T> : ReadOnlyObservableList<T>, IList<T>, IList
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ObservableList{T}"/> class
@@ -18,10 +19,6 @@ public sealed class ObservableList<T> : ReadOnlyObservableList<T>, IList<T>
     /// that is empty and has the specified initial capacity.
     /// </summary>
     public ObservableList(int capacity) : base(capacity) { }
-
-    int ICollection<T>.Count => ItemCount;
-
-    bool ICollection<T>.IsReadOnly => false;
 
     /// <summary>
     /// Gets or sets the element at the specified index.
@@ -67,4 +64,23 @@ public sealed class ObservableList<T> : ReadOnlyObservableList<T>, IList<T>
     /// <param name="newIndex">The zero-based index specifying the new location of the item.</param>
     public void Move(int oldIndex, int newIndex) =>
         MoveItem(oldIndex, newIndex);
+
+    int ICollection<T>.Count => ItemCount;
+
+    bool ICollection<T>.IsReadOnly => false;
+
+    int IList.Add(object? value) =>
+        AddItem((T) value!);
+
+    void IList.Clear() =>
+        ClearItems();
+
+    void IList.Insert(int index, object? value) =>
+        InsertItem(index, (T) value!);
+
+    void IList.Remove(object? value) =>
+        RemoveItem((T) value!);
+
+    void IList.RemoveAt(int index) =>
+        RemoveItemAt(index);
 }

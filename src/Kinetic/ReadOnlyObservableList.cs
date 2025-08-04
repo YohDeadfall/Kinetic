@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -9,13 +10,15 @@ namespace Kinetic;
 /// <summary>A read-only list with observable collection changes.<summary>
 /// <seealso cref="ObservableList{T}"/>
 [DebuggerDisplay("Count = {Count}")]
-public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyList<T>
+public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyList<T>, INotifyCollectionChanged
 {
     private const int DefaultCapacity = 4;
 
     private T[] _items;
     private int _count;
     private int _version;
+
+    private NotifyCollectionChangedEventHandler? _changed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ReadOnlyObservableList{T}"/> class
@@ -32,6 +35,12 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         _items = capacity < 0
         ? throw new ArgumentOutOfRangeException(nameof(capacity))
         : capacity > 0 ? new T[capacity] : Array.Empty<T>();
+
+    event NotifyCollectionChangedEventHandler? INotifyCollectionChanged.CollectionChanged
+    {
+        add => _changed += value;
+        remove => _changed -= value;
+    }
 
     /// <summary>Gets an <see cref="IObservable{T}"/> notifying about collection changes of this list.</summary>
     /// <returns>An <see cref="IObservable{T}"/> notifying about collection changes of this list.</returns>
@@ -83,6 +92,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         {
             GetCountObservable()?.Changed(index);
             GetChangeObservable()?.Inserted(index, item);
+
+            _changed?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
         }
     }
 
@@ -101,6 +112,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         {
             GetCountObservable()?.Changed(0);
             GetChangeObservable()?.RemovedAll();
+
+            _changed?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
     }
 
@@ -239,6 +252,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         {
             GetCountObservable()?.Changed(_count);
             GetChangeObservable()?.Inserted(index, item);
+
+            _changed?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
         }
     }
 
@@ -269,6 +284,10 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
+        var changedArgs = _changed is { } && NotificationsEnabled
+            ? new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, _items[index], index)
+            : null;
+
         _count -= 1;
         _version += 1;
 
@@ -291,6 +310,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         {
             GetCountObservable()?.Changed(_count);
             GetChangeObservable()?.Removed(index);
+
+            _changed?.Invoke(this, changedArgs!);
         }
     }
 
@@ -304,12 +325,18 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
             throw new ArgumentOutOfRangeException(nameof(index));
         }
 
+        var changedArgs = _changed is { } && NotificationsEnabled
+            ? new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace, _items[index], item, index)
+            : null;
+
         _items[index] = item;
         _version += 1;
 
         if (NotificationsEnabled)
         {
             GetChangeObservable()?.Replaced(index, item);
+
+            _changed?.Invoke(this, changedArgs!);
         }
     }
 
@@ -351,6 +378,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         {
             GetCountObservable()?.Changed(_count);
             GetChangeObservable()?.Moved(oldIndex, newIndex);
+            
+            _changed?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Move, item, newIndex, oldIndex));
         }
     }
 

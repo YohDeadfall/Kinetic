@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace Kinetic;
@@ -10,7 +11,7 @@ namespace Kinetic;
 /// <summary>A read-only list with observable collection changes.<summary>
 /// <seealso cref="ObservableList{T}"/>
 [DebuggerDisplay("Count = {Count}")]
-public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyList<T>, INotifyCollectionChanged
+public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyList<T>, IList, INotifyCollectionChanged
 {
     private const int DefaultCapacity = 4;
 
@@ -50,8 +51,6 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
     /// <returns>A <see cref="ReadOnlyProperty{Int32}"/> providing the number of elements contained in the list.</returns>
     public ReadOnlyProperty<int> Count => Property(ref _count);
 
-    int IReadOnlyCollection<T>.Count => ItemCount;
-
     /// <summary>Gets the number of elements contained in the list.</summary>
     /// <returns>The number of elements contained in the list.</returns>
     /// <seealso cref="Count"/>
@@ -75,7 +74,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
 
     /// <summary>Adds an object to the end of the list.</summary>
     /// <param name="item">The object to be added to the end of the list.</param>
-    protected void AddItem(T item)
+    protected int AddItem(T item)
     {
         var index = _count;
 
@@ -95,6 +94,8 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
 
             _changed?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, item, index));
         }
+
+        return index;
     }
 
     /// <summary>Removes all elements from the list.</summary>
@@ -378,7 +379,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         {
             GetCountObservable()?.Changed(_count);
             GetChangeObservable()?.Moved(oldIndex, newIndex);
-            
+
             _changed?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Move, item, newIndex, oldIndex));
         }
     }
@@ -391,6 +392,60 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
 
     private PropertyObservable<int>? GetCountObservable() =>
         Unsafe.As<PropertyObservable<int>?>(GetObservable(GetOffsetOf(ref _count)));
+
+    private static bool IsCompatibleObject(object? value) =>
+        value is T ||
+        value is null && default(T) is null;
+
+    [DoesNotReturn]
+    private static TReturn ThrowMutationsNotSupported<TReturn>() =>
+        throw new NotSupportedException();
+
+    [DoesNotReturn]
+    private static void ThrowMutationsNotSupported() =>
+        throw new NotSupportedException();
+
+    int IReadOnlyCollection<T>.Count => ItemCount;
+
+    int ICollection.Count => ItemCount;
+
+    bool ICollection.IsSynchronized => false;
+
+    object ICollection.SyncRoot => throw new NotSupportedException();
+
+    bool IList.IsFixedSize => false;
+
+    bool IList.IsReadOnly => true;
+
+    object? IList.this[int index]
+    {
+        get => this[index];
+        set => throw new NotSupportedException();
+    }
+
+    int IList.Add(object? value) =>
+        ThrowMutationsNotSupported<int>();
+
+    void IList.Clear() =>
+        ThrowMutationsNotSupported();
+
+    bool IList.Contains(object? value) =>
+        IsCompatibleObject(value) && Contains((T) value!);
+
+    int IList.IndexOf(object? value) =>
+        IsCompatibleObject(value) ? IndexOf((T) value!) : -1;
+
+    void IList.Insert(int index, object? value) =>
+        ThrowMutationsNotSupported();
+
+    void IList.Remove(object? value) =>
+        ThrowMutationsNotSupported();
+
+    void IList.RemoveAt(int index) =>
+        ThrowMutationsNotSupported();
+
+    void ICollection.CopyTo(Array array, int index) =>
+        _items.CopyTo(array, index);
 
     /// <summary>Enumerates the elements of a list.</summary>
     public struct Enumerator : IEnumerator<T>

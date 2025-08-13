@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using Kinetic.Linq.StateMachines;
+using Kinetic.Linq;
+using Kinetic.Runtime;
 
 namespace Kinetic;
 
@@ -34,22 +35,22 @@ public abstract class ObservableObject
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal PropertyObservable<T>? GetObservableFor<T>(IntPtr offset)
+    internal ValueObservable<T>? GetObservableFor<T>(IntPtr offset)
     {
         var observable = GetObservable(offset);
 
         Debug.Assert(
             observable is null ||
-            observable is PropertyObservable<T>);
+            observable is ValueObservable<T>);
 
-        return Unsafe.As<PropertyObservable<T>>(observable);
+        return Unsafe.As<ValueObservable<T>>(observable);
     }
 
     private protected PropertyObservable EnsureObservable(IntPtr offset, Func<ObservableObject, IntPtr, PropertyObservable?, PropertyObservable> factory) =>
         GetObservable(offset) ?? CreateObservable(offset, factory);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal PropertyObservable<T> EnsureObservableFor<T>(IntPtr offset) =>
+    internal ValueObservable<T> EnsureObservableFor<T>(IntPtr offset) =>
         GetObservableFor<T>(offset) ?? CreateObservableFor<T>(offset);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -57,9 +58,9 @@ public abstract class ObservableObject
         _observables = factory(this, offset, _observables);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private PropertyObservable<T> CreateObservableFor<T>(IntPtr offset)
+    private ValueObservable<T> CreateObservableFor<T>(IntPtr offset)
     {
-        var observable = new PropertyObservable<T, SetValueUnchecked<T>>(offset, this, _observables, default);
+        var observable = new ValueObservable<T>(offset, this, _observables);
         _observables = observable;
         return observable;
     }
@@ -84,7 +85,7 @@ public abstract class ObservableObject
     /// <param name="property">The property for which a preview handler should be set..</param>
     /// <param name="preview">The value preview handler that is invoked before setting a new value.</param>
     /// <returns>Returns an observable property for the specified field.</returns>
-    protected void Preview<T>(ReadOnlyProperty<T> property, Func<ObserverBuilder<T>, ObserverBuilder<T>> preview)
+    protected void Preview<T>(ReadOnlyProperty<T> property, Func<Operator<PropertyPreview<T>, T>, IObservable<T>> preview)
     {
         CheckOwner(property);
 
@@ -94,8 +95,13 @@ public abstract class ObservableObject
             throw new InvalidOperationException("A preview handler cannot be set for an already initialized property.");
         }
 
-        EnsureObservable(property.Offset, (owner, offset, next) => preview(default)
-            .Build<SetValueChecked<T>, PropertyObservableFactory, PropertyObservable>(new(), new(offset, owner, next)));
+        EnsureObservable(property.Offset, (owner, offset, next) =>
+        {
+            var observable = new ValueObservable<T>(offset, owner, next);
+            preview(new(new(observable))).Subscribe(new ValueObservable<T>.PreviewObserver(observable));
+
+            return observable;
+        });
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -152,14 +158,15 @@ public abstract class ObservableObject
         }
 
         var observable = GetObservableFor<T>(offset);
-        if (observable is { })
+        if (observable?.Preview is { } preview)
         {
-            observable.Changing(value);
+            preview.OnNext(value);
+            return;
         }
-        else
-        {
-            GetReference<T>(offset) = value;
-        }
+
+        GetReference<T>(offset) = value;
+
+        observable?.Changed(value);
     }
 
     /// <summary>
@@ -193,6 +200,7 @@ public abstract class ObservableObject
         /// <summary>
         /// Enables notifications for the object for which they were previously
         /// suppressed by a call to the <see cref="SuppressNotifications"/> method.
+        /// </summary>
         public void Dispose()
         {
             if (_owner is not null &&
@@ -212,82 +220,143 @@ public abstract class ObservableObject
         }
     }
 
-    private struct SetValueUnchecked<T> : IStateMachine<T>
+    private sealed class ValueObservableDebugView<T>
     {
-        public PropertyObservable<T>? Observable;
+        private readonly ValueObservable<T> _observable;
 
-        public StateMachineBox Box =>
-            Observable ?? throw new InvalidOperationException();
+        public ValueObservableDebugView(ValueObservable<T> observable) =>
+            _observable = observable;
 
-        public StateMachine<T> Reference =>
-            new StateMachine<T, SetValueUnchecked<T>>(ref this);
+        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+        public IReadOnlyList<IObserver<T>> Items =>
+            _observable.Subscriptions.GetObserversForDebugger();
+    }
 
-        public StateMachine? Continuation =>
-            null;
+    [DebuggerDisplay("Observers = {Subscriptions.GetObserversCountForDebugger()}")]
+    [DebuggerTypeProxy(typeof(ValueObservableDebugView<>))]
+    internal sealed class ValueObservable<T> : PropertyObservable, IObservableInternal<T>, IObserver<T>
+    {
+        internal ObservableSubscriptions<T> Subscriptions;
+        internal IObserver<T>? Preview;
 
-        public void Dispose() =>
-            Observable = null;
+        public ValueObservable(IntPtr offset, ObservableObject owner, PropertyObservable? next) :
+            base(offset, owner, next)
+        { }
 
-        public void Initialize(StateMachineBox box) =>
-            Observable = (PropertyObservable<T>) box;
+        internal override void Changed() =>
+            Subscriptions.OnNext(Owner.Get<T>(Offset));
+
+        internal void Changed(T value)
+        {
+            if (Owner.NotificationsEnabled)
+            {
+                Version = Owner._version++;
+                Subscriptions.OnNext(value);
+            }
+            else
+            {
+                Version = Owner._version;
+            }
+        }
+
+        public IDisposable Subscribe(IObserver<T> observer)
+        {
+            observer.OnNext(Owner.Get<T>(Offset));
+            return Subscriptions.Subscribe(observer, this);
+        }
+
+        public void Subscribe(ObservableSubscription<T> subscription) =>
+            Subscriptions.Subscribe(subscription, this);
+
+        public void Unsubscribe(ObservableSubscription<T> subscription) =>
+            Subscriptions.Unsubscribe(subscription);
 
         public void OnCompleted() { }
 
         public void OnError(Exception error) { }
 
-        public void OnNext(T value)
+        public void OnNext(T value) =>
+            Owner.Set(Offset, value);
+
+        private void OnPreviewCompleted() { }
+
+        private void OnPreviewError(Exception error) { }
+
+        private void OnPreviewNext(T value)
         {
-            var observable = Observable!;
-            var owner = observable.Owner;
-
-            owner.GetReference<T>(observable.Offset) = value;
-
-            if (owner.NotificationsEnabled)
-            {
-                observable.Version = owner._version++;
-                observable.Changed(value);
-            }
-            else
-            {
-                observable.Version = owner._version;
-            }
-        }
-    }
-
-    private struct SetValueChecked<T> : IStateMachine<T>
-    {
-        private SetValueUnchecked<T> _continuation;
-
-        public StateMachineBox Box =>
-            _continuation.Box;
-
-        public StateMachine<T> Reference =>
-            new StateMachine<T, SetValueChecked<T>>(ref this);
-
-        public StateMachine? Continuation =>
-            _continuation.Reference;
-
-        public void Dispose() =>
-            _continuation.Dispose();
-
-        public void Initialize(StateMachineBox box) =>
-            _continuation.Initialize(box);
-
-        public void OnCompleted() =>
-            _continuation.OnCompleted();
-
-        public void OnError(Exception error) =>
-            _continuation.OnError(error);
-
-        public void OnNext(T value)
-        {
-            var observable = _continuation.Observable!;
-            if (EqualityComparer<T>.Default.Equals(value, observable.Owner.Get<T>(observable.Offset)))
+            if (EqualityComparer<T>.Default.Equals(value, Owner.Get<T>(Offset)))
             {
                 return;
             }
 
-            _continuation.OnNext(value);
+            Owner.GetReference<T>(Offset) = value;
+            Changed(value);
+        }
+
+        internal struct SubscribeStateMachine<TPreview> : IEntryStateMachine<T>
+            where TPreview : struct, IStateMachine<T>
+        {
+            private TPreview _preview;
+            private readonly ValueObservable<T> _observable;
+
+            public SubscribeStateMachine(TPreview preview, ValueObservable<T> observable)
+            {
+                _preview = preview;
+                _observable = observable;
+            }
+
+            public StateMachineBox Box =>
+                _preview.Box;
+
+            public StateMachineReference<T> Reference =>
+                _preview.Reference;
+
+            public StateMachineReference? Continuation =>
+                _preview.Continuation;
+
+            public void Dispose()
+            {
+                _observable.Preview = null;
+                _preview.Dispose();
+            }
+
+            public void Initialize(StateMachineBox box)
+            {
+                _preview.Initialize(box);
+                _observable.Preview ??= box as IObserver<T> ?? StateMachineReference<T>.Create(ref this);
+            }
+
+            public void Start()
+            {
+                // That state machine has no real subscription as it usually happens.
+                // Instead, all changes are sourced to it directly by the property setter.
+            }
+
+            public void OnCompleted() =>
+                _preview.OnCompleted();
+
+            public void OnError(Exception error) =>
+                _preview.OnError(error);
+
+            public void OnNext(T value) =>
+                _preview.OnNext(value);
+        }
+
+        internal sealed class PreviewObserver : IObserver<T>
+        {
+            private readonly ValueObservable<T> _observable;
+
+            public PreviewObserver(ValueObservable<T> observable) =>
+                _observable = observable;
+
+            public void OnCompleted() =>
+                _observable.OnPreviewCompleted();
+
+            public void OnError(Exception error) =>
+                _observable.OnPreviewError(error);
+
+            public void OnNext(T value) =>
+                _observable.OnPreviewNext(value);
         }
     }
 }

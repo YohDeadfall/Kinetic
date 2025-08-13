@@ -1,39 +1,45 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using Kinetic.Linq.StateMachines;
+using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
-public static partial class ObservableView
-{
-    public static ObservableView<T> ToView<T>(this ObserverBuilder<ListChange<T>> builder) =>
-        new ObservableView<T>(builder);
-}
-
 public class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
 {
-    private readonly IDisposable _stateMachineBox;
+    private IDisposable? _subscription;
 
-    public ObservableView(ObserverBuilder<ListChange<T>> builder) =>
-        _stateMachineBox = builder
-            .ContinueWith<BindStateMachineFactory, ListChange<T>>(new(this))
-            .Subscribe();
+    protected internal ObservableView() { }
+
+    protected internal void Bind<TOperator>(Operator<TOperator, ListChange<T>> source)
+        where TOperator : IOperator<ListChange<T>>
+    {
+        _subscription?.Dispose();
+        _subscription = ObserverFactory<ListChange<T>>.Create(
+            new BindOperator<TOperator>(source, this));
+    }
 
     public void Dispose() =>
-        _stateMachineBox.Dispose();
+        _subscription?.Dispose();
 
-    private readonly struct BindStateMachineFactory : IStateMachineFactory<ListChange<T>, ListChange<T>>
+    private readonly struct BindOperator<TOperator> : IOperator<ListChange<T>>
+        where TOperator : IOperator<ListChange<T>>
     {
+        private readonly TOperator _source;
         private readonly ObservableView<T> _view;
 
-        public BindStateMachineFactory(ObservableView<T> view) =>
+        public BindOperator(TOperator source, ObservableView<T> view)
+        {
+            _source = source;
             _view = view;
+        }
 
-        public void Create<TContinuation>(in TContinuation continuation, ObserverStateMachine<ListChange<T>> source)
+        public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
+            where TBoxFactory : struct, IStateMachineBoxFactory<TBox>
             where TContinuation : struct, IStateMachine<ListChange<T>>
         {
-            source.ContinueWith<BindStateMachine<TContinuation>>(new(continuation, _view));
+            return _source.Build<TBox, TBoxFactory, BindStateMachine<TContinuation>>(
+                boxFactory, new(continuation, _view));
         }
     }
 
@@ -52,10 +58,10 @@ public class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
         public StateMachineBox Box =>
             _continuation.Box;
 
-        public StateMachine<ListChange<T>> Reference =>
-            new ListStateMachine<T, BindStateMachine<TContinuation>>(ref this);
+        public StateMachineReference<ListChange<T>> Reference =>
+            new ListStateMachineReference<T, BindStateMachine<TContinuation>>(ref this);
 
-        public StateMachine? Continuation =>
+        public StateMachineReference? Continuation =>
             _continuation.Reference;
 
         public int Count =>

@@ -10,8 +10,14 @@ public class ObservableViewTests
     public void GroupByStaticWithoutComparer()
     {
         var list = new ObservableList<Item>();
-        var groupings = list.GroupBy(item => item.Name.Get()).ToView();
-        var groupingsOrdered = list.GroupBy(item => item.Name.Get(), items => items.OrderBy(item => item.Number)).ToView();
+        var groupings = list
+            .GroupBy(item => item.Name.Get())
+            .ToView();
+        var groupingsOrdered = list
+            .GroupBy(
+                item => item.Name.Get(),
+                items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key))
+            .ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -86,8 +92,14 @@ public class ObservableViewTests
     public void GroupByStaticWithComparer()
     {
         var list = new ObservableList<Item>();
-        var groupings = list.GroupBy(item => item.Name.Get(), StringComparer.OrdinalIgnoreCase).ToView();
-        var groupingsOrdered = list.GroupBy(item => item.Name.Get(), items => items.OrderBy(item => item.Number), StringComparer.OrdinalIgnoreCase).ToView();
+        var groupings = list
+            .GroupBy(item => item.Name.Get(), StringComparer.OrdinalIgnoreCase)
+            .ToView();
+        var groupingsOrdered = list
+            .GroupBy(
+                item => item.Name.Get(),
+                items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key),
+                StringComparer.OrdinalIgnoreCase).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -162,8 +174,14 @@ public class ObservableViewTests
     public void GroupByDynamicWithoutComparer()
     {
         var list = new ObservableList<Item>();
-        var groupings = list.GroupBy(item => item.Name).ToView();
-        var groupingsOrdered = list.GroupBy(item => item.Name, items => items.OrderBy(item => item.Number)).ToView();
+        var groupings = list
+            .GroupByObservable(item => item.Name.Changed)
+            .ToView();
+        var groupingsOrdered = list
+            .GroupByObservable(
+                item => item.Name.Changed,
+                items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key))
+            .ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -251,8 +269,14 @@ public class ObservableViewTests
     public void GroupByDynamicWithComparer()
     {
         var list = new ObservableList<Item>();
-        var groupings = list.GroupBy(item => item.Name, StringComparer.OrdinalIgnoreCase).ToView();
-        var groupingsOrdered = list.GroupBy(item => item.Name, items => items.OrderBy(item => item.Number), StringComparer.OrdinalIgnoreCase).ToView();
+        var groupings = list
+            .GroupByObservable(item => item.Name.Changed, StringComparer.OrdinalIgnoreCase)
+            .ToView();
+        var groupingsOrdered = list
+            .GroupByObservable(
+                item => item.Name.Changed,
+                items => items.OrderByObservable(item => item.Number.Changed).ToGroup(items.Key), StringComparer.OrdinalIgnoreCase)
+            .ToView();
 
         var itemA = new Item(0, "a");
         var itemB = new Item(1, "B");
@@ -345,13 +369,13 @@ public class ObservableViewTests
 
         using var changes = list
             .Changed
-            .Do(change => SetWhenAdded(change, ref handledBefore))
+            .OnNext(change => SetWhenAdded(change, ref handledBefore))
             .OnItemAdded(item =>
             {
                 Assert.True(handledBefore);
                 Assert.False(handledAfter);
             })
-            .Do(change => SetWhenAdded(change, ref handledAfter))
+            .OnNext(change => SetWhenAdded(change, ref handledAfter))
             .Subscribe();
 
         list.Add(0);
@@ -375,13 +399,13 @@ public class ObservableViewTests
 
         using var changes = list
             .Changed
-            .Do(change => SetWhenRemoved(change, ref handledBefore))
+            .OnNext(change => SetWhenRemoved(change, ref handledBefore))
             .OnItemRemoved(item =>
             {
                 Assert.True(handledBefore);
                 Assert.True(handledAfter);
             })
-            .Do(change => SetWhenRemoved(change, ref handledAfter))
+            .OnNext(change => SetWhenRemoved(change, ref handledAfter))
             .Subscribe();
 
         list.Add(0);
@@ -456,7 +480,7 @@ public class ObservableViewTests
     public void OrderByDynamic()
     {
         var list = new ObservableList<Item>();
-        var view = list.OrderBy(item => item.Number).ToView();
+        var view = list.OrderByObservable(item => item.Number.Changed).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -547,7 +571,7 @@ public class ObservableViewTests
     public void SelectDynamic()
     {
         var list = new ObservableList<Item>();
-        var view = list.SelectAwait(item => item.Name).ToView();
+        var view = list.SelectObservable(item => item.Name.Changed).ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");
@@ -629,7 +653,9 @@ public class ObservableViewTests
     public void WhereDynamic()
     {
         var list = new ObservableList<Item>();
-        var view = list.WhereAwait(item => item.Number.Changed.Select(static number => number % 2 == 0)).ToView();
+        var view = list
+            .WhereObservable(item => item.Number.Changed.Select(static number => number % 2 == 0))
+            .ToView();
 
         var itemA = new Item(0, "A");
         var itemB = new Item(1, "B");

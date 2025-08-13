@@ -492,29 +492,75 @@ public class LinqTests
     }
 
     [Fact]
-    public async ValueTask Then()
+    public async ValueTask Switch()
     {
-        var container = new Container<int>();
-        var values = container.PublishSubject.Changed
-            .Then(value => value)
+        var outer = new PublishSubject<Subject<string>>();
+        var innerA = new PublishSubject<string>();
+        var innerB = new PublishSubject<string>();
+
+        var values = outer
+            .Switch()
             .ToArray()
             .ToValueTask();
 
-        var source = container.PublishSubject.Get();
+        innerA.OnNext("initial");
+        outer.OnNext(innerA);
+        innerA.OnNext("visible from A");
+        outer.OnNext(innerB);
+        innerA.OnNext("invisible from A");
+        innerB.OnNext("visible from B");
 
-        source.OnNext(1);
-        source.OnNext(2);
+        Assert.Equal(
+            new[] { "visible from A", "visible from B" },
+            await values);
+    }
 
-        var sourceNew = new PublishSubject<int>();
+    [Fact]
+    public void SwitchCompletesAfterInner()
+    {
+        var outer = new PublishSubject<Subject<string>>();
+        var inner = new PublishSubject<string>();
+        var result = outer.Switch().ToValueTask();
 
-        container.PublishSubject.Set(sourceNew);
-        sourceNew.OnNext(10);
-        sourceNew.OnNext(20);
+        outer.OnNext(inner);
+        inner.OnCompleted();
 
-        source.OnNext(3);
-        source.OnNext(4);
+        Assert.False(result.IsCompleted);
 
-        Assert.Equal(new[] { 1, 2, 10, 20 }, await values);
+        outer.OnCompleted();
+
+        Assert.True(result.IsCompleted);
+    }
+
+    [Fact]
+    public void SwitchCompletesNotBeforeInner()
+    {
+        var outer = new PublishSubject<Subject<string>>();
+        var inner = new PublishSubject<string>();
+        var result = outer.Switch().ToValueTask();
+
+        outer.OnNext(inner);
+        outer.OnCompleted();
+
+        Assert.False(result.IsCompleted);
+
+        inner.OnCompleted();
+
+        Assert.True(result.IsCompleted);
+    }
+
+    [Fact]
+    public void SwitchCompletesIfNoInner()
+    {
+        var outer = new PublishSubject<Subject<string>?>();
+        var inner = new PublishSubject<string>();
+        var result = outer.Switch().ToValueTask();
+
+        outer.OnNext(inner);
+        outer.OnNext(null);
+        outer.OnCompleted();
+
+        Assert.True(result.IsCompleted);
     }
 
     [Fact]
@@ -710,14 +756,6 @@ public class LinqTests
     {
         await Task.Yield();
         return value;
-    }
-
-    private sealed class Container<T> : ObservableObject
-    {
-        private PublishSubject<T> _source;
-
-        public Container() => _source = new PublishSubject<T>();
-        public Property<PublishSubject<T>> PublishSubject => Property(ref _source);
     }
 
     private sealed class WithSynchronizationContext : SynchronizationContext

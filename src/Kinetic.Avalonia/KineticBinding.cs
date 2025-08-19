@@ -70,7 +70,7 @@ public static class KineticBinding
         private readonly AvaloniaProperty _targetProperty;
         private StateMachineValueReference<TProperty, StateMachine<TProperty>> _publisher;
 
-        public Box(in TStateMachine stateMachine, AvaloniaObject targetObject, AvaloniaProperty targetProperty) :
+        public Box(TStateMachine stateMachine, AvaloniaObject targetObject, AvaloniaProperty targetProperty) :
             base(stateMachine)
         {
             _targetObject = targetObject;

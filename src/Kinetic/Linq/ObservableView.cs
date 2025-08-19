@@ -49,7 +49,7 @@ public class ObservableView<T> : ReadOnlyObservableList<T>, IDisposable
         private TContinuation _continuation;
         private readonly ObservableView<T> _view;
 
-        public BindStateMachine(in TContinuation continuation, ObservableView<T> view)
+        public BindStateMachine(TContinuation continuation, ObservableView<T> view)
         {
             _continuation = continuation;
             _view = view;

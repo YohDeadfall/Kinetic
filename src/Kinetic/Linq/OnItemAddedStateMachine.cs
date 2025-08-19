@@ -10,7 +10,7 @@ internal struct OnItemAddedStateMachine<TContinuation, TSource> : IStateMachine<
     private TContinuation _continuation;
     private readonly Action<TSource> _onAdded;
 
-    public OnItemAddedStateMachine(in TContinuation continuation, Action<TSource> onAdded)
+    public OnItemAddedStateMachine(TContinuation continuation, Action<TSource> onAdded)
     {
         _continuation = continuation;
         _onAdded = onAdded;

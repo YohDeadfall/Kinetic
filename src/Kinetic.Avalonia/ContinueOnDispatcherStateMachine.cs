@@ -11,7 +11,7 @@ internal struct ContinueOnDispatcherStateMachine<TContinuation, TSource> : IStat
     private readonly Dispatcher _dispatcher;
     private readonly DispatcherPriority _priority;
 
-    public ContinueOnDispatcherStateMachine(in TContinuation continuation, Dispatcher dispatcher, DispatcherPriority priorty)
+    public ContinueOnDispatcherStateMachine(TContinuation continuation, Dispatcher dispatcher, DispatcherPriority priorty)
     {
         _continuation = continuation;
         _dispatcher = dispatcher;

@@ -13,7 +13,7 @@ internal struct OnItemRemovedStateMachine<TContinuation, TSource> : IStateMachin
     private IReadOnlyList<TSource>? _items;
     private readonly Action<TSource> _onRemoved;
 
-    public OnItemRemovedStateMachine(in TContinuation continuation, Action<TSource> onRemoved)
+    public OnItemRemovedStateMachine(TContinuation continuation, Action<TSource> onRemoved)
     {
         _continuation = continuation;
         _onRemoved = onRemoved;

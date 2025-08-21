@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Kinetic;
 
@@ -448,6 +449,7 @@ public abstract class ReadOnlyObservableList<T> : ObservableObject, IReadOnlyLis
         _items.CopyTo(array, index);
 
     /// <summary>Enumerates the elements of a list.</summary>
+    [StructLayout(LayoutKind.Auto)]
     public struct Enumerator : IEnumerator<T>
     {
         private readonly ReadOnlyObservableList<T> _items;

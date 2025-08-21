@@ -1,7 +1,9 @@
+using System.Runtime.InteropServices;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct OfType<TOperator, TSource, TResult> : IOperator<TResult>
     where TOperator : IOperator<TSource>
 {

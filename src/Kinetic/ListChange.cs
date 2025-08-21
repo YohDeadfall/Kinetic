@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Kinetic;
 
@@ -30,6 +31,7 @@ public static class ListChange
         new(oldIndex.ThrowIfArgumentNegative(), newIndex.ThrowIfArgumentNegative());
 }
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct ListChange<T> : IEquatable<ListChange<T>>
 {
     private readonly int _oldIndex;

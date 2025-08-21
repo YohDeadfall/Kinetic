@@ -1,7 +1,9 @@
+using System.Runtime.InteropServices;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct Count<TOperator, TSource> : IOperator<int>
     where TOperator : IOperator<TSource>
 {

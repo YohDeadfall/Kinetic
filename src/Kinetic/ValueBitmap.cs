@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 internal struct ValueBitmap
 {
     private static readonly int BitsPerBucket = nuint.Size * 8;

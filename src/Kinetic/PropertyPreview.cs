@@ -1,8 +1,10 @@
+using System.Runtime.InteropServices;
 using Kinetic.Linq;
 using Kinetic.Runtime;
 
 namespace Kinetic;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct PropertyPreview<T> : IOperator<T>
 {
     private readonly ObservableObject.ValueObservable<T> _observable;

@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace Kinetic.Runtime;
 
@@ -14,6 +15,7 @@ public static class StateMachineValueReference<T>
 }
 
 [DebuggerTypeProxy(typeof(StateMachineReferenceDebugView<,>))]
+[StructLayout(LayoutKind.Auto)]
 public readonly struct StateMachineValueReference<T, TStateMachine> : IEquatable<StateMachineValueReference<T, TStateMachine>>
     where TStateMachine : struct, IStateMachine<T>
 {

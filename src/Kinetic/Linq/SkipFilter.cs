@@ -1,5 +1,8 @@
+using System.Runtime.InteropServices;
+
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 internal struct SkipFilter<T> : ITransform<T, bool>
 {
     private uint _index;

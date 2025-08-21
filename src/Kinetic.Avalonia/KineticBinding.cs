@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Avalonia;
 using Avalonia.Interactivity;
 using Kinetic.Linq;
@@ -135,7 +136,7 @@ public static class KineticBinding
         }
     }
 
-
+    [StructLayout(LayoutKind.Auto)]
     private struct StateMachine<TProperty> :
         IStateMachine<Property<TProperty>?>,
         IStateMachine<ReadOnlyProperty<TProperty>?>,
@@ -215,6 +216,7 @@ public static class KineticBinding
         void IObserver<TProperty>.OnNext(TProperty value) =>
             Observer?.OnNext(value);
 
+        [StructLayout(LayoutKind.Auto)]
         public struct OneWay : IStateMachine<Property<TProperty>?>
         {
             private StateMachine<TProperty> _inner;

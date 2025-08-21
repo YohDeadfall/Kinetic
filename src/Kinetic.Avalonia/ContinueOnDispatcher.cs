@@ -1,9 +1,11 @@
 using System;
+using System.Runtime.InteropServices;
 using Avalonia.Threading;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct ContinueOnDispatcher<TOperator, TSource> : IOperator<TSource>
     where TOperator : IOperator<TSource>
 {

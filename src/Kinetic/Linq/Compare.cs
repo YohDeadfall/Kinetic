@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 internal readonly struct Compare<T, TOrdering> : IAggregator<T, T>
     where TOrdering : IOrdering
 {

@@ -1,9 +1,11 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 internal struct Accumulator<TAggregator, TSource> : IAccumulator<TSource, TSource>
     where TAggregator : struct, IAggregator<TSource, TSource>
 {

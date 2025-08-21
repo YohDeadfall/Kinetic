@@ -1,8 +1,10 @@
 using System;
+using System.Runtime.InteropServices;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct OnItemAdded<TOperator, TSource> : IOperator<ListChange<TSource>>
     where TOperator : IOperator<ListChange<TSource>>
 {

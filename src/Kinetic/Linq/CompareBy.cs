@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 internal struct CompareBy<T, TKey, TOrdering> : IAggregator<T, T>
     where TOrdering : IOrdering
 {

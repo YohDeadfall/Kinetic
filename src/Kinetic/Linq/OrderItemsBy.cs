@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct OrderItemsBy<TOperator, TSource, TKey> : IOperator<ListChange<TSource>>
     where TOperator : IOperator<ListChange<TSource>>
 {

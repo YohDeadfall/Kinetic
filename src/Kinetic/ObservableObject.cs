@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Kinetic.Linq;
 using Kinetic.Runtime;
 
@@ -182,6 +183,7 @@ public abstract class ObservableObject
     /// A scope controlling the time during notifications are disabled for the object
     /// for which the <see cref="SuppressNotifications"/> method was called.
     /// <summary>
+    [StructLayout(LayoutKind.Auto)]
     public readonly struct SuppressNotificationsScope : IDisposable
     {
         private readonly ObservableObject? _owner;
@@ -293,6 +295,7 @@ public abstract class ObservableObject
             Changed(value);
         }
 
+        [StructLayout(LayoutKind.Auto)]
         internal struct SubscribeStateMachine<TPreview> : IEntryStateMachine<T>
             where TPreview : struct, IStateMachine<T>
         {

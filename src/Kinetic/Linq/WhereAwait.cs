@@ -1,9 +1,11 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct WhereAwait<TOperator, TSource> : IOperator<TSource>
     where TOperator : IOperator<TSource>
 {

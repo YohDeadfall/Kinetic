@@ -1,8 +1,10 @@
 using System;
+using System.Runtime.InteropServices;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct SelectItems<TOperator, TSource, TResult> : IOperator<ListChange<TResult>>
     where TOperator : IOperator<ListChange<TSource>>
 {

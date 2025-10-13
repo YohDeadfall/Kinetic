@@ -39,7 +39,7 @@ public abstract class StateMachineBox
 }
 
 [DebuggerTypeProxy(typeof(StateMachineBoxDebugView<,>))]
-public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObserver<T>
+public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox
     where TStateMachine : struct, IEntryStateMachine<T>
 {
     private TStateMachine _stateMachine;
@@ -54,42 +54,4 @@ public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObse
 
     protected StateMachineBox(in TStateMachine stateMachine) =>
         _stateMachine = stateMachine;
-
-    public void OnCompleted()
-    {
-        try
-        {
-            _stateMachine.OnCompleted();
-        }
-        finally
-        {
-            _stateMachine.Dispose();
-        }
-    }
-
-    public void OnError(Exception error)
-    {
-        try
-        {
-            _stateMachine.OnError(error);
-        }
-        finally
-        {
-            _stateMachine.Dispose();
-        }
-    }
-
-    public void OnNext(T value)
-    {
-        try
-        {
-            _stateMachine.OnNext(value);
-        }
-        catch
-        {
-            _stateMachine.Dispose();
-
-            throw;
-        }
-    }
 }

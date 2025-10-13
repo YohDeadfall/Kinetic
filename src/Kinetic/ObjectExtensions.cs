@@ -20,4 +20,12 @@ internal static class ObjectExtensions
             throw new ArgumentOutOfRangeException(paramName, "The value cannot be negative.");
         return obj;
     }
+
+    public static TimeSpan ThrowIfArgumentNegative(this TimeSpan obj, [CallerArgumentExpression("obj")] string? paramName = null)
+    {
+        if (obj < TimeSpan.Zero)
+            throw new ArgumentOutOfRangeException(paramName, "The value cannot be negative.");
+        return obj;
+    }
+
 }

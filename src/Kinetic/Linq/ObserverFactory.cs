@@ -18,7 +18,7 @@ internal readonly struct ObserverFactory<TResult> : IStateMachineBoxFactory<IDis
         return new Box<TSource, TStateMachine>(stateMachine);
     }
 
-    private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>, IDisposable
+    private sealed class Box<T, TStateMachine> : StateMachineBox<T, TStateMachine>
         where TStateMachine : struct, IEntryStateMachine<T>
     {
         public Box(TStateMachine stateMachine) :
@@ -27,9 +27,6 @@ internal readonly struct ObserverFactory<TResult> : IStateMachineBoxFactory<IDis
             StateMachine.Initialize(this);
             StateMachine.Start();
         }
-
-        public void Dispose() =>
-            StateMachine.Dispose();
     }
 
     private struct StateMachine : IStateMachine<TResult>
@@ -50,9 +47,11 @@ internal readonly struct ObserverFactory<TResult> : IStateMachineBoxFactory<IDis
         public void Initialize(StateMachineBox box) =>
             _box = box;
 
-        public void OnCompleted() { }
+        public void OnCompleted() =>
+            Box.Dispose();
 
-        public void OnError(Exception error) { }
+        public void OnError(Exception error) =>
+            Box.Dispose();
 
         public void OnNext(TResult value) { }
     }

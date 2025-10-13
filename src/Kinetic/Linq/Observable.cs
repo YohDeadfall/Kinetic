@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,4 +18,28 @@ public static class Observable
 
     public static Operator<FromAsync<T>, T> FromAsync<T>(Func<CancellationToken, ValueTask<T>> task, bool configureAwait = true) =>
         new(new(task, configureAwait));
+
+    public static Operator<FromRange<T>, T> FromRange<T>(T start, T end)
+        where T : INumberBase<T>, IComparisonOperators<T, T, bool>
+    {
+        return FromRange(start, end, T.One);
+    }
+
+    public static Operator<FromRange<T>, T> FromRange<T>(T start, T end, T step)
+        where T : IAdditionOperators<T, T, T>, IComparisonOperators<T, T, bool>
+    {
+        return new(new(start, end, step, inclusive: false));
+    }
+
+    public static Operator<FromRange<T>, T> FromRangeInclusive<T>(T start, T end)
+        where T : INumberBase<T>, IComparisonOperators<T, T, bool>
+    {
+        return FromRangeInclusive(start, end, T.One);
+    }
+
+    public static Operator<FromRange<T>, T> FromRangeInclusive<T>(T start, T end, T step)
+        where T : IAdditionOperators<T, T, T>, IComparisonOperators<T, T, bool>
+    {
+        return new(new(start, end, step, inclusive: false));
+    }
 }

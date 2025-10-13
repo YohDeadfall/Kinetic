@@ -1,8 +1,10 @@
 using System;
+using System.Runtime.InteropServices;
 using Kinetic.Runtime;
 
 namespace Kinetic.Linq;
 
+[StructLayout(LayoutKind.Auto)]
 public readonly struct Never<T> : IOperator<T>
 {
     public TBox Build<TBox, TBoxFactory, TContinuation>(in TBoxFactory boxFactory, TContinuation continuation)
@@ -13,6 +15,7 @@ public readonly struct Never<T> : IOperator<T>
             new(continuation));
     }
 
+    [StructLayout(LayoutKind.Auto)]
     private struct StateMachine<TContinuation> : IEntryStateMachine<T>
         where TContinuation : struct, IStateMachine<T>
     {

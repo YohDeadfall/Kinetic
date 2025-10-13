@@ -233,6 +233,68 @@ public class LinqTests
     }
 
     [Fact]
+    public async ValueTask FromAsync()
+    {
+        var cts = new TaskCompletionSource();
+        var source = Observable
+            .FromAsync(async _ => await cts.Task)
+            .ToValueTask();
+
+        cts.SetResult();
+
+        Assert.Equal(default, await source);
+    }
+
+    [Fact]
+    public async ValueTask FromAsync_CancelsOnDispose()
+    {
+        var cts = new TaskCompletionSource<int?>();
+        var source = Observable
+            .FromAsync(async ct =>
+            {
+                ct.ThrowIfCancellationRequested();
+                return await cts.Task;
+            })
+            .FirstOrDefault()
+            .ToValueTask();
+
+        cts.SetResult(42);
+
+        Assert.Null(await source);
+    }
+
+    [Fact]
+    public async ValueTask FromAsyncGeneric()
+    {
+        var cts = new TaskCompletionSource<int>();
+        var source = Observable
+            .FromAsync(async _ => await cts.Task)
+            .ToValueTask();
+
+        cts.SetResult(42);
+
+        Assert.Equal(42, await source);
+    }
+
+    [Fact]
+    public async ValueTask FromAsyncGeneric_CancelsOnDispose()
+    {
+        var cts = new TaskCompletionSource<int?>();
+        var source = Observable
+            .FromAsync(async ct =>
+            {
+                ct.ThrowIfCancellationRequested();
+                return await cts.Task;
+            })
+            .FirstOrDefault()
+            .ToValueTask();
+
+        cts.SetResult(42);
+
+        Assert.Null(await source);
+    }
+
+    [Fact]
     public async ValueTask Last_WithPredicate()
     {
         var source = new PublishSubject<int>();

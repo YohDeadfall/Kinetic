@@ -310,6 +310,15 @@ public class LinqTests
     }
 
     [Fact]
+    public async ValueTask FromRange()
+    {
+        Assert.Equal([0, 1, 2], await Observable.FromRange(0, 3).ToArray());
+        Assert.Equal([0, 1, 2, 3], await Observable.FromRangeInclusive(0, 3).ToArray());
+        Assert.Equal([0, 2], await Observable.FromRange(0, 4, step: 2).ToArray());
+        Assert.Equal([0, 2, 4], await Observable.FromRange(0, 4, step: 2).ToArray());
+    }
+
+    [Fact]
     public async ValueTask Last_WithPredicate()
     {
         var source = new PublishSubject<int>();

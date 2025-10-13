@@ -42,4 +42,7 @@ public static class Observable
     {
         return new(new(start, end, step, inclusive: false));
     }
+
+    public static Operator<Never<T>, T> Never<T>() =>
+        new(new());
 }

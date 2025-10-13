@@ -295,6 +295,21 @@ public class LinqTests
     }
 
     [Fact]
+    public async ValueTask FromGenerator()
+    {
+        var source = Observable
+            .Create<int>(observer =>
+            {
+                observer.OnNext(42);
+                observer.OnCompleted();
+                return Disposable.Empty;
+            })
+            .ToValueTask();
+
+        Assert.Equal(42, await source);
+    }
+
+    [Fact]
     public async ValueTask Last_WithPredicate()
     {
         var source = new PublishSubject<int>();

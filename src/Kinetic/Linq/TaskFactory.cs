@@ -68,15 +68,21 @@ internal readonly struct TaskFactory<TResult> : IStateMachineBoxFactory<Task<TRe
             }
             catch (Exception error)
             {
-                taskSource.SetException(error);
+                OnError(error);
             }
         }
 
-        public void OnError(Exception error) =>
+        public void OnError(Exception error)
+        {
             GetTaskSource().SetException(error);
+            Box.Dispose();
+        }
 
-        public void OnNext(TResult value) =>
+        public void OnNext(TResult value)
+        {
             GetTaskSource().SetResult(value);
+            Box.Dispose();
+        }
 
         private TaskCompletionSource<TResult> GetTaskSource() =>
             ((IBox) Box).TaskSource;

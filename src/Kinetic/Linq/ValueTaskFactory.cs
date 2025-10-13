@@ -31,7 +31,7 @@ internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<Val
     {
         private IntPtr _publisher;
 
-        public short Token => GetCore().Version;
+        public short Token => GetTask().Version;
 
         public Box(in TStateMachine stateMachine) :
             base(stateMachine)
@@ -41,25 +41,25 @@ internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<Val
         }
 
         public ValueTaskSourceStatus GetStatus(short token) =>
-            GetCore().GetStatus(token);
+            GetTask().GetStatus(token);
 
         public TResult GetResult(short token) =>
-            GetCore().GetResult(token);
+            GetTask().GetResult(token);
 
         public void OnCompleted(Action<object?> continuation, object? state, short token, ValueTaskSourceOnCompletedFlags flags) =>
-            GetCore().OnCompleted(continuation, state, token, flags);
+            GetTask().OnCompleted(continuation, state, token, flags);
 
         public void Initialize(ref StateMachine publisher) =>
             _publisher = OffsetTo<TResult, StateMachine>(ref publisher);
 
-        private ref ManualResetValueTaskSourceCore<TResult> GetCore() =>
-            ref ReferenceTo<TResult, StateMachine>(_publisher)._core;
+        private ref ManualResetValueTaskSourceCore<TResult> GetTask() =>
+            ref ReferenceTo<TResult, StateMachine>(_publisher)._task;
     }
 
     internal struct StateMachine : IStateMachine<TResult>
     {
         private StateMachineBox? _box;
-        internal ManualResetValueTaskSourceCore<TResult> _core;
+        internal ManualResetValueTaskSourceCore<TResult> _task;
 
         public StateMachineBox Box =>
             _box ?? throw new InvalidOperationException();
@@ -81,8 +81,11 @@ internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<Val
 
         public void OnCompleted()
         {
-            if (_core.GetStatus(_core.Version) != ValueTaskSourceStatus.Pending)
+            if (_task.GetStatus(_task.Version) != ValueTaskSourceStatus.Pending)
+            {
+                _box!.Dispose();
                 return;
+            }
 
             try
             {
@@ -90,14 +93,19 @@ internal readonly struct ValueTaskFactory<TResult> : IStateMachineBoxFactory<Val
             }
             catch (Exception error)
             {
-                _core.SetException(error);
+                OnError(error);
             }
         }
 
-        public void OnError(Exception error) =>
-            _core.SetException(error);
+        public void OnError(Exception error)
+        {
+            _task.SetException(error);
+            _box!.Dispose();
+        }
 
-        public void OnNext(TResult value) =>
-            _core.SetResult(value);
+        public void OnNext(TResult value)
+        {
+            _task.SetResult(value);
+        }
     }
 }

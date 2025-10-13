@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 
 namespace Kinetic.Runtime;
 
-public abstract class StateMachineBox
+public abstract class StateMachineBox : IDisposable
 {
     private protected abstract ReadOnlySpan<byte> StateMachineData { get; }
 
@@ -36,6 +36,8 @@ public abstract class StateMachineBox
 
         return ref Unsafe.As<byte, TStateMachine>(ref machinePart);
     }
+
+    public abstract void Dispose();
 }
 
 [DebuggerTypeProxy(typeof(StateMachineBoxDebugView<,>))]
@@ -55,15 +57,19 @@ public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObse
     protected StateMachineBox(in TStateMachine stateMachine) =>
         _stateMachine = stateMachine;
 
+    public override void Dispose() =>
+        _stateMachine.Dispose();
+
     public void OnCompleted()
     {
         try
         {
             _stateMachine.OnCompleted();
         }
-        finally
+        catch
         {
             _stateMachine.Dispose();
+            throw;
         }
     }
 
@@ -73,9 +79,10 @@ public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObse
         {
             _stateMachine.OnError(error);
         }
-        finally
+        catch
         {
             _stateMachine.Dispose();
+            throw;
         }
     }
 
@@ -88,7 +95,6 @@ public abstract class StateMachineBox<T, TStateMachine> : StateMachineBox, IObse
         catch
         {
             _stateMachine.Dispose();
-
             throw;
         }
     }

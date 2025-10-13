@@ -101,11 +101,11 @@ public static class KineticBinding
             return this;
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             _targetObject.PropertyChanged -= TargetPropertyChanged;
 
-            StateMachine.Dispose();
+            base.Dispose();
         }
 
         private void TargetPropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs args)
@@ -207,11 +207,17 @@ public static class KineticBinding
             }
         }
 
-        public void OnError(Exception error) =>
+        public void OnError(Exception error)
+        {
             Observer?.OnError(error);
+            Box.Dispose();
+        }
 
-        public void OnCompleted() =>
+        public void OnCompleted()
+        {
             Observer?.OnCompleted();
+            Box.Dispose();
+        }
 
         void IObserver<TProperty>.OnNext(TProperty value) =>
             Observer?.OnNext(value);

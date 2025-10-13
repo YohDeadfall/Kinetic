@@ -27,10 +27,8 @@ internal struct SwitchStateMachine<TContinuation, TSource> : IStateMachine<IObse
     {
         lock (_gate)
         {
-            if (_subscription is { })
-                _subscription = null;
-            else
-                _continuation.Dispose();
+            _subscription?.Dispose();
+            _continuation.Dispose();
         }
     }
 
@@ -41,7 +39,9 @@ internal struct SwitchStateMachine<TContinuation, TSource> : IStateMachine<IObse
     {
         lock (_gate)
         {
-            if (_subscription is null)
+            if (_subscription is { })
+                _subscription = null;
+            else
             {
                 _continuation.OnCompleted();
                 _self = null;

@@ -90,11 +90,17 @@ internal readonly struct ObservableFactory<TResult> : IStateMachineBoxFactory<IO
             _box = box;
         }
 
-        public void OnCompleted() =>
+        public void OnCompleted()
+        {
             _subscriptions.OnCompleted();
+            _box!.Dispose();
+        }
 
-        public void OnError(Exception error) =>
+        public void OnError(Exception error)
+        {
             _subscriptions.OnError(error);
+            _box!.Dispose();
+        }
 
         public void OnNext(TResult value) =>
             _subscriptions.OnNext(value);

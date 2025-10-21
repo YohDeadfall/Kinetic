@@ -45,4 +45,20 @@ public static class Observable
 
     public static Operator<Never<T>, T> Never<T>() =>
         new(new());
+
+    public static Operator<Return<T>, T> Return<T>(T value) =>
+        new(new(value));
+
+    public static Operator<ReturnAt<T>, T> Return<T>(T value, TimeSpan dueTime) =>
+        new(new(value, dueTime, TimeProvider.System, CancellationToken.None));
+
+    public static Operator<ReturnAt<T>, T> Return<T>(T value, TimeSpan dueTime, CancellationToken cancellationToken) =>
+        new(new(value, dueTime, TimeProvider.System, cancellationToken));
+
+    public static Operator<ReturnAt<T>, T> Return<T>(T value, TimeSpan dueTime, TimeProvider timeProvider) =>
+        new(new(value, dueTime, timeProvider, CancellationToken.None));
+
+    public static Operator<ReturnAt<T>, T> Return<T>(T value, TimeSpan dueTime, TimeProvider timeProvider, CancellationToken cancellationToken) =>
+        new(new(value, dueTime, timeProvider, cancellationToken));
+
 }

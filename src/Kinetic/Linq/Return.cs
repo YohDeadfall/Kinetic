@@ -27,17 +27,20 @@ public readonly struct Return<T> : IOperator<T>
         private TContinuation _continuation;
         private readonly T _value;
 
-        public StateMachineBox Box => throw new NotImplementedException();
-
-        public StateMachineReference<T> Reference => throw new NotImplementedException();
-
-        public StateMachineReference? Continuation => throw new NotImplementedException();
-
         public StateMachine(TContinuation continuation, T value)
         {
             _continuation = continuation;
             _value = value;
         }
+
+        public StateMachineBox Box =>
+            _continuation.Box;
+
+        public StateMachineReference<T> Reference =>
+            StateMachineReference<T>.Create(ref this);
+
+        public StateMachineReference? Continuation =>
+            _continuation.Reference;
 
         public void Dispose() =>
             _continuation.Dispose();

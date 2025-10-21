@@ -409,6 +409,14 @@ public class LinqTests
     }
 
     [Fact]
+    public async ValueTask Return()
+    {
+        Assert.Equal(42, await Observable.Return(42));
+        Assert.Equal(42, await Observable.Return(42, TimeSpan.Zero));
+        Assert.Equal(42, await Observable.Return(42, TimeSpan.FromMilliseconds(1)));
+    }
+
+    [Fact]
     public async ValueTask Select()
     {
         var source = new PublishSubject<int>();
@@ -545,39 +553,6 @@ public class LinqTests
     }
 
     [Fact]
-    public async ValueTask Take()
-    {
-        var source = new PublishSubject<int>();
-        var values = source
-            .Take(2)
-            .ToArray()
-            .ToValueTask();
-
-        source.OnNext(1);
-        source.OnNext(2);
-        source.OnNext(3);
-
-        Assert.Equal(new[] { 1, 2 }, await values);
-    }
-
-    [Fact]
-    public async ValueTask TakeWhile()
-    {
-        var source = new PublishSubject<int>();
-        var values = source
-            .TakeWhile(value => value < 2)
-            .ToArray()
-            .ToValueTask();
-
-        source.OnNext(0);
-        source.OnNext(1);
-        source.OnNext(2);
-        source.OnNext(3);
-
-        Assert.Equal(new[] { 0, 1 }, await values);
-    }
-
-    [Fact]
     public async ValueTask Switch()
     {
         var outer = new PublishSubject<Subject<string>>();
@@ -647,6 +622,39 @@ public class LinqTests
         outer.OnCompleted();
 
         Assert.True(result.IsCompleted);
+    }
+
+    [Fact]
+    public async ValueTask Take()
+    {
+        var source = new PublishSubject<int>();
+        var values = source
+            .Take(2)
+            .ToArray()
+            .ToValueTask();
+
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnNext(3);
+
+        Assert.Equal(new[] { 1, 2 }, await values);
+    }
+
+    [Fact]
+    public async ValueTask TakeWhile()
+    {
+        var source = new PublishSubject<int>();
+        var values = source
+            .TakeWhile(value => value < 2)
+            .ToArray()
+            .ToValueTask();
+
+        source.OnNext(0);
+        source.OnNext(1);
+        source.OnNext(2);
+        source.OnNext(3);
+
+        Assert.Equal(new[] { 0, 1 }, await values);
     }
 
     [Fact]

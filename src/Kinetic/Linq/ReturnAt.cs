@@ -95,7 +95,8 @@ public readonly struct ReturnAt<T> : IOperator<T>
 
                 self._continuation.OnNext(self._value);
                 self._continuation.OnCompleted();
-            };
+            }
+            ;
 
             if (_timeProvider == TimeProvider.System && _dueTime == TimeSpan.Zero)
             {
@@ -103,14 +104,14 @@ public readonly struct ReturnAt<T> : IOperator<T>
             }
             else
             {
-                _timer = _timeProvider.CreateTimer(Callback, state,_dueTime,period: TimeSpan.Zero);
+                _timer = _timeProvider.CreateTimer(Callback, state, _dueTime, period: TimeSpan.Zero);
             }
         }
 
-        public void OnCompleted(){}
+        public void OnCompleted() { }
 
-        public void OnError(Exception error){}
+        public void OnError(Exception error) { }
 
-        public void OnNext(T value){}
+        public void OnNext(T value) { }
     }
 }

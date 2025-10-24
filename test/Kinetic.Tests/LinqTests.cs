@@ -782,6 +782,27 @@ public class LinqTests
     }
 
     [Fact]
+    public async ValueTask WhenAny()
+    {
+        var container = new Container();
+        var when2 = container.WhenAnyValue(c => c.Bool, c => c.String).ToArray().ToValueTask();
+        var when3 = container.WhenAnyValue(c => c.Bool, c => c.String, c => c.Int).ToArray().ToValueTask();
+        var when4 = container.WhenAnyValue(c => c.Bool, c => c.String, c => c.Int, c => c.Long).ToArray().ToValueTask();
+
+        const long l0 = 0;
+        const long l1 = 1;
+
+        container.Bool.Set(true);
+        container.String.Set("s");
+        container.Int.Set(1);
+        container.Long.Set(l1);
+
+        Assert.Equal(new[] { (false, ""), (true, ""), (true, "s") }, await when2);
+        Assert.Equal(new[] { (false, "", 0), (true, "", 0), (true, "s", 1) }, await when3);
+        Assert.Equal(new[] { (false, "", 0, l0), (true, "", 0, l0), (true, "s", 1, l0), (true, "s", 1, l1) }, await when4);
+    }
+
+    [Fact]
     public async ValueTask Where()
     {
         var source = new PublishSubject<int>();
@@ -871,5 +892,18 @@ public class LinqTests
 
         public override void Send(SendOrPostCallback d, object? state) =>
             throw new InvalidOperationException("Must not be used.");
+    }
+
+    private sealed class Container : ObservableObject
+    {
+        private string _string = string.Empty;
+        private bool _bool;
+        private int _int;
+        private long _long;
+
+        public Property<string> String => Property(ref _string);
+        public Property<bool> Bool => Property(ref _bool);
+        public Property<int> Int => Property(ref _int);
+        public Property<long> Long => Property(ref _long);
     }
 }

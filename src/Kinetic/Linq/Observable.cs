@@ -61,4 +61,54 @@ public static class Observable
     public static Operator<ReturnAt<T>, T> Return<T>(T value, TimeSpan dueTime, TimeProvider timeProvider, CancellationToken cancellationToken) =>
         new(new(value, dueTime, timeProvider, cancellationToken));
 
+    public static Operator<WhenAny<T1, T2>, (T1, T2)> WhenAnyValue<T1, T2>(
+        ReadOnlyProperty<T1> source1,
+        ReadOnlyProperty<T2> source2)
+    {
+        return new(new(source1, source2));
+    }
+
+    public static Operator<WhenAny<T1, T2, T3>, (T1, T2, T3)> WhenAnyValue<T1, T2, T3>(
+        ReadOnlyProperty<T1> source1,
+        ReadOnlyProperty<T2> source2,
+        ReadOnlyProperty<T3> source3)
+    {
+        return new(new(source1, source2, source3));
+    }
+
+    public static Operator<WhenAny<T1, T2, T3, T4>, (T1, T2, T3, T4)> WhenAnyValue<T1, T2, T3, T4>(
+        ReadOnlyProperty<T1> source1,
+        ReadOnlyProperty<T2> source2,
+        ReadOnlyProperty<T3> source3,
+        ReadOnlyProperty<T4> source4)
+    {
+        return new(new(source1, source2, source3, source4));
+    }
+
+    public static Operator<WhenAny<T1, T2>, (T1, T2)> WhenAnyValue<T, T1, T2>(
+        this T obj,
+        Func<T, Property<T1>> source1,
+        Func<T, Property<T2>> source2)
+    {
+        return new(new(source1(obj), source2(obj)));
+    }
+
+    public static Operator<WhenAny<T1, T2, T3>, (T1, T2, T3)> WhenAnyValue<T, T1, T2, T3>(
+        this T obj,
+        Func<T, Property<T1>> source1,
+        Func<T, Property<T2>> source2,
+        Func<T, Property<T3>> source3)
+    {
+        return new(new(source1(obj), source2(obj), source3(obj)));
+    }
+
+    public static Operator<WhenAny<T1, T2, T3, T4>, (T1, T2, T3, T4)> WhenAnyValue<T, T1, T2, T3, T4>(
+        this T obj,
+        Func<T, Property<T1>> source1,
+        Func<T, Property<T2>> source2,
+        Func<T, Property<T3>> source3,
+        Func<T, Property<T4>> source4)
+    {
+        return new(new(source1(obj), source2(obj), source3(obj), source4(obj)));
+    }
 }

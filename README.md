@@ -1,6 +1,13 @@
 ## What is Kinetic?
 
-Kinetic is an alternative implementation of the Reactive framework focused on performance and lesser memory allocations.
+Kinetic is an alternative implementation of the Reactive framework focused on performance and fewer memory allocations. It allows for defining observer chains on the stack and allocating a single box out of the definition. Thus reducing the number of virtual calls and even making method inlining possible for JIT.
+
+## Design
+
+The design and ideas are well described in two articles:
+
+* [Lightweight observer chains](https://yoh.dev/lightweight-observer-chains)
+* [It's all about properties](https://yoh.dev/it-is-all-about-properties)
 
 ## Features
 
@@ -86,7 +93,7 @@ Collection bindings automaticlly produce a proxy which translates `ListChange<T>
 using Avalonia.Data.Core;
 using Kinetic.Data;
 
-// Adds the accessor for Kinetic properties before the CLR property accessor  
+// Adds the accessor for Kinetic properties before the CLR property accessor
 BindingPlugins.PropertyAccessors.Insert(2, new KineticPropertyAccessor());
 ```
 

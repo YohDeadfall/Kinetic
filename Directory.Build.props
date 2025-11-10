@@ -1,11 +1,11 @@
 <Project>
   <PropertyGroup>
-    <Version>0.5</Version>
+    <Version>0.6</Version>
     <Authors>Yoh Deadfall</Authors>
     <Description>A lightweight implementation of the Reactive framework.</Description>
     <PackageTags>observable reactive ui</PackageTags>
 
-    <Copyright>Copyright 2024 © Yoh Deadfall</Copyright>
+    <Copyright>Copyright 2025 © Yoh Deadfall</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/YohDeadfall/Kinetic</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -13,7 +13,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    
+
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
